@@ -2,29 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Game Host Lobby</title>
+    <title>Game Host - Quiz Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 30px; }
+        .screen { display: none; }
+        .active { display: block; }
         #qrcode { margin: 20px auto; display: inline-block; }
         ul { list-style: none; padding: 0; }
-        li { font-size: 20px; margin: 5px 0; }
-        #start-btn { font-size: 24px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; display: none; }
+        li { font-size: 18px; margin: 5px 0; }
+        button { font-size: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1 id="room-title">Loading Room...</h1>
-    <div id="qrcode"></div>
-    <h2>Players in Lobby:</h2>
-    <ul id="player-list"></ul>
-    <br>
-    <button id="start-btn" onclick="startGame()">Start Game</button>
+    <!-- LOBBY SCREEN -->
+    <div id="lobby-screen" class="screen active">
+        <h1 id="room-title">Loading Room...</h1>
+        <div id="qrcode"></div>
+        <h2>Players in Lobby:</h2>
+        <ul id="player-list"></ul>
+        <br>
+        <button id="start-btn" style="display:none;" onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- HOST QUESTION SCREEN -->
+    <div id="question-screen" class="screen">
+        <h1 id="q-title">Question 1</h1>
+        <h2 id="q-text">What is 2 + 2? (Answer: 4)</h2>
+        <h3>Time Remaining: <span id="timer">120</span>s</h3>
+        
+        <h2>Live Player Status:</h2>
+        <ul id="live-player-list"></ul>
+        
+        <br>
+        <button id="reveal-btn" onclick="revealAnswer()" style="display:none; background: #dc3545;">Reveal Answer / End Round</button>
+    </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -40,42 +58,76 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Generate a random 4-letter room code
         const roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
         document.getElementById("room-title").innerText = `Room Code: ${roomCode}`;
 
-        // Generate QR code pointing to player screen (Update GitHub Pages URL later)
-        // For local testing, use your computer's local network URL (e.g., http://192.168.1.50:5500/player.html)
-        const playerUrl = `${window.location.origin}/demo/player.html?room=${roomCode}`;
+        const playerUrl = `${window.location.origin}/player.html?room=${roomCode}`;
         new QRCode(document.getElementById("qrcode"), playerUrl);
 
-        // Set initial room status in Firebase
+        // Initialize Room
         const roomRef = ref(db, `rooms/${roomCode}`);
         set(roomRef, {
-            status: "waiting"
+            status: "waiting",
+            question: {
+                text: "What is 2 + 2?",
+                answer: "4"
+            }
         });
 
-        // Listen for players joining
+        // Listen for players joining lobby
         const playersRef = ref(db, `rooms/${roomCode}/players`);
         onValue(playersRef, (snapshot) => {
             const data = snapshot.val();
             const listEl = document.getElementById("player-list");
+            const liveListEl = document.getElementById("live-player-list");
             listEl.innerHTML = "";
+            liveListEl.innerHTML = "";
             
             if (data) {
-                const players = Object.values(data);
-                players.forEach(p => {
+                const players = Object.entries(data);
+                players.forEach(([id, p]) => {
+                    // Lobby list
                     const li = document.createElement("li");
                     li.innerText = p.name;
                     listEl.appendChild(li);
+
+                    // Live Question tracking list
+                    const liveLi = document.createElement("li");
+                    liveLi.innerText = `${p.name}: ${p.answered ? "✅ Answered" : "⏳ Thinking..."} (Score: ${p.score || 0})`;
+                    liveListEl.appendChild(liveLi);
                 });
                 document.getElementById("start-btn").style.display = "inline-block";
             }
         });
 
-        // Start game function attached to window so HTML can see it
+        let countdownInterval;
+
         window.startGame = function() {
-            set(ref(db, `rooms/${roomCode}/status`), "started");
+            // Switch views on host
+            document.getElementById("lobby-screen").classList.remove("active");
+            document.getElementById("question-screen").classList.add("active");
+            document.getElementById("reveal-btn").style.display = "inline-block";
+
+            // Update Firebase status to start game for players
+            update(roomRef, { status: "question-1", startTime: Date.now() });
+
+            // Start Host 2-minute timer
+            let timeLeft = 120;
+            const timerEl = document.getElementById("timer");
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    revealAnswer();
+                }
+            }, 1000);
+        };
+
+        window.revealAnswer = function() {
+            clearInterval(countdownInterval);
+            update(roomRef, { status: "round-over" });
+            alert("Round ended! Host can now review scores.");
         };
     </script>
 </body>
