@@ -50,7 +50,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -66,8 +66,9 @@
                const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // QR code points directly to the player page without any room codes
-        const playerUrl = `${window.location.origin}/demo/player.html`;
+        // QR code points directly to the player page without any room codes.
+        // Use a relative URL so it also works when opened via file:// during local testing.
+        const playerUrl = new URL("player.html", window.location.href).href;
         new QRCode(document.getElementById("qrcode"), playerUrl);
 
         const questions = [
