@@ -7,7 +7,8 @@
         :root {
             --bg-1: #f4fbff;
             --bg-2: #eef4ff;
-            --panel: rgba(255,255,255,0.76);
+            --bg-3: #edf2ff;
+            --panel: rgba(255,255,255,0.77);
             --text: #1d2a39;
             --muted: #5b6f82;
             --primary: #4f7cff;
@@ -23,25 +24,45 @@
             text-align: center;
             margin: 0;
             min-height: 100vh;
-            background: radial-gradient(circle at top, var(--bg-1), var(--bg-2) 56%, #ebeffd);
+            background:
+                radial-gradient(circle at top left, rgba(79,124,255,0.18), transparent 25%),
+                radial-gradient(circle at top right, rgba(34,181,115,0.18), transparent 24%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2) 52%, var(--bg-3));
             color: var(--text);
             display: flex;
             justify-content: center;
             align-items: flex-start;
             padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: rgba(79,124,255,0.12);
+            filter: blur(60px);
+            top: -90px;
+            left: -70px;
+            pointer-events: none;
         }
 
         .screen {
             display: none;
             width: min(560px, 100%);
-            background: var(--panel);
-            border: 1px solid rgba(255,255,255,0.8);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.66));
+            border: 1px solid rgba(255,255,255,0.9);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: 30px;
             box-shadow: var(--shadow);
             padding: 28px 20px 30px;
             animation: fadeInUp 0.5s ease;
+            position: relative;
+            z-index: 1;
         }
 
         .active { display: block; }
@@ -62,7 +83,7 @@
         }
 
         input {
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.82);
             color: var(--text);
             box-shadow: inset 0 1px 3px rgba(12, 20, 34, 0.06);
         }
@@ -73,6 +94,22 @@
             border: none;
             cursor: pointer;
             box-shadow: 0 16px 24px rgba(79,124,255,0.26);
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.32) 45%, transparent 100%);
+            transform: translateX(-120%);
+            transition: transform 0.8s ease;
+        }
+
+        button:hover::after {
+            transform: translateX(120%);
         }
 
         button:hover {
@@ -84,9 +121,35 @@
             position: relative;
         }
 
+        .status-chip {
+            display: inline-block;
+            padding: 8px 14px;
+            margin-bottom: 10px;
+            border-radius: 999px;
+            background: rgba(79,124,255,0.08);
+            border: 1px solid rgba(79,124,255,0.16);
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .question-panel,
+        .result-panel {
+            background: linear-gradient(135deg, rgba(79,124,255,0.08), rgba(34,181,115,0.07));
+            border: 1px solid rgba(79,124,255,0.1);
+            border-radius: 22px;
+            padding: 18px 16px;
+            margin: 12px auto 8px;
+            width: min(420px, 92%);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+        }
+
         #question-prompt {
             font-size: clamp(1.7rem, 3vw, 2.2rem);
             margin: 12px 0 10px;
+            letter-spacing: -0.04em;
         }
 
         #result-msg {
@@ -97,6 +160,17 @@
         #current-score, #final-score, #player-timer {
             color: var(--primary-dark);
             font-weight: 700;
+        }
+
+        .status-chip {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(79,124,255,0.08);
+            border: 1px solid rgba(79,124,255,0.14);
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-bottom: 8px;
         }
 
         @keyframes fadeInUp {
@@ -129,9 +203,12 @@
 
     <!-- QUESTION SCREEN -->
     <div id="question-screen" class="screen">
+        <div class="status-chip">Live Question</div>
         <h3 id="player-round-indicator">Round X</h3>
-        <h2 id="question-prompt">Loading Question...</h2>
-        <h3>Time Left: <span id="player-timer">120</span>s</h3>
+        <div class="question-panel">
+            <h2 id="question-prompt">Loading Question...</h2>
+            <h3>Time Left: <span id="player-timer">120</span>s</h3>
+        </div>
         <input type="text" id="answer-input" placeholder="Type your answer..." />
         <br>
         <button onclick="submitAnswer()">Submit Answer</button>
@@ -139,10 +216,12 @@
 
     <!-- POST-ANSWER WAITING SCREEN -->
     <div id="post-answer-screen" class="screen">
+        <div class="status-chip">Answer Locked In</div>
         <h2>Answer Submitted! 🎯</h2>
-        <p id="result-msg">Waiting for the round to end...</p>
-        <h3>Your Current Total Score: <span id="current-score">0</span></h3>
-    </div>
+        <div class="result-panel">
+            <p id="result-msg">Waiting for the round to end...</p>
+            <h3>Your Current Total Score: <span id="current-score">0</span></h3>
+        </div>
 
     <!-- FINAL LEADERBOARD SCREEN -->
     <div id="leaderboard-screen" class="screen">
@@ -174,7 +253,26 @@
         let gameStartTime = 0;
         let timerInterval;
         let currentScore = 0;
+        let lastRoundPoints = 0;
         let activeRound = -1;
+        let audioCtx;
+
+        function playUiTone(frequency, duration, type = "sine", volume = 0.04) {
+            const AudioCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtor) return;
+            if (!audioCtx) audioCtx = new AudioCtor();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = type;
+            oscillator.frequency.value = frequency;
+            gainNode.gain.value = volume;
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
 
         window.joinGame = function() {
             const name = document.getElementById("name-input").value.trim();
@@ -198,11 +296,13 @@
                 const gameData = snapshot.val();
                 if (!gameData) return;
 
-                if (gameData.status.startsWith("round-") && !gameData.status.endsWith("-over")) {
+                if (gameData.status.startsWith("round-") && !gameData.status.endsWith("-results")) {
                     const roundNum = gameData.round;
                     
                     if (activeRound !== roundNum) {
                         activeRound = roundNum;
+                        lastRoundPoints = 0;
+                        playUiTone(420, 0.12, "triangle", 0.03);
                         
                         document.getElementById("waiting-screen").classList.remove("active");
                         document.getElementById("post-answer-screen").classList.remove("active");
@@ -217,10 +317,14 @@
                     }
                 }
 
-                if (gameData.status.endsWith("-over")) {
+                if (gameData.status.endsWith("-results")) {
                     clearInterval(timerInterval);
+                    playUiTone(660, 0.12, "sine", 0.05);
+                    setTimeout(() => playUiTone(820, 0.18, "triangle", 0.05), 80);
                     document.getElementById("question-screen").classList.remove("active");
                     document.getElementById("post-answer-screen").classList.add("active");
+                    document.getElementById("result-msg").innerText = `Round complete! You earned ${lastRoundPoints} points. Total: ${currentScore}.`;
+                    document.getElementById("current-score").innerText = currentScore;
                 }
 
                 if (gameData.status === "leaderboard-reveal") {
@@ -258,9 +362,9 @@
                 
                 if (playerAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
                     earnedPoints = Math.max(200, Math.floor(1000 - (timeElapsed / 120) * 800));
-                    document.getElementById("result-msg").innerText = `Correct! You earned ${earnedPoints} points 🎉`;
+                    lastRoundPoints = earnedPoints;
                 } else {
-                    document.getElementById("result-msg").innerText = `Incorrect! The answer was "${correctAnswer}".`;
+                    lastRoundPoints = 0;
                 }
 
                 currentScore += earnedPoints;
@@ -268,21 +372,28 @@
                 const playerRef = ref(db, `game/players/${playerId}`);
                 update(playerRef, {
                     answered: true,
-                    score: currentScore
+                    score: currentScore,
+                    lastRoundPoints: lastRoundPoints
                 });
 
                 document.getElementById("question-screen").classList.remove("active");
                 document.getElementById("post-answer-screen").classList.add("active");
-                document.getElementById("current-score").innerText = currentScore;
+                document.getElementById("result-msg").innerText = "Answer submitted. Scores are hidden until the round ends.";
+                document.getElementById("current-score").innerText = "Secret";
             });
         };
 
         function autoSubmitEmpty() {
+            lastRoundPoints = 0;
             const playerRef = ref(db, `game/players/${playerId}`);
-            update(playerRef, { answered: true });
+            update(playerRef, {
+                answered: true,
+                lastRoundPoints: 0
+            });
             document.getElementById("question-screen").classList.remove("active");
             document.getElementById("post-answer-screen").classList.add("active");
             document.getElementById("result-msg").innerText = "Time's up! No points awarded for this round ⏰";
+            document.getElementById("current-score").innerText = "Secret";
         }
     </script>
 </body>
