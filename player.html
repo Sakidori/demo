@@ -246,6 +246,24 @@
     <div id="waiting-screen" class="screen">
         <h2><span id="waiting-avatar">🦊</span> You're in!</h2>
         <p>Waiting for the host to start the game...</p>
+        <fieldset class="avatar-picker" id="waiting-avatar-picker">
+            <legend>Change your avatar</legend>
+            <div class="avatar-options">
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦊" aria-label="Fox"><span aria-hidden="true">🦊</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐼" aria-label="Panda"><span aria-hidden="true">🐼</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐸" aria-label="Frog"><span aria-hidden="true">🐸</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐯" aria-label="Tiger"><span aria-hidden="true">🐯</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐙" aria-label="Octopus"><span aria-hidden="true">🐙</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦉" aria-label="Owl"><span aria-hidden="true">🦉</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐧" aria-label="Penguin"><span aria-hidden="true">🐧</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦄" aria-label="Unicorn"><span aria-hidden="true">🦄</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐨" aria-label="Koala"><span aria-hidden="true">🐨</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦁" aria-label="Lion"><span aria-hidden="true">🦁</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐵" aria-label="Monkey"><span aria-hidden="true">🐵</span></label>
+                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐢" aria-label="Turtle"><span aria-hidden="true">🐢</span></label>
+            </div>
+        </fieldset>
+        <p id="avatar-save-status" aria-live="polite"></p>
     </div>
 
     <!-- QUESTION SCREEN -->
@@ -299,6 +317,7 @@
 
         let playerId = "";
         let playerName = "";
+        let playerAvatar = "🦊";
         const playerAvatars = ["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢"];
         let gameStartTime = 0;
         let timerInterval;
@@ -332,6 +351,7 @@
             const avatar = playerAvatars.includes(selectedAvatar) ? selectedAvatar : playerAvatars[0];
             playerId = "player_" + Math.random().toString(36).substring(2, 8);
             playerName = name;
+            playerAvatar = avatar;
 
             const playerRef = ref(db, `game/players/${playerId}`);
             try {
@@ -351,6 +371,29 @@
             document.getElementById("join-screen").classList.remove("active");
             document.getElementById("waiting-screen").classList.add("active");
             document.getElementById("waiting-avatar").innerText = avatar;
+            document.querySelectorAll('input[name="waiting-avatar"]').forEach((input) => {
+                input.checked = input.value === avatar;
+            });
+
+            document.querySelectorAll('input[name="waiting-avatar"]').forEach((input) => {
+                input.addEventListener("change", async (event) => {
+                    const nextAvatar = event.target.value;
+                    if (!playerId || activeRound !== -1 || !playerAvatars.includes(nextAvatar)) return;
+
+                    const status = document.getElementById("avatar-save-status");
+                    try {
+                        await update(playerRef, { avatar: nextAvatar });
+                        playerAvatar = nextAvatar;
+                        document.getElementById("waiting-avatar").innerText = nextAvatar;
+                        status.innerText = "Avatar updated";
+                    } catch (error) {
+                        document.querySelectorAll('input[name="waiting-avatar"]').forEach((option) => {
+                            option.checked = option.value === playerAvatar;
+                        });
+                        status.innerText = "Could not update avatar. Please try again.";
+                    }
+                });
+            });
 
             // Listen to global game status changes
             const gameRef = ref(db, `game`);
