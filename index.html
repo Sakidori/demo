@@ -410,6 +410,30 @@
             font-weight: 700;
         }
 
+        .music-control {
+            position: fixed;
+            top: 14px;
+            right: 16px;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: auto;
+            margin: 0;
+            padding: 9px 13px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(18,26,42,0.94);
+            color: var(--text);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+            font-size: 0.9rem;
+        }
+
+        .music-control[aria-pressed="true"] {
+            border-color: rgba(43,212,168,0.55);
+            color: var(--success-2);
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -436,15 +460,19 @@
         }
 
         @media (max-width: 600px) {
-            body { padding: 20px 12px; }
+            body { padding: 56px 12px 20px; }
+            .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             #lobby-screen { padding: 22px 16px; }
             .lobby-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
             .lobby-join { padding: 0 0 18px; border-right: 0; border-bottom: 1px solid var(--line); }
-            .lobby-join h1 { font-size: 2rem; margin-bottom: 8px; }
+            .lobby-join h1 { width: 100%; font-size: clamp(1.6rem, 7vw, 2rem); margin-bottom: 8px; }
             .lobby-join #qrcode { margin-top: 8px; }
+            .lobby-join #qrcode canvas,
+            .lobby-join #qrcode img { width: min(48vw, 180px); height: min(48vw, 180px); }
             .lobby-roster { padding: 8px 0 0; }
             .lobby-roster ul { max-height: 220px; }
+            .lobby-roster #empty-player-state { margin: 8px 0; padding: 14px 10px; }
             .lobby-actions { margin-top: 14px; }
             li { width: 92%; }
             .result-item { width: 96%; grid-template-columns: 30px 26px minmax(0, 1fr) auto; gap: 8px; padding: 12px 10px; font-size: 15px; }
@@ -455,6 +483,10 @@
     </style>
 </head>
 <body>
+
+    <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on">
+        <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
+    </button>
 
     <!-- LOBBY SCREEN -->
     <div id="lobby-screen" class="screen active">
@@ -509,6 +541,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { createFunkyMusic } from "./music.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -552,6 +585,26 @@
         });
 
         let audioCtx;
+        const funkyMusic = createFunkyMusic();
+        const musicToggle = document.getElementById("music-toggle");
+        const musicLabel = document.getElementById("music-label");
+
+        musicToggle.addEventListener("click", async () => {
+            if (funkyMusic.isPlaying) {
+                funkyMusic.stop();
+            } else {
+                try {
+                    await funkyMusic.start();
+                } catch (error) {
+                    musicLabel.innerText = "Audio unavailable";
+                    return;
+                }
+            }
+
+            musicToggle.setAttribute("aria-pressed", String(funkyMusic.isPlaying));
+            musicToggle.setAttribute("aria-label", funkyMusic.isPlaying ? "Turn music off" : "Turn music on");
+            musicLabel.innerText = funkyMusic.isPlaying ? "Music on" : "Music off";
+        });
 
         function playUiTone(frequency, duration, type = "sine", volume = 0.05) {
             const AudioCtor = window.AudioContext || window.webkitAudioContext;

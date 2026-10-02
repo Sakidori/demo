@@ -168,6 +168,30 @@
             box-shadow: 0 22px 28px rgba(124,92,255,0.3);
         }
 
+        .music-control {
+            position: fixed;
+            top: 14px;
+            right: 16px;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: auto;
+            margin: 0;
+            padding: 9px 13px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(18,26,42,0.94);
+            color: var(--text);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+            font-size: 0.9rem;
+        }
+
+        .music-control[aria-pressed="true"] {
+            border-color: rgba(43,212,168,0.55);
+            color: #9deed0;
+        }
+
         #question-screen {
             position: relative;
         }
@@ -219,7 +243,8 @@
         }
 
         @media (max-width: 600px) {
-            body { padding: 12px 8px; }
+            body { padding: 56px 8px 12px; }
+            .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 18px 12px 20px; border-radius: 18px; }
             input, button { width: 100%; font-size: 16px; padding: 12px 14px; margin: 8px auto; }
             .avatar-picker { margin: 10px auto 4px; }
@@ -237,6 +262,10 @@
     </style>
 </head>
 <body>
+
+    <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on">
+        <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
+    </button>
 
     <!-- JOIN SCREEN -->
     <div id="join-screen" class="screen active">
@@ -333,6 +362,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { createFunkyMusic } from "./music.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -358,6 +388,26 @@
         let lastRoundPoints = 0;
         let activeRound = -1;
         let audioCtx;
+        const funkyMusic = createFunkyMusic();
+        const musicToggle = document.getElementById("music-toggle");
+        const musicLabel = document.getElementById("music-label");
+
+        musicToggle.addEventListener("click", async () => {
+            if (funkyMusic.isPlaying) {
+                funkyMusic.stop();
+            } else {
+                try {
+                    await funkyMusic.start();
+                } catch (error) {
+                    musicLabel.innerText = "Audio unavailable";
+                    return;
+                }
+            }
+
+            musicToggle.setAttribute("aria-pressed", String(funkyMusic.isPlaying));
+            musicToggle.setAttribute("aria-label", funkyMusic.isPlaying ? "Turn music off" : "Turn music on");
+            musicLabel.innerText = funkyMusic.isPlaying ? "Music on" : "Music off";
+        });
 
         function playUiTone(frequency, duration, type = "sine", volume = 0.04) {
             const AudioCtor = window.AudioContext || window.webkitAudioContext;
