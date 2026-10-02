@@ -4,12 +4,111 @@
     <meta charset="UTF-8">
     <title>Game Player</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 30px; background: #f4f7f6; }
-        .screen { display: none; }
+        :root {
+            --bg-1: #f4fbff;
+            --bg-2: #eef4ff;
+            --panel: rgba(255,255,255,0.76);
+            --text: #1d2a39;
+            --muted: #5b6f82;
+            --primary: #4f7cff;
+            --primary-dark: #315ce2;
+            --success: #22b573;
+            --shadow: 0 28px 48px rgba(56, 74, 102, 0.18);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, var(--bg-1), var(--bg-2) 56%, #ebeffd);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .screen {
+            display: none;
+            width: min(560px, 100%);
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,0.8);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            padding: 28px 20px 30px;
+            animation: fadeInUp 0.5s ease;
+        }
+
         .active { display: block; }
-        input, button { font-size: 18px; padding: 12px; margin: 10px; width: 80%; max-width: 300px; }
-        button { background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #0056b3; }
+
+        h2, h3 {
+            margin-top: 0;
+        }
+
+        input, button {
+            font-size: 18px;
+            padding: 14px 16px;
+            margin: 12px auto;
+            width: min(360px, 80%);
+            border-radius: 14px;
+            border: 1px solid rgba(100, 122, 147, 0.18);
+            display: block;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input {
+            background: rgba(255,255,255,0.8);
+            color: var(--text);
+            box-shadow: inset 0 1px 3px rgba(12, 20, 34, 0.06);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 16px 24px rgba(79,124,255,0.26);
+        }
+
+        button:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 22px 28px rgba(79,124,255,0.3);
+        }
+
+        #question-screen {
+            position: relative;
+        }
+
+        #question-prompt {
+            font-size: clamp(1.7rem, 3vw, 2.2rem);
+            margin: 12px 0 10px;
+        }
+
+        #result-msg {
+            color: var(--muted);
+            font-size: 1.05rem;
+        }
+
+        #current-score, #final-score, #player-timer {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 20px 12px; }
+            .screen { padding: 24px 14px 26px; border-radius: 18px; }
+            input, button { width: 92%; }
+        }
     </style>
 </head>
 <body>
