@@ -5,44 +5,52 @@
     <title>Game Host - Quiz Master</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 30px; }
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 30px; background: #f4f7f6; }
         .screen { display: none; }
         .active { display: block; }
-        #qrcode { margin: 20px auto; display: inline-block; }
+        #qrcode { margin: 20px auto; display: inline-block; background: white; padding: 10px; border-radius: 8px; }
         ul { list-style: none; padding: 0; }
-        li { font-size: 18px; margin: 5px 0; }
-        button { font-size: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        li { font-size: 18px; margin: 8px 0; background: white; padding: 10px; width: 300px; margin: 5px auto; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { font-size: 20px; padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; }
+        button:hover { background: #218838; }
+        .leaderboard-item { font-size: 22px; font-weight: bold; background: #ffc107; }
     </style>
 </head>
 <body>
 
     <!-- LOBBY SCREEN -->
     <div id="lobby-screen" class="screen active">
-        <h1 id="room-title">Loading Room...</h1>
+        <h1>Scan to Join Game!</h1>
         <div id="qrcode"></div>
         <h2>Players in Lobby:</h2>
         <ul id="player-list"></ul>
         <br>
-        <button id="start-btn" style="display:none;" onclick="startGame()">Start Game</button>
+        <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Game (Round 1)</button>
     </div>
 
-    <!-- HOST QUESTION SCREEN -->
+    <!-- QUESTION SCREEN -->
     <div id="question-screen" class="screen">
-        <h1 id="q-title">Question 1</h1>
-        <h2 id="q-text">What is 2 + 2? (Answer: 4)</h2>
+        <h2 id="round-indicator">Round 1 / 3</h2>
+        <h1 id="q-text">Loading question...</h1>
         <h3>Time Remaining: <span id="timer">120</span>s</h3>
         
         <h2>Live Player Status:</h2>
         <ul id="live-player-list"></ul>
         
         <br>
-        <button id="reveal-btn" onclick="revealAnswer()" style="display:none; background: #dc3545;">Reveal Answer / End Round</button>
+        <button id="action-btn" onclick="endCurrentRound()" style="background: #dc3545;">End Round Early</button>
+    </div>
+
+    <!-- LEADERBOARD SCREEN -->
+    <div id="leaderboard-screen" class="screen">
+        <h1>🏆 Final Leaderboard 🏆</h1>
+        <ul id="final-leaderboard-list"></ul>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -55,27 +63,35 @@
             appId: "1:251212598778:web:8e12a0d06b6191fe6ae843"
         };
 
-        const app = initializeApp(firebaseConfig);
+               const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-        document.getElementById("room-title").innerText = `Room Code: ${roomCode}`;
-
-        const playerUrl = `${window.location.origin}/player.html?room=${roomCode}`;
+        // QR code points directly to the player page without any room codes
+        const playerUrl = `${window.location.origin}/demo/player.html`;
         new QRCode(document.getElementById("qrcode"), playerUrl);
 
-        // Initialize Room
-        const roomRef = ref(db, `rooms/${roomCode}`);
-        set(roomRef, {
+        const questions = [
+            { text: "What is 2 + 2?", answer: "4" },
+            { text: "What color is a clear daytime sky?", answer: "blue" },
+            { text: "What is the capital of France?", answer: "paris" }
+        ];
+
+        let currentRoundIndex = 0;
+        let countdownInterval;
+
+        // Global game database reference
+        const gameRef = ref(db, `game`);
+        
+        // Reset/Initialize game state on load
+        set(gameRef, {
             status: "waiting",
-            question: {
-                text: "What is 2 + 2?",
-                answer: "4"
-            }
+            round: 0,
+            question: questions[0],
+            players: {}
         });
 
-        // Listen for players joining lobby
-        const playersRef = ref(db, `rooms/${roomCode}/players`);
+        // Listen for players joining/updating
+        const playersRef = ref(db, `game/players`);
         onValue(playersRef, (snapshot) => {
             const data = snapshot.val();
             const listEl = document.getElementById("player-list");
@@ -86,49 +102,106 @@
             if (data) {
                 const players = Object.entries(data);
                 players.forEach(([id, p]) => {
-                    // Lobby list
                     const li = document.createElement("li");
                     li.innerText = p.name;
                     listEl.appendChild(li);
 
-                    // Live Question tracking list
                     const liveLi = document.createElement("li");
-                    liveLi.innerText = `${p.name}: ${p.answered ? "✅ Answered" : "⏳ Thinking..."} (Score: ${p.score || 0})`;
+                    liveLi.innerText = `${p.name}: ${p.answered ? "✅ Answered" : "⏳ Thinking..."} (Total Score: ${p.score || 0})`;
                     liveListEl.appendChild(liveLi);
                 });
-                document.getElementById("start-btn").style.display = "inline-block";
+                if (currentRoundIndex === 0) {
+                    document.getElementById("start-btn").style.display = "inline-block";
+                }
             }
         });
 
-        let countdownInterval;
+        window.startNextRound = function() {
+            if (currentRoundIndex >= questions.length) {
+                showLeaderboard();
+                return;
+            }
 
-        window.startGame = function() {
-            // Switch views on host
+            get(playersRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const updates = {};
+                    snapshot.forEach((childSnap) => {
+                        updates[`${childSnap.key}/answered`] = false;
+                    });
+                    update(playersRef, updates);
+                }
+            });
+
             document.getElementById("lobby-screen").classList.remove("active");
+            document.getElementById("leaderboard-screen").classList.remove("active");
             document.getElementById("question-screen").classList.add("active");
-            document.getElementById("reveal-btn").style.display = "inline-block";
+            document.getElementById("round-indicator").innerText = `Round ${currentRoundIndex + 1} / 3`;
+            document.getElementById("q-text").innerText = questions[currentRoundIndex].text;
+            document.getElementById("action-btn").innerText = "End Round Early";
+            document.getElementById("action-btn").onclick = endCurrentRound;
 
-            // Update Firebase status to start game for players
-            update(roomRef, { status: "question-1", startTime: Date.now() });
+            update(gameRef, {
+                status: `round-${currentRoundIndex}`,
+                round: currentRoundIndex,
+                question: questions[currentRoundIndex],
+                startTime: Date.now()
+            });
 
-            // Start Host 2-minute timer
             let timeLeft = 120;
             const timerEl = document.getElementById("timer");
+            timerEl.innerText = timeLeft;
+            clearInterval(countdownInterval);
+
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 timerEl.innerText = timeLeft;
                 if (timeLeft <= 0) {
                     clearInterval(countdownInterval);
-                    revealAnswer();
+                    endCurrentRound();
                 }
             }, 1000);
         };
 
-        window.revealAnswer = function() {
+        window.endCurrentRound = function() {
             clearInterval(countdownInterval);
-            update(roomRef, { status: "round-over" });
-            alert("Round ended! Host can now review scores.");
+            update(gameRef, { status: `round-${currentRoundIndex}-over` });
+
+            currentRoundIndex++;
+
+            const actionBtn = document.getElementById("action-btn");
+            if (currentRoundIndex < questions.length) {
+                actionBtn.innerText = `Start Round ${currentRoundIndex + 1}`;
+                actionBtn.onclick = startNextRound;
+            } else {
+                actionBtn.innerText = "Show Final Leaderboard 🏆";
+                actionBtn.onclick = showLeaderboard;
+            }
         };
+
+        function showLeaderboard() {
+            clearInterval(countdownInterval);
+            document.getElementById("question-screen").classList.remove("active");
+            document.getElementById("leaderboard-screen").classList.add("active");
+
+            update(gameRef, { status: "leaderboard-reveal" });
+
+            get(playersRef).then((snapshot) => {
+                const data = snapshot.val();
+                const lbList = document.getElementById("final-leaderboard-list");
+                lbList.innerHTML = "";
+
+                if (data) {
+                    const sortedPlayers = Object.values(data).sort((a, b) => (b.score || 0) - (a.score || 0));
+                    
+                    sortedPlayers.forEach((p, index) => {
+                        const li = document.createElement("li");
+                        li.className = "leaderboard-item";
+                        li.innerHTML = `#${index + 1}: ${p.name} — ${p.score || 0} pts`;
+                        lbList.appendChild(li);
+                    });
+                }
+            });
+        }
     </script>
 </body>
 </html>
