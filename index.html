@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Host Lobby</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        #qrcode { margin: 20px auto; display: inline-block; }
+        ul { list-style: none; padding: 0; }
+        li { font-size: 20px; margin: 5px 0; }
+        #start-btn { font-size: 24px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; display: none; }
+    </style>
+</head>
+<body>
+
+    <h1 id="room-title">Loading Room...</h1>
+    <div id="qrcode"></div>
+    <h2>Players in Lobby:</h2>
+    <ul id="player-list"></ul>
+    <br>
+    <button id="start-btn" onclick="startGame()">Start Game</button>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // TODO: Replace with your actual Firebase config from Step 1
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRg8ZJ4eFlHsbU-mvZGkeET49WZjbW4JQ",
+            authDomain: "demogame-e8627.firebaseapp.com",
+            databaseURL: "https://demogame-e8627-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "demogame-e8627",
+            storageBucket: "demogame-e8627.firebasestorage.app",
+            messagingSenderId: "251212598778",
+            appId: "1:251212598778:web:8e12a0d06b6191fe6ae843"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Generate a random 4-letter room code
+        const roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+        document.getElementById("room-title").innerText = `Room Code: ${roomCode}`;
+
+        // Generate QR code pointing to player screen (Update GitHub Pages URL later)
+        // For local testing, use your computer's local network URL (e.g., http://192.168.1.50:5500/player.html)
+        const playerUrl = `${window.location.origin}/player.html?room=${roomCode}`;
+        new QRCode(document.getElementById("qrcode"), playerUrl);
+
+        // Set initial room status in Firebase
+        const roomRef = ref(db, `rooms/${roomCode}`);
+        set(roomRef, {
+            status: "waiting"
+        });
+
+        // Listen for players joining
+        const playersRef = ref(db, `rooms/${roomCode}/players`);
+        onValue(playersRef, (snapshot) => {
+            const data = snapshot.val();
+            const listEl = document.getElementById("player-list");
+            listEl.innerHTML = "";
+            
+            if (data) {
+                const players = Object.values(data);
+                players.forEach(p => {
+                    const li = document.createElement("li");
+                    li.innerText = p.name;
+                    listEl.appendChild(li);
+                });
+                document.getElementById("start-btn").style.display = "inline-block";
+            }
+        });
+
+        // Start game function attached to window so HTML can see it
+        window.startGame = function() {
+            set(ref(db, `rooms/${roomCode}/status`), "started");
+        };
+    </script>
+</body>
+</html>

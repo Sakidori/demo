@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Join Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        input, button { font-size: 18px; padding: 10px; margin: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="join-screen">
+        <h2>Enter Your Name</h2>
+        <input type="text" id="name-input" placeholder="Your Nickname" />
+        <br>
+        <button onclick="joinGame()">Join Lobby</button>
+    </div>
+
+    <div id="waiting-screen" style="display:none;">
+        <h2>You're in!</h2>
+        <p>Waiting for the host to start the game...</p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // TODO: Replace with your actual Firebase config from Step 1
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRg8ZJ4eFlHsbU-mvZGkeET49WZjbW4JQ",
+            authDomain: "demogame-e8627.firebaseapp.com",
+            databaseURL: "https://demogame-e8627-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "demogame-e8627",
+            storageBucket: "demogame-e8627.firebasestorage.app",
+            messagingSenderId: "251212598778",
+            appId: "1:251212598778:web:8e12a0d06b6191fe6ae843"
+        };
+
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomCode = urlParams.get('room');
+
+        window.joinGame = function() {
+            const name = document.getElementById("name-input").value.trim();
+            if (!name) return alert("Please enter a name!");
+
+            // Push player name into the room's players list
+            const playersRef = ref(db, `rooms/${roomCode}/players`);
+            push(playersRef, { name: name });
+
+            // Switch views
+            document.getElementById("join-screen").style.display = "none";
+            document.getElementById("waiting-screen").style.display = "block";
+
+            // Listen for game status change (when host clicks start)
+            const statusRef = ref(db, `rooms/${roomCode}/status`);
+            onValue(statusRef, (snapshot) => {
+                if (snapshot.val() === "started") {
+                    document.body.innerHTML = "<h1>Game Started! 🚀</h1><p>Time to play your game logic here.</p>";
+                }
+            });
+        };
+    </script>
+</body>
+</html>
