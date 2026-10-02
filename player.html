@@ -2,30 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Join Game</title>
+    <title>Game Player</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 30px; }
+        .screen { display: none; }
+        .active { display: block; }
         input, button { font-size: 18px; padding: 10px; margin: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="join-screen">
+    <!-- JOIN SCREEN -->
+    <div id="join-screen" class="screen active">
         <h2>Enter Your Name</h2>
         <input type="text" id="name-input" placeholder="Your Nickname" />
         <br>
         <button onclick="joinGame()">Join Lobby</button>
     </div>
 
-    <div id="waiting-screen" style="display:none;">
-        <h2>You're in!</h2>
+    <!-- WAITING FOR START -->
+    <div id="waiting-screen" class="screen">
+        <h2>You're in! 🎮</h2>
         <p>Waiting for the host to start the game...</p>
+    </div>
+
+    <!-- QUESTION SCREEN -->
+    <div id="question-screen" class="screen">
+        <h2 id="question-prompt">Loading Question...</h2>
+        <h3>Time Left: <span id="player-timer">120</span>s</h3>
+        <input type="text" id="answer-input" placeholder="Type your answer..." />
+        <br>
+        <button onclick="submitAnswer()">Submit Answer</button>
+    </div>
+
+    <!-- POST-ANSWER WAITING SCREEN -->
+    <div id="post-answer-screen" class="screen">
+        <h2>Answer Submitted! 🎯</h2>
+        <p id="result-msg">Waiting for round to end...</p>
+        <h3>Your Current Score: <span id="current-score">0</span></h3>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -38,33 +58,119 @@
             appId: "1:251212598778:web:8e12a0d06b6191fe6ae843"
         };
 
-
-        const app = initializeApp(firebaseConfig);
+    const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
+        
+        let playerId = "";
+        let gameStartTime = 0;
+        let timerInterval;
 
         window.joinGame = function() {
             const name = document.getElementById("name-input").value.trim();
             if (!name) return alert("Please enter a name!");
 
-            // Push player name into the room's players list
-            const playersRef = ref(db, `rooms/${roomCode}/players`);
-            push(playersRef, { name: name });
+            // Create unique ID for this player session
+            playerId = "player_" + Math.random().toString(36).substring(2, 8);
 
-            // Switch views
-            document.getElementById("join-screen").style.display = "none";
-            document.getElementById("waiting-screen").style.display = "block";
+            // Save player to Firebase
+            const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+            set(playerRef, {
+                name: name,
+                score: 0,
+                answered: false
+            });
 
-            // Listen for game status change (when host clicks start)
-            const statusRef = ref(db, `rooms/${roomCode}/status`);
-            onValue(statusRef, (snapshot) => {
-                if (snapshot.val() === "started") {
-                    document.body.innerHTML = "<h1>Game Started! 🚀</h1><p>Time to play your game logic here.</p>";
+            // Switch to waiting view
+            document.getElementById("join-screen").classList.remove("active");
+            document.getElementById("waiting-screen").classList.add("active");
+
+            // Listen for room status changes
+            const roomRef = ref(db, `rooms/${roomCode}`);
+            onValue(roomRef, (snapshot) => {
+                const roomData = snapshot.val();
+                if (!roomData) return;
+
+                // When host clicks Start Game
+                if (roomData.status === "question-1" && document.getElementById("waiting-screen").classList.contains("active")) {
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("question-screen").classList.add("active");
+                    
+                    document.getElementById("question-prompt").innerText = roomData.question.text;
+                    gameStartTime = roomData.startTime;
+
+                    // Start 2-minute countdown timer on player phone
+                    startPlayerTimer();
+                }
+
+                // When round is over
+                if (roomData.status === "round-over") {
+                    clearInterval(timerInterval);
+                    document.getElementById("question-screen").classList.remove("active");
+                    document.getElementById("post-answer-screen").classList.add("active");
                 }
             });
         };
+
+        function startPlayerTimer() {
+            let timeLeft = 120;
+            const timerEl = document.getElementById("player-timer");
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    autoSubmitEmpty();
+                }
+            }, 1000);
+        }
+
+        window.submitAnswer = function() {
+            clearInterval(timerInterval);
+            const playerAnswer = document.getElementById("answer-input").value.trim();
+            
+            // Calculate score based on time remaining (Kahoot style: max 1000 points)
+            const timeElapsed = (Date.now() - gameStartTime) / 1000; // seconds taken
+            let earnedPoints = 0;
+
+            // Fetch correct answer from firebase to check accuracy
+            const roomRef = ref(db, `rooms/${roomCode}/question`);
+            get(roomRef).then((snapshot) => {
+                const correctAnswer = snapshot.val().answer;
+                
+                if (playerAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                    // Formula: more time left = more points (minimum 200 points for correct answer)
+                    earnedPoints = Math.max(200, Math.floor(1000 - (timeElapsed / 120) * 800));
+                    document.getElementById("result-msg").innerText = `Correct! You earned ${earnedPoints} points 🎉`;
+                } else {
+                    document.getElementById("result-msg").innerText = `Incorrect! The correct answer was "${correctAnswer}".`;
+                }
+
+                // Update player record in Firebase
+                const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+                update(playerRef, {
+                    answered: true,
+                    score: earnedPoints,
+                    lastAnswer: playerAnswer
+                });
+
+                // Transition screen
+                document.getElementById("question-screen").classList.remove("active");
+                document.getElementById("post-answer-screen").classList.add("active");
+                document.getElementById("current-score").innerText = earnedPoints;
+            });
+        };
+
+        function autoSubmitEmpty() {
+            // If timer runs out before submitting
+            const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+            update(playerRef, { answered: true, score: 0 });
+            document.getElementById("question-screen").classList.remove("active");
+            document.getElementById("post-answer-screen").classList.add("active");
+            document.getElementById("result-msg").innerText = "Time's up! You didn't answer in time ⏰";
+        }
     </script>
 </body>
 </html>
