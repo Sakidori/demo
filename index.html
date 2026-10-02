@@ -169,9 +169,10 @@
         }
 
         .result-item {
-            display: flex;
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr) auto;
+            gap: 14px;
             align-items: center;
-            justify-content: space-between;
             width: min(500px, 92%);
             padding: 14px 18px;
             font-size: 18px;
@@ -180,10 +181,49 @@
             margin: 10px auto;
             box-shadow: 0 12px 18px rgba(3, 8, 18, 0.32);
             border: 1px solid var(--line);
+            transition: transform 650ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 250ms ease, box-shadow 250ms ease;
+            will-change: transform;
+        }
+
+        .result-rank {
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 800;
+            text-align: left;
+        }
+
+        .result-player {
+            min-width: 0;
+            text-align: left;
+        }
+
+        .result-name {
+            overflow-wrap: anywhere;
+        }
+
+        .result-total {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 0.78rem;
         }
 
         .result-item strong {
             color: var(--success-2);
+            white-space: nowrap;
+        }
+
+        .result-item.rank-up {
+            border-color: rgba(43,212,168,0.55);
+            box-shadow: 0 0 24px rgba(43,212,168,0.14), 0 12px 18px rgba(3,8,18,0.32);
+        }
+
+        .result-item.rank-down {
+            border-color: rgba(255,185,71,0.4);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .result-item { transition-duration: 1ms; }
         }
 
         .result-item.top-score {
@@ -283,7 +323,8 @@
             body { padding: 20px 12px; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             li { width: 92%; }
-            .result-item { width: 92%; }
+            .result-item { width: 96%; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; padding: 12px 10px; font-size: 15px; }
+            .result-item strong { font-size: 0.88rem; }
             .podium { grid-template-columns: repeat(3, minmax(90px, 1fr)); }
             button { width: 100%; }
         }
@@ -496,13 +537,72 @@
                 const data = snapshot.val();
                 if (!data) return;
 
-                const sortedPlayers = Object.values(data).sort((a, b) => (b.score || 0) - (a.score || 0));
-                sortedPlayers.forEach((p, index) => {
+                const players = Object.entries(data).map(([id, player]) => {
+                    const score = Number(player.score || 0);
+                    const roundPoints = Number(player.lastRoundPoints || 0);
+                    return { id, name: player.name, score, roundPoints, previousScore: Math.max(0, score - roundPoints) };
+                });
+                const previousStandings = [...players].sort((a, b) => b.previousScore - a.previousScore);
+                const previousRanks = new Map(previousStandings.map((player, index) => [player.id, index + 1]));
+
+                previousStandings.forEach((player, index) => {
                     const li = document.createElement("li");
-                    li.className = `result-item${index === 0 ? " top-score" : ""}`;
-                    const roundPoints = Number(p.lastRoundPoints || 0);
-                    li.innerHTML = `<span>${p.name}</span><strong>+${roundPoints} pts</strong><span>Total: ${p.score || 0}</span>`;
+                    li.className = "result-item";
+                    li.dataset.playerId = player.id;
+                    li.innerHTML = `<span class="result-rank">#${index + 1}</span><span class="result-player"><span class="result-name"></span><span class="result-total">Total: <span class="total-count">${player.previousScore}</span></span></span><strong>+<span class="round-count">0</span> pts</strong>`;
+                    li.querySelector(".result-name").textContent = player.name;
                     resultsList.appendChild(li);
+                });
+
+                const duration = 1050;
+                const updateCount = (element, start, end, startTime) => {
+                    const difference = end - start;
+                    return new Promise((resolve) => {
+                        const tick = () => {
+                            const progress = Math.max(0, Math.min((performance.now() - startTime) / duration, 1));
+                            const eased = 1 - Math.pow(1 - progress, 4);
+                            element.textContent = Math.round(start + difference * eased).toLocaleString();
+                            if (progress < 1) {
+                                window.setTimeout(tick, 32);
+                            } else {
+                                resolve();
+                            }
+                        };
+                        tick();
+                    });
+                };
+
+                const revealStart = performance.now() + 120;
+                const countAnimations = previousStandings.flatMap((player) => {
+                    const row = resultsList.querySelector(`[data-player-id="${player.id}"]`);
+                    return [
+                        updateCount(row.querySelector(".round-count"), 0, player.roundPoints, revealStart),
+                        updateCount(row.querySelector(".total-count"), player.previousScore, player.score, revealStart)
+                    ];
+                });
+
+                Promise.all(countAnimations).then(() => {
+                    const positions = new Map(Array.from(resultsList.children, (row) => [row.dataset.playerId, row.getBoundingClientRect().top]));
+                    const finalStandings = [...players].sort((a, b) => b.score - a.score);
+
+                    finalStandings.forEach((player, index) => {
+                        const row = resultsList.querySelector(`[data-player-id="${player.id}"]`);
+                        const oldRank = previousRanks.get(player.id);
+                        row.querySelector(".result-rank").textContent = `#${index + 1}`;
+                        row.classList.toggle("top-score", index === 0);
+                        if (oldRank !== index + 1) {
+                            row.classList.add(index + 1 < oldRank ? "rank-up" : "rank-down");
+                        }
+                        resultsList.appendChild(row);
+                    });
+
+                    Array.from(resultsList.children).forEach((row) => {
+                        const offset = positions.get(row.dataset.playerId) - row.getBoundingClientRect().top;
+                        row.style.transform = `translateY(${offset}px)`;
+                    });
+                    window.setTimeout(() => {
+                        Array.from(resultsList.children).forEach((row) => { row.style.transform = ""; });
+                    }, 32);
                 });
             });
         }
