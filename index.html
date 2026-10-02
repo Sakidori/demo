@@ -106,6 +106,37 @@
             animation: slideIn 0.25s ease both;
         }
 
+        .player-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .avatar-chip {
+            display: inline-grid;
+            place-items: center;
+            flex: 0 0 34px;
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: rgba(255,255,255,0.06);
+            font-size: 1.25rem;
+        }
+
+        .player-name {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .player-status {
+            margin-left: auto;
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-align: right;
+        }
+
         li:hover {
             transform: translateY(-2px);
             box-shadow: 0 14px 22px rgba(4,10,20,0.42);
@@ -170,7 +201,7 @@
 
         .result-item {
             display: grid;
-            grid-template-columns: 42px minmax(0, 1fr) auto;
+            grid-template-columns: 42px 32px minmax(0, 1fr) auto;
             gap: 14px;
             align-items: center;
             width: min(500px, 92%);
@@ -195,6 +226,10 @@
         .result-player {
             min-width: 0;
             text-align: left;
+        }
+
+        .result-avatar {
+            font-size: 1.5rem;
         }
 
         .result-name {
@@ -323,7 +358,7 @@
             body { padding: 20px 12px; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             li { width: 92%; }
-            .result-item { width: 96%; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; padding: 12px 10px; font-size: 15px; }
+            .result-item { width: 96%; grid-template-columns: 30px 26px minmax(0, 1fr) auto; gap: 8px; padding: 12px 10px; font-size: 15px; }
             .result-item strong { font-size: 0.88rem; }
             .podium { grid-template-columns: repeat(3, minmax(90px, 1fr)); }
             button { width: 100%; }
@@ -399,6 +434,8 @@
             { text: "What color is a clear daytime sky?", answer: "blue" },
             { text: "What is the capital of France?", answer: "paris" }
         ];
+        const playerAvatars = new Set(["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢"]);
+        const getPlayerAvatar = (player) => playerAvatars.has(player.avatar) ? player.avatar : "🎮";
 
         let currentRoundIndex = 0;
         let countdownInterval;
@@ -443,14 +480,33 @@
             liveListEl.innerHTML = "";
             
             if (data) {
-                const players = Object.entries(data);
+                const players = Object.entries(data).filter(([, player]) =>
+                    player && typeof player.name === "string" && player.name.trim()
+                );
                 players.forEach(([id, p]) => {
                     const li = document.createElement("li");
-                    li.innerText = p.name;
+                    li.classList.add("player-line");
+                    const avatar = document.createElement("span");
+                    avatar.className = "avatar-chip";
+                    avatar.innerText = getPlayerAvatar(p);
+                    const name = document.createElement("span");
+                    name.className = "player-name";
+                    name.innerText = p.name;
+                    li.append(avatar, name);
                     listEl.appendChild(li);
 
-                            const liveLi = document.createElement("li");
-                    liveLi.innerText = `${p.name}: ${p.answered ? "✅ Answered" : "⏳ Thinking..."}`;
+                    const liveLi = document.createElement("li");
+                    liveLi.classList.add("player-line");
+                    const liveAvatar = document.createElement("span");
+                    liveAvatar.className = "avatar-chip";
+                    liveAvatar.innerText = getPlayerAvatar(p);
+                    const liveName = document.createElement("span");
+                    liveName.className = "player-name";
+                    liveName.innerText = p.name;
+                    const status = document.createElement("span");
+                    status.className = "player-status";
+                    status.innerText = p.answered ? "✅ Answered" : "⏳ Thinking...";
+                    liveLi.append(liveAvatar, liveName, status);
                     liveListEl.appendChild(liveLi);
                 });
                 if (currentRoundIndex === 0) {
@@ -537,11 +593,13 @@
                 const data = snapshot.val();
                 if (!data) return;
 
-                const players = Object.entries(data).map(([id, player]) => {
+                const players = Object.entries(data)
+                    .filter(([, player]) => player && typeof player.name === "string" && player.name.trim())
+                    .map(([id, player]) => {
                     const score = Number(player.score || 0);
                     const roundPoints = Number(player.lastRoundPoints || 0);
-                    return { id, name: player.name, score, roundPoints, previousScore: Math.max(0, score - roundPoints) };
-                });
+                        return { id, name: player.name, avatar: getPlayerAvatar(player), score, roundPoints, previousScore: Math.max(0, score - roundPoints) };
+                    });
                 const previousStandings = [...players].sort((a, b) => b.previousScore - a.previousScore);
                 const previousRanks = new Map(previousStandings.map((player, index) => [player.id, index + 1]));
 
@@ -549,7 +607,7 @@
                     const li = document.createElement("li");
                     li.className = "result-item";
                     li.dataset.playerId = player.id;
-                    li.innerHTML = `<span class="result-rank">#${index + 1}</span><span class="result-player"><span class="result-name"></span><span class="result-total">Total: <span class="total-count">${player.previousScore}</span></span></span><strong>+<span class="round-count">0</span> pts</strong>`;
+                    li.innerHTML = `<span class="result-rank">#${index + 1}</span><span class="result-avatar" aria-hidden="true">${player.avatar}</span><span class="result-player"><span class="result-name"></span><span class="result-total">Total: <span class="total-count">${player.previousScore}</span></span></span><strong>+<span class="round-count">0</span> pts</strong>`;
                     li.querySelector(".result-name").textContent = player.name;
                     resultsList.appendChild(li);
                 });
@@ -641,18 +699,29 @@
                 podium.innerHTML = "";
 
                 if (data) {
-                    const sortedPlayers = Object.values(data).sort((a, b) => (b.score || 0) - (a.score || 0));
+                    const sortedPlayers = Object.values(data)
+                        .filter((player) => player && typeof player.name === "string" && player.name.trim())
+                        .sort((a, b) => (b.score || 0) - (a.score || 0));
 
                     const podiumPlayers = sortedPlayers.slice(0, 3);
                     podiumPlayers.forEach((p, index) => {
                         const item = document.createElement("div");
                         item.className = `podium-item rank-${index + 1}`;
                         const medal = ["🥇", "🥈", "🥉"][index];
-                        item.innerHTML = `
-                            <div class="podium-rank">${medal}</div>
-                            <div class="podium-name">${p.name}</div>
-                            <div class="podium-score">${p.score || 0} pts</div>
-                        `;
+                        const rank = document.createElement("div");
+                        rank.className = "podium-rank";
+                        rank.innerText = medal;
+                        const avatar = document.createElement("span");
+                        avatar.className = "result-avatar";
+                        avatar.setAttribute("aria-hidden", "true");
+                        avatar.innerText = getPlayerAvatar(p);
+                        const name = document.createElement("div");
+                        name.className = "podium-name";
+                        name.innerText = p.name;
+                        const score = document.createElement("div");
+                        score.className = "podium-score";
+                        score.innerText = `${p.score || 0} pts`;
+                        item.append(rank, avatar, name, score);
                         podium.appendChild(item);
                     });
 
@@ -660,7 +729,17 @@
                         const li = document.createElement("li");
                         li.className = "leaderboard-item";
                         const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "✨";
-                        li.innerHTML = `${medal} #${index + 1}: ${p.name} — ${p.score || 0} pts`;
+                        li.classList.add("player-line");
+                        const avatar = document.createElement("span");
+                        avatar.className = "avatar-chip";
+                        avatar.innerText = getPlayerAvatar(p);
+                        const name = document.createElement("span");
+                        name.className = "player-name";
+                        name.innerText = `${medal} #${index + 1}: ${p.name}`;
+                        const score = document.createElement("span");
+                        score.className = "player-status";
+                        score.innerText = `${p.score || 0} pts`;
+                        li.append(avatar, name, score);
                         lbList.appendChild(li);
                     });
                 }

@@ -74,6 +74,61 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
         }
 
+        .avatar-picker {
+            border: 0;
+            padding: 0;
+            margin: 16px auto 8px;
+        }
+
+        .avatar-picker legend {
+            margin: 0 auto 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .avatar-options {
+            display: grid;
+            grid-template-columns: repeat(6, 48px);
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .avatar-option { position: relative; cursor: pointer; }
+
+        .avatar-option input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+        }
+
+        .avatar-option span {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            font-size: 1.65rem;
+            transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+        }
+
+        .avatar-option:hover span { transform: translateY(-2px); }
+
+        .avatar-option input:checked + span {
+            border-color: var(--primary-2);
+            background: rgba(78,161,255,0.16);
+            box-shadow: 0 0 0 2px rgba(78,161,255,0.18);
+        }
+
+        .avatar-option input:focus-visible + span {
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+
         button {
             background: linear-gradient(135deg, var(--primary), var(--primary-2));
             color: white;
@@ -166,13 +221,30 @@
     <div id="join-screen" class="screen active">
         <h2>Enter Your Name</h2>
         <input type="text" id="name-input" placeholder="Your Nickname" />
+        <fieldset class="avatar-picker">
+            <legend>Choose your avatar</legend>
+            <div class="avatar-options">
+                <label class="avatar-option"><input type="radio" name="avatar" value="🦊" aria-label="Fox" checked><span aria-hidden="true">🦊</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐼" aria-label="Panda"><span aria-hidden="true">🐼</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐸" aria-label="Frog"><span aria-hidden="true">🐸</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐯" aria-label="Tiger"><span aria-hidden="true">🐯</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐙" aria-label="Octopus"><span aria-hidden="true">🐙</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🦉" aria-label="Owl"><span aria-hidden="true">🦉</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐧" aria-label="Penguin"><span aria-hidden="true">🐧</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🦄" aria-label="Unicorn"><span aria-hidden="true">🦄</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐨" aria-label="Koala"><span aria-hidden="true">🐨</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🦁" aria-label="Lion"><span aria-hidden="true">🦁</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐵" aria-label="Monkey"><span aria-hidden="true">🐵</span></label>
+                <label class="avatar-option"><input type="radio" name="avatar" value="🐢" aria-label="Turtle"><span aria-hidden="true">🐢</span></label>
+            </div>
+        </fieldset>
         <br>
         <button onclick="joinGame()">Join Lobby</button>
     </div>
 
     <!-- WAITING FOR START -->
     <div id="waiting-screen" class="screen">
-        <h2>You're in! 🎮</h2>
+        <h2><span id="waiting-avatar">🦊</span> You're in!</h2>
         <p>Waiting for the host to start the game...</p>
     </div>
 
@@ -226,6 +298,8 @@
         const db = getDatabase(app);
 
         let playerId = "";
+        let playerName = "";
+        const playerAvatars = ["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢"];
         let gameStartTime = 0;
         let timerInterval;
         let currentScore = 0;
@@ -250,21 +324,33 @@
             oscillator.stop(audioCtx.currentTime + duration);
         }
 
-        window.joinGame = function() {
+        window.joinGame = async function() {
             const name = document.getElementById("name-input").value.trim();
             if (!name) return alert("Please enter a name!");
 
+            const selectedAvatar = document.querySelector('input[name="avatar"]:checked')?.value;
+            const avatar = playerAvatars.includes(selectedAvatar) ? selectedAvatar : playerAvatars[0];
             playerId = "player_" + Math.random().toString(36).substring(2, 8);
+            playerName = name;
 
             const playerRef = ref(db, `game/players/${playerId}`);
-            set(playerRef, {
-                name: name,
-                score: 0,
-                answered: false
-            });
+            try {
+                await set(playerRef, {
+                    name: playerName,
+                    avatar,
+                    score: 0,
+                    answered: false
+                });
+            } catch (error) {
+                playerId = "";
+                playerName = "";
+                alert("Could not join the lobby. Please try again.");
+                return;
+            }
 
             document.getElementById("join-screen").classList.remove("active");
             document.getElementById("waiting-screen").classList.add("active");
+            document.getElementById("waiting-avatar").innerText = avatar;
 
             // Listen to global game status changes
             const gameRef = ref(db, `game`);
@@ -347,6 +433,7 @@
 
                 const playerRef = ref(db, `game/players/${playerId}`);
                 update(playerRef, {
+                    name: playerName,
                     answered: true,
                     score: currentScore,
                     lastRoundPoints: lastRoundPoints
@@ -360,9 +447,12 @@
         };
 
         function autoSubmitEmpty() {
+            if (!playerId || !playerName) return;
             lastRoundPoints = 0;
             const playerRef = ref(db, `game/players/${playerId}`);
             update(playerRef, {
+                name: playerName,
+                score: currentScore,
                 answered: true,
                 lastRoundPoints: 0
             });
