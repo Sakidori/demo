@@ -38,6 +38,26 @@
             overflow-x: hidden;
         }
 
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 8px;
+            z-index: 20;
+            border: 7px solid transparent;
+            border-radius: 18px;
+            pointer-events: none;
+        }
+
+        body.has-bomb::after {
+            border-color: #ff4d5e;
+            box-shadow: inset 0 0 24px rgba(255,77,94,0.12), 0 0 18px rgba(255,77,94,0.24);
+        }
+
+        body.safe::after {
+            border-color: var(--success);
+            box-shadow: inset 0 0 24px rgba(43,212,168,0.1), 0 0 18px rgba(43,212,168,0.22);
+        }
+
         .screen {
             display: none;
             width: min(560px, 100%);
@@ -98,6 +118,97 @@
             width: min(100%, 336px);
             margin: 0 auto;
         }
+
+        .team-picker {
+            width: min(100%, 360px);
+            margin: 14px auto 8px;
+            padding: 0;
+            border: 0;
+        }
+
+        .team-picker legend {
+            margin: 0 auto 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .team-color-options {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 7px;
+            width: 100%;
+        }
+
+        .team-color-option { position: relative; cursor: pointer; }
+
+        .team-color-option input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+        }
+
+        .team-color-card {
+            display: grid;
+            justify-items: start;
+            gap: 6px;
+            min-width: 0;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.035);
+            text-align: left;
+        }
+
+        .team-color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--team-color);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--team-color) 55%, transparent);
+        }
+
+        .team-color-name { font-size: 0.82rem; font-weight: 700; }
+        .team-color-count { color: var(--muted); font-size: 0.68rem; }
+
+        .team-color-option input:checked + .team-color-card {
+            border-color: var(--team-color);
+            background: color-mix(in srgb, var(--team-color) 16%, transparent);
+            box-shadow: 0 0 0 1px var(--team-color);
+        }
+
+        .team-color-option input:focus-visible + .team-color-card {
+            outline: 2px solid white;
+            outline-offset: 2px;
+        }
+
+        .team-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid color-mix(in srgb, var(--team-color, #64748b) 60%, transparent);
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--team-color, #64748b) 14%, transparent);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .team-chip::before {
+            content: "";
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--team-color, #64748b);
+        }
+
+        .outcome-icon { display: block; margin: 10px auto; font-size: 4rem; }
+        .win-heading { color: #78e3b6; }
+        .loss-heading { color: #ff8292; }
+
+        #pass-bomb-btn[hidden] { display: none; }
 
         .avatar-option { position: relative; cursor: pointer; }
 
@@ -192,8 +303,30 @@
             color: #9deed0;
         }
 
-        #question-screen {
-            position: relative;
+        .task-bomb {
+            display: block;
+            margin: 12px auto 20px;
+            font-size: 5.5rem;
+            line-height: 1;
+            animation: bombPulse 1s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255,92,122,0.5));
+        }
+
+        #task-screen h1 {
+            font-size: clamp(1.7rem, 5vw, 2.5rem);
+            margin-bottom: 12px;
+        }
+
+        #get-ready-player {
+            margin: 18px auto 0;
+            color: #ffd4dc;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        @keyframes bombPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.13); }
         }
 
         .status-chip {
@@ -210,52 +343,6 @@
             text-transform: uppercase;
         }
 
-        .question-panel,
-        .result-panel {
-            background: linear-gradient(135deg, rgba(124,92,255,0.08), rgba(78,161,255,0.06));
-            border: 1px solid rgba(124,92,255,0.08);
-            border-radius: 22px;
-            padding: 18px 16px;
-            margin: 12px auto 8px;
-            width: min(420px, 92%);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-        }
-
-        .question-image-wrap {
-            width: min(100%, 560px);
-            margin: 10px auto 14px;
-            padding: 6px;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.04);
-        }
-
-        .question-image-wrap[hidden] { display: none; }
-
-        .question-image {
-            display: block;
-            width: 100%;
-            max-height: 34vh;
-            object-fit: contain;
-            border-radius: 7px;
-        }
-
-        #question-prompt {
-            font-size: clamp(1.7rem, 3vw, 2.2rem);
-            margin: 12px 0 10px;
-            letter-spacing: -0.04em;
-        }
-
-        #result-msg {
-            color: var(--muted);
-            font-size: 1.05rem;
-        }
-
-        #current-score, #final-score, #player-timer {
-            color: #9deed0;
-            font-weight: 700;
-        }
-
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -263,6 +350,7 @@
 
         @media (max-width: 600px) {
             body { padding: 56px 8px 12px; }
+            body::after { inset: 4px; border-width: 5px; border-radius: 14px; }
             .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 18px 12px 20px; border-radius: 18px; }
             input, button { width: 100%; font-size: 16px; padding: 12px 14px; margin: 8px auto; }
@@ -313,14 +401,20 @@
                 <label class="avatar-option"><input type="radio" name="avatar" value="🦖" aria-label="Dinosaur"><span aria-hidden="true">🦖</span></label>
             </div>
         </fieldset>
+        <fieldset class="team-picker">
+            <legend>Choose your team color</legend>
+            <div id="team-color-options" class="team-color-options"></div>
+        </fieldset>
         <br>
         <button onclick="joinGame()">Join Lobby</button>
     </div>
 
     <!-- WAITING FOR START -->
     <div id="waiting-screen" class="screen">
-        <h2><span id="waiting-avatar">🦊</span> You're in!</h2>
-        <p>Waiting for the host to start the game...</p>
+        <h2><span id="waiting-avatar">🦊</span> <span id="waiting-title">You're in!</span></h2>
+        <p id="waiting-copy">Waiting for the host to start the game...</p>
+        <span id="waiting-team-chip" class="team-chip"></span>
+        <p id="get-ready-player" hidden></p>
         <fieldset class="avatar-picker" id="waiting-avatar-picker">
             <legend>Change your avatar</legend>
             <div class="avatar-options">
@@ -347,44 +441,38 @@
         <p id="avatar-save-status" aria-live="polite"></p>
     </div>
 
-    <!-- QUESTION SCREEN -->
-    <div id="question-screen" class="screen">
-        <div class="status-chip">Live Question</div>
-        <h3 id="player-round-indicator">Round X</h3>
-        <div class="question-panel">
-            <h2 id="question-prompt">Loading Question...</h2>
-            <div id="question-image-wrap" class="question-image-wrap" hidden>
-                <img id="question-image" class="question-image" alt="">
-            </div>
-            <h3>Time Left: <span id="player-timer">120</span>s</h3>
-        </div>
-        <input type="text" id="answer-input" placeholder="Type your answer..." />
-        <br>
-        <button onclick="submitAnswer()">Submit Answer</button>
+    <!-- ACTIVE TASK SCREEN -->
+    <div id="task-screen" class="screen">
+        <div class="status-chip">Bomb Holder</div>
+        <span class="task-bomb" aria-label="Pulsing bomb">💣</span>
+        <h1 id="player-task-prompt">Get ready...</h1>
+        <span id="player-active-team" class="team-chip"></span>
+        <p id="pass-lock-status">Waiting for the host to release the lock.</p>
+        <button id="pass-bomb-btn" onclick="passBomb()" hidden>Pass the Bomb</button>
     </div>
 
-    <!-- POST-ANSWER WAITING SCREEN -->
-    <div id="post-answer-screen" class="screen">
-        <div class="status-chip">Answer Locked In</div>
-        <h2>Answer Submitted! 🎯</h2>
-        <div class="result-panel">
-            <p id="result-msg">Waiting for the round to end...</p>
-            <h3>Your Current Total Score: <span id="current-score">0</span></h3>
-        </div>
+    <div id="bomb-loss-screen" class="screen">
+        <div class="status-chip">Bomb Exploded</div>
+        <span class="outcome-icon" aria-hidden="true">💥</span>
+        <h1 id="bomb-loss-heading" class="loss-heading">Your team lost</h1>
+        <span id="bomb-loss-team" class="team-chip"></span>
+        <p id="bomb-loss-copy"></p>
     </div>
 
-    <!-- FINAL LEADERBOARD SCREEN -->
-    <div id="leaderboard-screen" class="screen">
-        <h1>🏁 Game Over! 🏁</h1>
-        <h2>Check the main screen for the final leaderboard rankings!</h2>
-        <h3>Your Final Score: <span id="final-score">0</span></h3>
+    <div id="bomb-win-screen" class="screen">
+        <div class="status-chip">Bomb Exploded</div>
+        <span class="outcome-icon" aria-hidden="true">🏆</span>
+        <h1 class="win-heading">Your team won!</h1>
+        <p id="bomb-win-copy"></p>
+        <span id="bomb-win-team" class="team-chip"></span>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, update, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
+        import { TEAM_COLORS, TONGUE_TWISTERS } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -399,16 +487,16 @@
 
       const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+    const gameRef = ref(db, "game");
+    const playersRef = ref(db, "game/players");
 
         let playerId = "";
         let playerName = "";
         let playerAvatar = "🦊";
+    let playerTeamId = "";
         const playerAvatars = ["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢", "🐺", "🐰", "🐻", "🐬", "🐳", "🦖"];
-        let gameStartTime = 0;
-        let timerInterval;
-        let currentScore = 0;
-        let lastRoundPoints = 0;
-        let activeRound = -1;
+        let activePhase = "waiting";
+        let stopGameListener;
         let audioCtx;
         const funkyMusic = createFunkyMusic();
         const musicToggle = document.getElementById("music-toggle");
@@ -448,26 +536,57 @@
             oscillator.stop(audioCtx.currentTime + duration);
         }
 
-        function renderQuestion(question) {
-            document.getElementById("question-prompt").innerText = question.text;
-            const imageWrap = document.getElementById("question-image-wrap");
-            const image = document.getElementById("question-image");
-            imageWrap.hidden = !question.image;
-            if (question.image) {
-                image.src = question.image;
-                image.alt = question.imageAlt || question.text;
-            } else {
-                image.removeAttribute("src");
-                image.alt = "";
-            }
+        function renderTeamColorOptions(players = {}) {
+            const options = document.getElementById("team-color-options");
+            const selectedTeamId = options.querySelector('input[name="team-color"]:checked')?.value || TEAM_COLORS[0].id;
+            const counts = Object.values(players).reduce((teamCounts, player) => {
+                if (player?.teamId) teamCounts[player.teamId] = (teamCounts[player.teamId] || 0) + 1;
+                return teamCounts;
+            }, {});
+            options.innerHTML = "";
+
+            TEAM_COLORS.forEach((team, index) => {
+                const label = document.createElement("label");
+                label.className = "team-color-option";
+                const input = document.createElement("input");
+                input.type = "radio";
+                input.name = "team-color";
+                input.value = team.id;
+                input.setAttribute("aria-label", `Team ${team.name}`);
+                input.checked = team.id === selectedTeamId;
+                const card = document.createElement("span");
+                card.className = "team-color-card";
+                card.style.setProperty("--team-color", team.hex);
+                const swatch = document.createElement("span");
+                swatch.className = "team-color-swatch";
+                swatch.setAttribute("aria-hidden", "true");
+                const name = document.createElement("span");
+                name.className = "team-color-name";
+                name.innerText = team.name;
+                const count = document.createElement("span");
+                count.className = "team-color-count";
+                count.innerText = counts[team.id] ? `Join · ${counts[team.id]}` : "New team";
+                card.append(swatch, name, count);
+                label.append(input, card);
+                options.appendChild(label);
+            });
         }
+
+        onValue(playersRef, (snapshot) => renderTeamColorOptions(snapshot.val() || {}));
 
         window.joinGame = async function() {
             const name = document.getElementById("name-input").value.trim();
             if (!name) return alert("Please enter a name!");
 
+            const gameSnapshot = await get(gameRef);
+            if (gameSnapshot.val()?.phase && gameSnapshot.val().phase !== "waiting") {
+                return alert("The game has already started. Ask the host to reset the lobby.");
+            }
+
             const selectedAvatar = document.querySelector('input[name="avatar"]:checked')?.value;
             const avatar = playerAvatars.includes(selectedAvatar) ? selectedAvatar : playerAvatars[0];
+            playerTeamId = document.querySelector('input[name="team-color"]:checked')?.value || TEAM_COLORS[0].id;
+            const team = TEAM_COLORS.find((item) => item.id === playerTeamId) || TEAM_COLORS[0];
             playerId = "player_" + Math.random().toString(36).substring(2, 8);
             playerName = name;
             playerAvatar = avatar;
@@ -477,6 +596,9 @@
                 await set(playerRef, {
                     name: playerName,
                     avatar,
+                    teamId: team.id,
+                    teamName: team.name,
+                    teamColor: team.hex,
                     score: 0,
                     answered: false
                 });
@@ -490,6 +612,9 @@
             document.getElementById("join-screen").classList.remove("active");
             document.getElementById("waiting-screen").classList.add("active");
             document.getElementById("waiting-avatar").innerText = avatar;
+            const waitingTeamChip = document.getElementById("waiting-team-chip");
+            waitingTeamChip.innerText = `Team ${team.name}`;
+            waitingTeamChip.style.setProperty("--team-color", team.hex);
             document.querySelectorAll('input[name="waiting-avatar"]').forEach((input) => {
                 input.checked = input.value === avatar;
             });
@@ -497,7 +622,7 @@
             document.querySelectorAll('input[name="waiting-avatar"]').forEach((input) => {
                 input.addEventListener("change", async (event) => {
                     const nextValue = event.target.value;
-                    if (!playerId || activeRound !== -1 || !playerAvatars.includes(nextValue)) return;
+                    if (!playerId || activePhase !== "waiting" || !playerAvatars.includes(nextValue)) return;
 
                     const status = document.getElementById("avatar-save-status");
                     try {
@@ -514,115 +639,129 @@
                 });
             });
 
-            // Listen to global game status changes
-            const gameRef = ref(db, `game`);
-            onValue(gameRef, (snapshot) => {
+            // Listen to the host-controlled bomb round and its final result.
+            if (stopGameListener) stopGameListener();
+            stopGameListener = onValue(gameRef, (snapshot) => {
                 const gameData = snapshot.val();
                 if (!gameData) return;
 
-                if (gameData.status.startsWith("round-") && !gameData.status.endsWith("-results")) {
-                    const roundNum = gameData.round;
-                    
-                    if (activeRound !== roundNum) {
-                        activeRound = roundNum;
-                        lastRoundPoints = 0;
-                        playUiTone(420, 0.12, "triangle", 0.03);
-                        
+                if (gameData.phase === "bomb") {
+                    activePhase = "bomb";
+                    const hasBomb = playerId === gameData.activePlayerId;
+                    const passButton = document.getElementById("pass-bomb-btn");
+                    passButton.hidden = true;
+                    passButton.disabled = false;
+                    document.body.classList.toggle("has-bomb", hasBomb);
+                    document.body.classList.toggle("safe", !hasBomb);
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("waiting-avatar-picker").hidden = true;
+                    document.getElementById("avatar-save-status").hidden = true;
+                    document.getElementById("get-ready-player").hidden = false;
+                    const activePlayer = gameData.players?.[gameData.activePlayerId];
+                    const activeTeam = TEAM_COLORS.find((teamColor) => teamColor.id === activePlayer?.teamId);
+                    document.getElementById("get-ready-player").innerText = `💣 ${activePlayer?.name || "A player"} has the bomb`;
+                    if (hasBomb) {
                         document.getElementById("waiting-screen").classList.remove("active");
-                        document.getElementById("post-answer-screen").classList.remove("active");
-                        document.getElementById("question-screen").classList.add("active");
-                        
-                        document.getElementById("player-round-indicator").innerText = `Round ${roundNum + 1} / 3`;
-                        renderQuestion(gameData.question);
-                        document.getElementById("answer-input").value = "";
-                        gameStartTime = gameData.startTime;
-
-                        startPlayerTimer();
+                        document.getElementById("task-screen").classList.add("active");
+                        document.getElementById("player-task-prompt").innerText = gameData.task || "Complete the task!";
+                        passButton.hidden = gameData.bombLocked !== false;
+                        document.getElementById("pass-lock-status").innerText = gameData.bombLocked === false
+                            ? "Bomb unlocked. Tap below when your task is complete."
+                            : "Task complete? Wait for the host to release the lock.";
+                        const activeTeamChip = document.getElementById("player-active-team");
+                        activeTeamChip.innerText = activeTeam ? `Team ${activeTeam.name}` : "Unknown team";
+                        activeTeamChip.style.setProperty("--team-color", activeTeam?.hex || "#64748b");
+                    } else {
+                        document.getElementById("task-screen").classList.remove("active");
+                        document.getElementById("waiting-screen").classList.add("active");
+                        document.getElementById("waiting-title").innerText = "Get ready!";
+                        document.getElementById("waiting-copy").innerText = "Stay ready. The host will pass the bomb to another player.";
                     }
+                    return;
                 }
 
-                if (gameData.status.endsWith("-results")) {
-                    clearInterval(timerInterval);
-                    playUiTone(660, 0.12, "sine", 0.05);
-                    setTimeout(() => playUiTone(820, 0.18, "triangle", 0.05), 80);
-                    document.getElementById("question-screen").classList.remove("active");
-                    document.getElementById("post-answer-screen").classList.add("active");
-                    document.getElementById("result-msg").innerText = `Round complete! You earned ${lastRoundPoints} points. Total: ${currentScore}.`;
-                    document.getElementById("current-score").innerText = currentScore;
+                if (gameData.phase === "finished") {
+                    activePhase = "finished";
+                    document.getElementById("pass-bomb-btn").hidden = true;
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    const lostTeam = TEAM_COLORS.find((teamColor) => teamColor.id === gameData.losingTeamId);
+                    const lost = playerTeamId === gameData.losingTeamId;
+                    document.body.classList.toggle("has-bomb", lost);
+                    document.body.classList.toggle("safe", !lost);
+                    if (lost) {
+                        const chip = document.getElementById("bomb-loss-team");
+                        chip.innerText = `Team ${gameData.losingTeamName || lostTeam?.name || "Unknown"}`;
+                        chip.style.setProperty("--team-color", gameData.losingTeamColor || lostTeam?.hex || "#64748b");
+                        document.getElementById("bomb-loss-copy").innerText = playerId === gameData.losingPlayerId ? "You were holding the bomb when it exploded." : "Your teammate was holding the bomb when it exploded.";
+                        document.getElementById("bomb-loss-screen").classList.add("active");
+                        document.getElementById("bomb-win-screen").classList.remove("active");
+                    } else {
+                        const chip = document.getElementById("bomb-win-team");
+                        chip.innerText = `Team ${TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.name || "Unknown"}`;
+                        chip.style.setProperty("--team-color", TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.hex || "#64748b");
+                        document.getElementById("bomb-win-copy").innerText = `Team ${gameData.losingTeamName || lostTeam?.name || "Unknown"} had the bomb when it exploded.`;
+                        document.getElementById("bomb-win-screen").classList.add("active");
+                        document.getElementById("bomb-loss-screen").classList.remove("active");
+                    }
+                    return;
                 }
 
-                if (gameData.status === "leaderboard-reveal") {
-                    clearInterval(timerInterval);
-                    document.getElementById("question-screen").classList.remove("active");
-                    document.getElementById("post-answer-screen").classList.remove("active");
-                    document.getElementById("leaderboard-screen").classList.add("active");
-                    document.getElementById("final-score").innerText = currentScore;
+                if (gameData.phase === "waiting") {
+                    activePhase = "waiting";
+                    document.getElementById("pass-bomb-btn").hidden = true;
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    if (playerId && !gameData.players?.[playerId]) {
+                        playerId = "";
+                        playerName = "";
+                        playerTeamId = "";
+                        document.getElementById("waiting-screen").classList.remove("active");
+                        document.getElementById("join-screen").classList.add("active");
+                        return;
+                    }
+                    document.getElementById("join-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.add("active");
+                    document.getElementById("waiting-avatar-picker").hidden = false;
+                    document.getElementById("avatar-save-status").hidden = false;
+                    document.getElementById("get-ready-player").hidden = true;
+                    document.getElementById("waiting-title").innerText = "You're in!";
+                    document.getElementById("waiting-copy").innerText = "Waiting for the host to start the game...";
                 }
             });
         };
 
-        function startPlayerTimer() {
-            let timeLeft = 120;
-            const timerEl = document.getElementById("player-timer");
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                timerEl.innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    autoSubmitEmpty();
-                }
-            }, 1000);
-        }
+        window.passBomb = async function() {
+            const passButton = document.getElementById("pass-bomb-btn");
+            if (!playerId || activePhase !== "bomb" || passButton.hidden) return;
+            passButton.disabled = true;
 
-        window.submitAnswer = function() {
-            clearInterval(timerInterval);
-            const playerAnswer = document.getElementById("answer-input").value.trim();
-            const timeElapsed = (Date.now() - gameStartTime) / 1000;
-            let earnedPoints = 0;
+            const result = await runTransaction(gameRef, (gameData) => {
+                if (gameData?.phase !== "bomb" || gameData.bombLocked !== false || gameData.activePlayerId !== playerId) return;
+                const eligiblePlayers = Object.entries(gameData.players || {}).filter(([id, player]) => id !== playerId && player?.name);
+                if (!eligiblePlayers.length) return;
+                const [nextPlayerId] = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+                const availableTwisters = TONGUE_TWISTERS.filter((twister) => twister !== gameData.task);
+                const nextTask = availableTwisters[Math.floor(Math.random() * availableTwisters.length)];
+                return {
+                    ...gameData,
+                    activePlayerId: nextPlayerId,
+                    previousActivePlayerId: playerId,
+                    task: nextTask,
+                    bombLocked: true,
+                    handoffTime: Date.now()
+                };
+            }, { applyLocally: false });
 
-            const qRef = ref(db, `game/question`);
-            get(qRef).then((snapshot) => {
-                const correctAnswer = snapshot.val().answer;
-                
-                if (playerAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
-                    earnedPoints = Math.max(200, Math.floor(1000 - (timeElapsed / 120) * 800));
-                    lastRoundPoints = earnedPoints;
-                } else {
-                    lastRoundPoints = 0;
-                }
-
-                currentScore += earnedPoints;
-
-                const playerRef = ref(db, `game/players/${playerId}`);
-                update(playerRef, {
-                    name: playerName,
-                    answered: true,
-                    score: currentScore,
-                    lastRoundPoints: lastRoundPoints
-                });
-
-                document.getElementById("question-screen").classList.remove("active");
-                document.getElementById("post-answer-screen").classList.add("active");
-                document.getElementById("result-msg").innerText = "Answer submitted. Scores are hidden until the round ends.";
-                document.getElementById("current-score").innerText = "Secret";
-            });
+            if (result.committed) {
+                playUiTone(560, 0.1, "triangle", 0.035);
+            } else if (activePhase === "bomb") {
+                passButton.disabled = false;
+            }
         };
-
-        function autoSubmitEmpty() {
-            if (!playerId || !playerName) return;
-            lastRoundPoints = 0;
-            const playerRef = ref(db, `game/players/${playerId}`);
-            update(playerRef, {
-                name: playerName,
-                score: currentScore,
-                answered: true,
-                lastRoundPoints: 0
-            });
-            document.getElementById("question-screen").classList.remove("active");
-            document.getElementById("post-answer-screen").classList.add("active");
-            document.getElementById("result-msg").innerText = "Time's up! No points awarded for this round ⏰";
-            document.getElementById("current-score").innerText = "Secret";
-        }
     </script>
 </body>
 </html>

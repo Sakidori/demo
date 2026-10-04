@@ -140,6 +140,8 @@
             font-size: 0.9rem;
         }
 
+        #team-count { color: var(--muted); font-size: 0.85rem; }
+
         .lobby-roster ul {
             max-height: min(50vh, 360px);
             overflow-y: auto;
@@ -410,6 +412,70 @@
             font-weight: 700;
         }
 
+        .task-heading {
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .task-bomb {
+            display: block;
+            font-size: 5rem;
+            line-height: 1;
+            margin: 12px auto 20px;
+            animation: bombPulse 1s ease-in-out infinite;
+            filter: drop-shadow(0 0 18px rgba(255,92,122,0.45));
+        }
+
+        #task-prompt {
+            width: min(680px, 100%);
+            margin: 0 auto 22px;
+            font-size: clamp(1.6rem, 4vw, 2.6rem);
+        }
+
+        .active-player-banner {
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto 16px;
+            padding: 10px 16px;
+            border: 1px solid rgba(255,92,122,0.35);
+            border-radius: 12px;
+            background: rgba(255,92,122,0.1);
+            color: #ffd4dc;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .active-player-banner span { margin-right: 8px; }
+
+        .team-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .team-chip::before {
+            content: "";
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            border: 1px solid rgba(255,255,255,0.65);
+            border-radius: 50%;
+            background: var(--team-color, #64748b);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--team-color, #64748b) 60%, transparent);
+        }
+
+        #lost-team-chip { font-size: 1.2rem; margin: 14px 0; }
+
+        .result-team-player { border-left: 5px solid var(--team-color, #64748b); }
+
+        @keyframes bombPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.13); }
+        }
+
         .question-image-wrap {
             width: min(100%, 720px);
             margin: 12px auto 18px;
@@ -519,53 +585,46 @@
             <section class="lobby-roster" aria-labelledby="lobby-roster-title">
                 <div class="roster-heading">
                     <h2 id="lobby-roster-title">Players in Lobby</h2>
-                    <span id="player-count">0 joined</span>
+                    <span><span id="player-count">0 joined</span> · <span id="team-count">0 teams</span></span>
                 </div>
                 <ul id="player-list"></ul>
                 <p id="empty-player-state">Waiting for players to join</p>
             </section>
         </div>
         <div class="lobby-actions">
-            <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Game (Round 1)</button>
+            <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Bomb Round</button>
         </div>
     </div>
 
-    <!-- QUESTION SCREEN -->
-    <div id="question-screen" class="screen">
-        <h2 id="round-indicator">Round 1 / 3</h2>
-        <h1 id="q-text">Loading question...</h1>
-        <div id="question-image-wrap" class="question-image-wrap" hidden>
-            <img id="question-image" class="question-image" alt="">
-        </div>
-        <h3>Time Remaining: <span id="timer">120</span>s</h3>
-        
-        <h2>Live Player Status:</h2>
-        <ul id="live-player-list"></ul>
-        
-        <br>
-        <button id="action-btn" onclick="endCurrentRound()" style="background: #dc3545;">End Round Early</button>
+    <!-- TASK PASSING SCREEN -->
+    <div id="task-screen" class="screen">
+        <div class="status-chip">Bomb Round</div>
+        <h2>Pass the Bomb</h2>
+        <span class="task-bomb" aria-label="Bomb">💣</span>
+        <div id="active-player-banner" class="active-player-banner"><span aria-hidden="true">💣</span><strong id="active-player-name">Choosing player...</strong> has the bomb · <span id="active-player-team" class="team-chip"></span></div>
+        <h1 id="task-prompt">Get ready...</h1>
+        <h3>Time Remaining: <span id="task-timer">120</span>s</h3>
+        <ul id="task-player-list" aria-label="Players in the task round"></ul>
+        <p id="bomb-lock-status" class="status-chip">Bomb Locked</p>
+        <button id="unlock-bomb-btn" onclick="unlockBomb()">Release Bomb Lock</button>
     </div>
 
-    <!-- ROUND RESULTS SCREEN -->
-    <div id="results-screen" class="screen">
-        <h2 id="round-results-title">Round Results</h2>
-        <div class="results-badge">Points revealed</div>
-        <ul id="round-results-list"></ul>
-        <button id="results-next-btn" onclick="advanceFromResults()">Next Round</button>
-    </div>
-
-    <!-- LEADERBOARD SCREEN -->
-    <div id="leaderboard-screen" class="screen">
-        <h1>🏆 Final Leaderboard 🏆</h1>
-        <div id="podium" class="podium"></div>
-        <ul id="final-leaderboard-list"></ul>
+    <!-- BOMB RESULT SCREEN -->
+    <div id="bomb-result-screen" class="screen">
+        <div class="results-badge">Bomb Exploded</div>
+        <h1 id="lost-team-title">Team lost</h1>
+        <div id="lost-team-chip" class="team-chip"></div>
+        <p id="lost-player-name"></p>
+        <ul id="lost-team-players"></ul>
+        <button onclick="resetGame()">Back to Lobby</button>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
+        import { TEAM_COLORS, TONGUE_TWISTERS } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -596,6 +655,14 @@
 
         let currentRoundIndex = 0;
         let countdownInterval;
+        let activePlayerId = "";
+        let previousActivePlayerId = "";
+        let currentTask = "";
+        let fuseStartedAt = 0;
+        let currentPhase = "waiting";
+        let bombLocked = true;
+        let hostPlayers = {};
+        const getTeam = (teamId) => TEAM_COLORS.find((team) => team.id === teamId);
 
         // Global game database reference
         const gameRef = ref(db, `game`);
@@ -603,8 +670,8 @@
         // Reset/Initialize game state on load
         set(gameRef, {
             status: "waiting",
-            round: 0,
-            question: questions[0],
+            phase: "waiting",
+            round: 1,
             players: {}
         });
 
@@ -661,100 +728,190 @@
             }
         }
 
-        // Listen for players joining/updating
-        const playersRef = ref(db, `game/players`);
-        onValue(playersRef, (snapshot) => {
-            const data = snapshot.val();
+        function renderHostPlayerLists(data) {
             const listEl = document.getElementById("player-list");
-            const liveListEl = document.getElementById("live-player-list");
+            const taskListEl = document.getElementById("task-player-list");
             const countEl = document.getElementById("player-count");
+            const teamCountEl = document.getElementById("team-count");
             const emptyStateEl = document.getElementById("empty-player-state");
             const startButton = document.getElementById("start-btn");
             listEl.innerHTML = "";
-            liveListEl.innerHTML = "";
+            taskListEl.innerHTML = "";
 
             const players = Object.entries(data || {}).filter(([, player]) =>
                 player && typeof player.name === "string" && player.name.trim()
             );
+            const teams = new Set(players.map(([, player]) => player.teamId).filter(Boolean));
             countEl.innerText = `${players.length} joined`;
-            emptyStateEl.hidden = players.length > 0;
-            startButton.style.display = players.length > 0 && currentRoundIndex === 0 ? "inline-block" : "none";
+            teamCountEl.innerText = `${teams.size} teams`;
+            emptyStateEl.hidden = players.length > 0 && teams.size >= 2;
+            emptyStateEl.innerText = players.length ? "Two teams are needed to start" : "Waiting for players to join";
+            startButton.style.display = teams.size >= 2 && currentPhase === "waiting" ? "inline-block" : "none";
 
-            players.forEach(([id, p]) => {
-                    const li = document.createElement("li");
-                    li.classList.add("player-line");
-                    const avatar = document.createElement("span");
-                    avatar.className = "avatar-chip";
-                    avatar.innerText = getPlayerAvatar(p);
-                    const name = document.createElement("span");
-                    name.className = "player-name";
-                    name.innerText = p.name;
-                    li.append(avatar, name);
-                    listEl.appendChild(li);
+            players.forEach(([id, player]) => {
+                const team = getTeam(player.teamId);
+                const li = document.createElement("li");
+                li.classList.add("player-line");
+                li.style.setProperty("--team-color", team?.hex || "#64748b");
+                const avatar = document.createElement("span");
+                avatar.className = "avatar-chip";
+                avatar.innerText = getPlayerAvatar(player);
+                const name = document.createElement("span");
+                name.className = "player-name";
+                name.innerText = player.name;
+                const teamLabel = document.createElement("span");
+                teamLabel.className = "team-chip player-status";
+                teamLabel.innerText = team?.name || "No team";
+                li.append(avatar, name, teamLabel);
+                listEl.appendChild(li);
 
-                    const liveLi = document.createElement("li");
-                    liveLi.classList.add("player-line");
-                    const liveAvatar = document.createElement("span");
-                    liveAvatar.className = "avatar-chip";
-                    liveAvatar.innerText = getPlayerAvatar(p);
-                    const liveName = document.createElement("span");
-                    liveName.className = "player-name";
-                    liveName.innerText = p.name;
-                    const status = document.createElement("span");
-                    status.className = "player-status";
-                    status.innerText = p.answered ? "✅ Answered" : "⏳ Thinking...";
-                    liveLi.append(liveAvatar, liveName, status);
-                    liveListEl.appendChild(liveLi);
+                const statusRow = document.createElement("li");
+                statusRow.classList.add("player-line");
+                statusRow.style.setProperty("--team-color", team?.hex || "#64748b");
+                const statusAvatar = document.createElement("span");
+                statusAvatar.className = "avatar-chip";
+                statusAvatar.innerText = getPlayerAvatar(player);
+                const statusName = document.createElement("span");
+                statusName.className = "player-name";
+                statusName.innerText = player.name;
+                const status = document.createElement("span");
+                status.className = "player-status";
+                status.innerText = currentPhase === "bomb" && id === activePlayerId ? "💣 Has bomb" : team?.name || "No team";
+                statusRow.append(statusAvatar, statusName, status);
+                if (currentPhase === "bomb" && id === activePlayerId) statusRow.classList.add("result-team-player");
+                taskListEl.appendChild(statusRow);
             });
+        }
+
+        // Listen for players joining/updating
+        const playersRef = ref(db, `game/players`);
+        onValue(playersRef, (snapshot) => {
+            hostPlayers = snapshot.val() || {};
+            renderHostPlayerLists(hostPlayers);
         });
 
-        window.startNextRound = function() {
-            if (currentRoundIndex >= questions.length) {
-                showLeaderboard();
-                return;
-            }
+        onValue(gameRef, (snapshot) => {
+            const gameData = snapshot.val();
+            if (!gameData || gameData.phase !== "bomb" || currentPhase !== "bomb") return;
+            activePlayerId = gameData.activePlayerId || activePlayerId;
+            currentTask = gameData.task || currentTask;
+            bombLocked = gameData.bombLocked !== false;
+            hostPlayers = gameData.players || hostPlayers;
+            renderActivePlayer();
+            renderHostPlayerLists(hostPlayers);
+            renderBombLockState();
+        });
 
-            get(playersRef).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const updates = {};
-                    snapshot.forEach((childSnap) => {
-                        updates[`${childSnap.key}/answered`] = false;
-                        updates[`${childSnap.key}/lastRoundPoints`] = 0;
-                    });
-                    update(playersRef, updates);
-                }
-            });
-
+        window.startNextRound = async function() {
+            if (currentPhase !== "waiting") return;
+            const snapshot = await get(playersRef);
+            const players = Object.entries(snapshot.val() || {}).filter(([, player]) => player?.name && player.teamId);
+            if (new Set(players.map(([, player]) => player.teamId)).size < 2) return;
+            hostPlayers = snapshot.val() || {};
+            activePlayerId = players[Math.floor(Math.random() * players.length)][0];
+            currentTask = TONGUE_TWISTERS[Math.floor(Math.random() * TONGUE_TWISTERS.length)];
+            currentPhase = "bomb";
+            bombLocked = true;
+            fuseStartedAt = Date.now();
             document.getElementById("lobby-screen").classList.remove("active");
-            document.getElementById("results-screen").classList.remove("active");
-            document.getElementById("leaderboard-screen").classList.remove("active");
-            document.getElementById("question-screen").classList.add("active");
-            document.getElementById("round-indicator").innerText = `Round ${currentRoundIndex + 1} / 3`;
-            renderQuestion(questions[currentRoundIndex]);
-            document.getElementById("action-btn").innerText = "End Round Early";
-            document.getElementById("action-btn").onclick = endCurrentRound;
+            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.getElementById("task-screen").classList.add("active");
+            renderActivePlayer();
+            renderHostPlayerLists(hostPlayers);
+            renderBombLockState();
             playUiTone(440, 0.12, "triangle", 0.03);
 
-            update(gameRef, {
-                status: `round-${currentRoundIndex}`,
-                round: currentRoundIndex,
-                question: questions[currentRoundIndex],
-                startTime: Date.now()
-            });
-
-            let timeLeft = 120;
-            const timerEl = document.getElementById("timer");
-            timerEl.innerText = timeLeft;
+            await update(gameRef, { status: "bomb-round", phase: "bomb", round: 1, task: currentTask, activePlayerId, bombLocked });
+            updateHostFuse();
             clearInterval(countdownInterval);
+            countdownInterval = setInterval(updateHostFuse, 250);
+        };
 
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                timerEl.innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    endCurrentRound();
-                }
-            }, 1000);
+        window.unlockBomb = async function() {
+            if (currentPhase !== "bomb" || !bombLocked) return;
+            bombLocked = false;
+            renderBombLockState();
+            await update(gameRef, { bombLocked: false });
+        };
+
+        function renderBombLockState() {
+            const status = document.getElementById("bomb-lock-status");
+            const button = document.getElementById("unlock-bomb-btn");
+            status.innerText = bombLocked ? "Bomb Locked" : "Bomb Unlocked · Waiting for Player";
+            button.innerText = bombLocked ? "Release Bomb Lock" : "Waiting for Player to Pass";
+            button.disabled = currentPhase !== "bomb" || !bombLocked;
+        }
+
+        window.endTaskRound = function() {
+            explodeBomb();
+        };
+
+        function renderActivePlayer() {
+            const player = hostPlayers[activePlayerId];
+            const team = getTeam(player?.teamId);
+            document.getElementById("active-player-name").innerText = player?.name || "A player";
+            const teamEl = document.getElementById("active-player-team");
+            teamEl.innerText = team ? `Team ${team.name}` : "Unknown team";
+            teamEl.style.setProperty("--team-color", team?.hex || "#64748b");
+            document.getElementById("task-prompt").innerText = currentTask;
+        }
+
+        function updateHostFuse() {
+            if (currentPhase !== "bomb") return;
+            const timeLeft = Math.max(0, 120 - Math.floor((Date.now() - fuseStartedAt) / 1000));
+            document.getElementById("task-timer").innerText = timeLeft;
+            if (timeLeft <= 0) explodeBomb();
+        }
+
+        async function explodeBomb() {
+            if (currentPhase !== "bomb") return;
+            currentPhase = "exploding";
+            clearInterval(countdownInterval);
+            const snapshot = await get(playersRef);
+            hostPlayers = snapshot.val() || hostPlayers;
+            const losingPlayer = hostPlayers[activePlayerId];
+            const losingTeam = getTeam(losingPlayer?.teamId);
+            const losingPlayers = Object.values(hostPlayers).filter((player) => player?.teamId === losingPlayer?.teamId);
+            document.getElementById("task-screen").classList.remove("active");
+            document.getElementById("bomb-result-screen").classList.add("active");
+            document.getElementById("lost-team-title").innerText = `${losingTeam?.name || "Unknown"} Team Lost`;
+            document.getElementById("lost-team-chip").innerText = `Team ${losingTeam?.name || "Unknown"}`;
+            document.getElementById("lost-team-chip").style.setProperty("--team-color", losingTeam?.hex || "#64748b");
+            document.getElementById("lost-player-name").innerText = `Bomb holder: ${losingPlayer?.name || "Unknown player"}`;
+            const membersList = document.getElementById("lost-team-players");
+            membersList.innerHTML = "";
+            losingPlayers.forEach((player) => {
+                const row = document.createElement("li");
+                row.className = "player-line result-team-player";
+                row.style.setProperty("--team-color", losingTeam?.hex || "#64748b");
+                row.innerText = `${getPlayerAvatar(player)} ${player.name}`;
+                membersList.appendChild(row);
+            });
+            await update(gameRef, {
+                status: "bomb-exploded",
+                phase: "finished",
+                losingTeamId: losingPlayer?.teamId || "",
+                losingTeamName: losingTeam?.name || "Unknown",
+                losingTeamColor: losingTeam?.hex || "#64748b",
+                losingPlayerId: activePlayerId,
+                losingPlayerName: losingPlayer?.name || "Unknown player"
+            });
+            currentPhase = "finished";
+            renderHostPlayerLists(hostPlayers);
+        };
+
+        window.resetGame = async function() {
+            clearInterval(countdownInterval);
+            activePlayerId = "";
+            previousActivePlayerId = "";
+            currentTask = "";
+            currentPhase = "waiting";
+            bombLocked = true;
+            await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {} });
+            document.getElementById("task-screen").classList.remove("active");
+            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.getElementById("lobby-screen").classList.add("active");
+            renderHostPlayerLists({});
         };
 
         function showRoundResults() {
@@ -860,8 +1017,10 @@
         }
 
         window.endCurrentRound = function() {
+            if (currentPhase !== "quiz") return;
             clearInterval(countdownInterval);
-            update(gameRef, { status: `round-${currentRoundIndex}-results` });
+            currentPhase = "results";
+            update(gameRef, { status: `round-${currentRoundIndex}-results`, phase: "results" });
             showRoundResults();
         };
 
