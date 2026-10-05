@@ -376,37 +376,19 @@
 
     <!-- JOIN SCREEN -->
     <div id="join-screen" class="screen active">
-        <h2>Enter Your Name</h2>
+        <h2>Choose Your Name and Team</h2>
         <input type="text" id="name-input" placeholder="Your Nickname" />
-        <fieldset class="avatar-picker">
-            <legend>Choose your avatar</legend>
-            <div class="avatar-options">
-                <label class="avatar-option"><input type="radio" name="avatar" value="🦊" aria-label="Fox" checked><span aria-hidden="true">🦊</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐼" aria-label="Panda"><span aria-hidden="true">🐼</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐸" aria-label="Frog"><span aria-hidden="true">🐸</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐯" aria-label="Tiger"><span aria-hidden="true">🐯</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐙" aria-label="Octopus"><span aria-hidden="true">🐙</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🦉" aria-label="Owl"><span aria-hidden="true">🦉</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐧" aria-label="Penguin"><span aria-hidden="true">🐧</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🦄" aria-label="Unicorn"><span aria-hidden="true">🦄</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐨" aria-label="Koala"><span aria-hidden="true">🐨</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🦁" aria-label="Lion"><span aria-hidden="true">🦁</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐵" aria-label="Monkey"><span aria-hidden="true">🐵</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐢" aria-label="Turtle"><span aria-hidden="true">🐢</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐺" aria-label="Wolf"><span aria-hidden="true">🐺</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐰" aria-label="Rabbit"><span aria-hidden="true">🐰</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐻" aria-label="Bear"><span aria-hidden="true">🐻</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐬" aria-label="Dolphin"><span aria-hidden="true">🐬</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🐳" aria-label="Whale"><span aria-hidden="true">🐳</span></label>
-                <label class="avatar-option"><input type="radio" name="avatar" value="🦖" aria-label="Dinosaur"><span aria-hidden="true">🦖</span></label>
-            </div>
-        </fieldset>
         <fieldset class="team-picker">
-            <legend>Choose your team color</legend>
+            <legend>Join a team or choose an open color</legend>
             <div id="team-color-options" class="team-color-options"></div>
         </fieldset>
+        <fieldset id="team-animal-picker" class="team-picker">
+            <legend>Choose an open mascot for your new team</legend>
+            <div id="team-animal-options" class="avatar-options team-animal-options"></div>
+        </fieldset>
+        <p id="team-capacity-message" aria-live="polite"></p>
         <br>
-        <button onclick="joinGame()">Join Lobby</button>
+        <button id="join-game-btn" onclick="joinGame()">Join Lobby</button>
     </div>
 
     <!-- WAITING FOR START -->
@@ -415,30 +397,6 @@
         <p id="waiting-copy">Waiting for the host to start the game...</p>
         <span id="waiting-team-chip" class="team-chip"></span>
         <p id="get-ready-player" hidden></p>
-        <fieldset class="avatar-picker" id="waiting-avatar-picker">
-            <legend>Change your avatar</legend>
-            <div class="avatar-options">
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦊" aria-label="Fox"><span aria-hidden="true">🦊</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐼" aria-label="Panda"><span aria-hidden="true">🐼</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐸" aria-label="Frog"><span aria-hidden="true">🐸</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐯" aria-label="Tiger"><span aria-hidden="true">🐯</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐙" aria-label="Octopus"><span aria-hidden="true">🐙</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦉" aria-label="Owl"><span aria-hidden="true">🦉</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐧" aria-label="Penguin"><span aria-hidden="true">🐧</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦄" aria-label="Unicorn"><span aria-hidden="true">🦄</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐨" aria-label="Koala"><span aria-hidden="true">🐨</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦁" aria-label="Lion"><span aria-hidden="true">🦁</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐵" aria-label="Monkey"><span aria-hidden="true">🐵</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐢" aria-label="Turtle"><span aria-hidden="true">🐢</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐺" aria-label="Wolf"><span aria-hidden="true">🐺</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐰" aria-label="Rabbit"><span aria-hidden="true">🐰</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐻" aria-label="Bear"><span aria-hidden="true">🐻</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐬" aria-label="Dolphin"><span aria-hidden="true">🐬</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🐳" aria-label="Whale"><span aria-hidden="true">🐳</span></label>
-                <label class="avatar-option"><input type="radio" name="waiting-avatar" value="🦖" aria-label="Dinosaur"><span aria-hidden="true">🦖</span></label>
-            </div>
-        </fieldset>
-        <p id="avatar-save-status" aria-live="polite"></p>
     </div>
 
     <!-- ACTIVE TASK SCREEN -->
@@ -470,9 +428,9 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, update, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
-        import { TEAM_COLORS, TONGUE_TWISTERS } from "./game-data.js";
+        import { TEAM_COLORS, TEAM_ANIMALS, TONGUE_TWISTERS, MAX_PLAYERS } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -488,15 +446,16 @@
       const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
     const gameRef = ref(db, "game");
-    const playersRef = ref(db, "game/players");
 
         let playerId = "";
         let playerName = "";
         let playerAvatar = "🦊";
-    let playerTeamId = "";
-        const playerAvatars = ["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢", "🐺", "🐰", "🐻", "🐬", "🐳", "🦖"];
+        let playerTeamId = "";
+        let playerTeamName = "";
+
         let activePhase = "waiting";
         let stopGameListener;
+        let currentGameData = {};
         let audioCtx;
         const funkyMusic = createFunkyMusic();
         const musicToggle = document.getElementById("music-toggle");
@@ -536,110 +495,250 @@
             oscillator.stop(audioCtx.currentTime + duration);
         }
 
-        function renderTeamColorOptions(players = {}) {
+        function getGameTeams(gameData = {}) {
+            const teams = { ...(gameData.teams || {}) };
+            Object.values(gameData.players || {}).forEach((player) => {
+                if (player?.teamId && !teams[player.teamId]) {
+                    const color = TEAM_COLORS.find((item) => item.id === player.teamId);
+                    const animal = TEAM_ANIMALS.find((item) => item.id === player.teamAnimalId);
+                    if (color && animal) {
+                        teams[player.teamId] = {
+                            id: player.teamId,
+                            name: player.teamName || `${color.name} ${animal.plural}`,
+                            colorId: color.id,
+                            colorName: color.name,
+                            colorHex: color.hex,
+                            animalId: animal.id,
+                            animalName: animal.name,
+                            animalPlural: animal.plural,
+                            avatar: animal.avatar
+                        };
+                    }
+                }
+            });
+            return teams;
+        }
+
+        function renderTeamColorOptions(gameData = {}) {
             const options = document.getElementById("team-color-options");
-            const selectedTeamId = options.querySelector('input[name="team-color"]:checked')?.value || TEAM_COLORS[0].id;
-            const counts = Object.values(players).reduce((teamCounts, player) => {
-                if (player?.teamId) teamCounts[player.teamId] = (teamCounts[player.teamId] || 0) + 1;
-                return teamCounts;
-            }, {});
+            const teams = getGameTeams(gameData);
+            const previousSelection = options.querySelector('input[name="team-color"]:checked')?.value;
+            const selectedTeamId = (!teams[previousSelection] && TEAM_COLORS.some((color) => color.id === previousSelection))
+                ? previousSelection
+                : TEAM_COLORS.find((color) => !teams[color.id])?.id;
+            const playerCount = Object.keys(gameData.players || {}).length;
             options.innerHTML = "";
 
-            TEAM_COLORS.forEach((team, index) => {
+            TEAM_COLORS.forEach((color) => {
+                const existingTeam = teams[color.id];
                 const label = document.createElement("label");
                 label.className = "team-color-option";
                 const input = document.createElement("input");
                 input.type = "radio";
                 input.name = "team-color";
-                input.value = team.id;
-                input.setAttribute("aria-label", `Team ${team.name}`);
-                input.checked = team.id === selectedTeamId;
+                input.value = color.id;
+                input.setAttribute("aria-label", existingTeam ? `${existingTeam.name} is full` : `Create ${color.name} team`);
+                input.checked = color.id === selectedTeamId;
+                input.disabled = Boolean(existingTeam) || playerCount >= MAX_PLAYERS;
                 const card = document.createElement("span");
                 card.className = "team-color-card";
-                card.style.setProperty("--team-color", team.hex);
+                card.style.setProperty("--team-color", color.hex);
                 const swatch = document.createElement("span");
                 swatch.className = "team-color-swatch";
                 swatch.setAttribute("aria-hidden", "true");
                 const name = document.createElement("span");
                 name.className = "team-color-name";
-                name.innerText = team.name;
+                name.innerText = existingTeam?.name || `${color.name} team`;
                 const count = document.createElement("span");
                 count.className = "team-color-count";
-                count.innerText = counts[team.id] ? `Join · ${counts[team.id]}` : "New team";
+                count.innerText = existingTeam ? "Full · 1 player" : "Open team";
                 card.append(swatch, name, count);
                 label.append(input, card);
+                options.appendChild(label);
+                input.addEventListener("change", () => renderTeamAnimalOptions(currentGameData));
+            });
+            const capacityMessage = document.getElementById("team-capacity-message");
+            capacityMessage.innerText = playerCount >= MAX_PLAYERS
+                ? `All ${MAX_PLAYERS} teams are full.`
+                : `${playerCount} / ${MAX_PLAYERS} players joined`;
+            document.getElementById("join-game-btn").disabled = playerCount >= MAX_PLAYERS || !selectedTeamId;
+            renderTeamAnimalOptions(gameData);
+        }
+
+        function renderTeamAnimalOptions(gameData = {}) {
+            const picker = document.getElementById("team-animal-picker");
+            const options = document.getElementById("team-animal-options");
+            const selectedTeamId = document.querySelector('input[name="team-color"]:checked')?.value;
+            const teams = getGameTeams(gameData);
+            if (!selectedTeamId || teams[selectedTeamId]) {
+                picker.hidden = true;
+                options.innerHTML = "";
+                return;
+            }
+
+            picker.hidden = false;
+            const reservedAnimals = new Set(Object.values(teams).map((team) => team.animalId));
+            const previousAnimalId = options.querySelector('input[name="team-animal"]:checked')?.value;
+            const availableAnimals = TEAM_ANIMALS.filter((animal) => !reservedAnimals.has(animal.id));
+            const selectedAnimalId = availableAnimals.some((animal) => animal.id === previousAnimalId)
+                ? previousAnimalId
+                : availableAnimals[0]?.id;
+            options.innerHTML = "";
+
+            availableAnimals.forEach((animal) => {
+                const label = document.createElement("label");
+                label.className = "avatar-option";
+                const input = document.createElement("input");
+                input.type = "radio";
+                input.name = "team-animal";
+                input.value = animal.id;
+                input.setAttribute("aria-label", animal.name);
+                input.checked = animal.id === selectedAnimalId;
+                const avatar = document.createElement("span");
+                avatar.setAttribute("aria-hidden", "true");
+                avatar.innerText = animal.avatar;
+                label.append(input, avatar);
                 options.appendChild(label);
             });
         }
 
-        onValue(playersRef, (snapshot) => renderTeamColorOptions(snapshot.val() || {}));
+        const playerSessionKey = "bombGamePlayerId";
+        let checkedSavedPlayer = false;
+
+        function getSavedPlayerId() {
+            try {
+                return localStorage.getItem(playerSessionKey) || "";
+            } catch {
+                return "";
+            }
+        }
+
+        function clearSavedPlayerId() {
+            try {
+                localStorage.removeItem(playerSessionKey);
+            } catch {
+                return;
+            }
+        }
+
+        function savePlayerId(id) {
+            try {
+                localStorage.setItem(playerSessionKey, id);
+            } catch {
+                return;
+            }
+        }
+
+        function restorePlayerSession(gameData) {
+            const savedId = getSavedPlayerId();
+            const player = gameData.players?.[savedId];
+            if (!savedId || !player) {
+                if (savedId) clearSavedPlayerId();
+                return;
+            }
+
+            playerId = savedId;
+            playerName = player.name;
+            playerAvatar = player.avatar || "🎮";
+            playerTeamId = player.teamId || "";
+            const team = getGameTeams(gameData)[playerTeamId];
+            playerTeamName = player.teamName || team?.name || "Unknown team";
+            document.getElementById("join-screen").classList.remove("active");
+            document.getElementById("waiting-screen").classList.add("active");
+            document.getElementById("waiting-avatar").innerText = playerAvatar;
+            document.getElementById("waiting-team-chip").innerText = playerTeamName;
+            document.getElementById("waiting-team-chip").style.setProperty("--team-color", team?.colorHex || player.teamColor || "#64748b");
+            listenToPlayerGame();
+        }
+
+        onValue(gameRef, (snapshot) => {
+            currentGameData = snapshot.val() || {};
+            renderTeamColorOptions(currentGameData);
+            if (!checkedSavedPlayer) {
+                checkedSavedPlayer = true;
+                restorePlayerSession(currentGameData);
+            }
+        });
 
         window.joinGame = async function() {
             const name = document.getElementById("name-input").value.trim();
             if (!name) return alert("Please enter a name!");
 
             const gameSnapshot = await get(gameRef);
-            if (gameSnapshot.val()?.phase && gameSnapshot.val().phase !== "waiting") {
+            const currentGame = gameSnapshot.val() || {};
+            const savedPlayer = currentGame.players?.[getSavedPlayerId()];
+            if (savedPlayer) {
+                restorePlayerSession(currentGame);
+                return;
+            }
+            if (currentGame.phase !== "waiting") {
                 return alert("The game has already started. Ask the host to reset the lobby.");
             }
 
-            const selectedAvatar = document.querySelector('input[name="avatar"]:checked')?.value;
-            const avatar = playerAvatars.includes(selectedAvatar) ? selectedAvatar : playerAvatars[0];
-            playerTeamId = document.querySelector('input[name="team-color"]:checked')?.value || TEAM_COLORS[0].id;
-            const team = TEAM_COLORS.find((item) => item.id === playerTeamId) || TEAM_COLORS[0];
+            const teamColorId = document.querySelector('input[name="team-color"]:checked')?.value;
+            const color = TEAM_COLORS.find((item) => item.id === teamColorId);
+            if (!color) return alert("Choose a team color.");
+            const teamAnimalId = document.querySelector('input[name="team-animal"]:checked')?.value;
             playerId = "player_" + Math.random().toString(36).substring(2, 8);
             playerName = name;
-            playerAvatar = avatar;
+            let joinedTeam;
 
-            const playerRef = ref(db, `game/players/${playerId}`);
             try {
-                await set(playerRef, {
-                    name: playerName,
-                    avatar,
-                    teamId: team.id,
-                    teamName: team.name,
-                    teamColor: team.hex,
-                    score: 0,
-                    answered: false
-                });
+                const result = await runTransaction(gameRef, (gameData) => {
+                    if (!gameData || gameData.phase !== "waiting") return;
+                    const teams = getGameTeams(gameData);
+                    const players = { ...(gameData.players || {}) };
+                    if (Object.keys(players).length >= MAX_PLAYERS || teams[color.id]) return;
+                    const animal = TEAM_ANIMALS.find((item) => item.id === teamAnimalId);
+                    if (!animal || Object.values(teams).some((existingTeam) => existingTeam.animalId === animal.id)) return;
+                    const team = {
+                        id: color.id,
+                        colorId: color.id,
+                        colorName: color.name,
+                        colorHex: color.hex,
+                        animalId: animal.id,
+                        animalName: animal.name,
+                        animalPlural: animal.plural,
+                        avatar: animal.avatar,
+                        name: `${color.name} ${animal.plural}`
+                    };
+                    teams[color.id] = team;
+                    players[playerId] = {
+                        name: playerName,
+                        avatar: team.avatar,
+                        teamId: team.id,
+                        teamName: team.name,
+                        teamColor: team.colorHex,
+                        teamAnimalId: team.animalId,
+                        score: 0,
+                        answered: false
+                    };
+                    return { ...gameData, teams, players };
+                }, { applyLocally: false });
+
+                if (!result.committed) throw new Error("The selected color or mascot is no longer available.");
+                joinedTeam = result.snapshot.val().teams[color.id];
+                playerTeamId = joinedTeam.id;
+                playerTeamName = joinedTeam.name;
+                playerAvatar = joinedTeam.avatar;
+                savePlayerId(playerId);
             } catch (error) {
                 playerId = "";
                 playerName = "";
-                alert("Could not join the lobby. Please try again.");
+                alert(error.message || "Could not join the lobby. Please try again.");
                 return;
             }
 
             document.getElementById("join-screen").classList.remove("active");
             document.getElementById("waiting-screen").classList.add("active");
-            document.getElementById("waiting-avatar").innerText = avatar;
+            document.getElementById("waiting-avatar").innerText = playerAvatar;
             const waitingTeamChip = document.getElementById("waiting-team-chip");
-            waitingTeamChip.innerText = `Team ${team.name}`;
-            waitingTeamChip.style.setProperty("--team-color", team.hex);
-            document.querySelectorAll('input[name="waiting-avatar"]').forEach((input) => {
-                input.checked = input.value === avatar;
-            });
+            waitingTeamChip.innerText = joinedTeam.name;
+            waitingTeamChip.style.setProperty("--team-color", joinedTeam.colorHex);
+            listenToPlayerGame();
+        };
 
-            document.querySelectorAll('input[name="waiting-avatar"]').forEach((input) => {
-                input.addEventListener("change", async (event) => {
-                    const nextValue = event.target.value;
-                    if (!playerId || activePhase !== "waiting" || !playerAvatars.includes(nextValue)) return;
-
-                    const status = document.getElementById("avatar-save-status");
-                    try {
-                        await update(playerRef, { avatar: nextValue });
-                        playerAvatar = nextValue;
-                        document.getElementById("waiting-avatar").innerText = nextValue;
-                        status.innerText = "Avatar updated";
-                    } catch (error) {
-                        document.querySelectorAll('input[name="waiting-avatar"]').forEach((option) => {
-                            option.checked = option.value === playerAvatar;
-                        });
-                        status.innerText = "Could not update avatar. Please try again.";
-                    }
-                });
-            });
-
-            // Listen to the host-controlled bomb round and its final result.
+        function listenToPlayerGame() {
             if (stopGameListener) stopGameListener();
             stopGameListener = onValue(gameRef, (snapshot) => {
                 const gameData = snapshot.val();
@@ -655,8 +754,6 @@
                     document.body.classList.toggle("safe", !hasBomb);
                     document.getElementById("bomb-loss-screen").classList.remove("active");
                     document.getElementById("bomb-win-screen").classList.remove("active");
-                    document.getElementById("waiting-avatar-picker").hidden = true;
-                    document.getElementById("avatar-save-status").hidden = true;
                     document.getElementById("get-ready-player").hidden = false;
                     const activePlayer = gameData.players?.[gameData.activePlayerId];
                     const activeTeam = TEAM_COLORS.find((teamColor) => teamColor.id === activePlayer?.teamId);
@@ -670,7 +767,7 @@
                             ? "Bomb unlocked. Tap below when your task is complete."
                             : "Task complete? Wait for the host to release the lock.";
                         const activeTeamChip = document.getElementById("player-active-team");
-                        activeTeamChip.innerText = activeTeam ? `Team ${activeTeam.name}` : "Unknown team";
+                        activeTeamChip.innerText = activePlayer?.teamName || activeTeam?.name || "Unknown team";
                         activeTeamChip.style.setProperty("--team-color", activeTeam?.hex || "#64748b");
                     } else {
                         document.getElementById("task-screen").classList.remove("active");
@@ -692,16 +789,16 @@
                     document.body.classList.toggle("safe", !lost);
                     if (lost) {
                         const chip = document.getElementById("bomb-loss-team");
-                        chip.innerText = `Team ${gameData.losingTeamName || lostTeam?.name || "Unknown"}`;
+                        chip.innerText = gameData.losingTeamName || playerTeamName || lostTeam?.name || "Unknown";
                         chip.style.setProperty("--team-color", gameData.losingTeamColor || lostTeam?.hex || "#64748b");
                         document.getElementById("bomb-loss-copy").innerText = playerId === gameData.losingPlayerId ? "You were holding the bomb when it exploded." : "Your teammate was holding the bomb when it exploded.";
                         document.getElementById("bomb-loss-screen").classList.add("active");
                         document.getElementById("bomb-win-screen").classList.remove("active");
                     } else {
                         const chip = document.getElementById("bomb-win-team");
-                        chip.innerText = `Team ${TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.name || "Unknown"}`;
+                        chip.innerText = playerTeamName || TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.name || "Unknown";
                         chip.style.setProperty("--team-color", TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.hex || "#64748b");
-                        document.getElementById("bomb-win-copy").innerText = `Team ${gameData.losingTeamName || lostTeam?.name || "Unknown"} had the bomb when it exploded.`;
+                        document.getElementById("bomb-win-copy").innerText = `${gameData.losingTeamName || playerTeamName || lostTeam?.name || "Unknown team"} had the bomb when it exploded.`;
                         document.getElementById("bomb-win-screen").classList.add("active");
                         document.getElementById("bomb-loss-screen").classList.remove("active");
                     }
@@ -719,20 +816,20 @@
                         playerId = "";
                         playerName = "";
                         playerTeamId = "";
+                        playerTeamName = "";
+                        clearSavedPlayerId();
                         document.getElementById("waiting-screen").classList.remove("active");
                         document.getElementById("join-screen").classList.add("active");
                         return;
                     }
                     document.getElementById("join-screen").classList.remove("active");
                     document.getElementById("waiting-screen").classList.add("active");
-                    document.getElementById("waiting-avatar-picker").hidden = false;
-                    document.getElementById("avatar-save-status").hidden = false;
                     document.getElementById("get-ready-player").hidden = true;
                     document.getElementById("waiting-title").innerText = "You're in!";
                     document.getElementById("waiting-copy").innerText = "Waiting for the host to start the game...";
                 }
             });
-        };
+        }
 
         window.passBomb = async function() {
             const passButton = document.getElementById("pass-bomb-btn");

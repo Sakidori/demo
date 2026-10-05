@@ -43,6 +43,14 @@
             position: relative;
         }
 
+        body.bomb-round-active {
+            height: 100dvh;
+            min-height: 0;
+            align-items: center;
+            padding: 12px;
+            overflow: hidden;
+        }
+
         body::before {
             content: "";
             position: fixed;
@@ -426,16 +434,65 @@
             filter: drop-shadow(0 0 18px rgba(255,92,122,0.45));
         }
 
+        #task-screen {
+            display: none;
+            grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+            grid-template-rows: auto auto minmax(120px, 1fr) auto auto auto;
+            gap: 8px 24px;
+            width: min(1100px, 100%);
+            height: calc(100dvh - 24px);
+            max-height: 860px;
+            min-height: 0;
+            padding: 16px 24px;
+            overflow: hidden;
+        }
+
+        #task-screen.active {
+            display: grid;
+            animation: none;
+        }
+
+        .task-title-row {
+            grid-column: 1;
+            grid-row: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .task-title-row .status-chip { flex: 0 0 auto; margin: 0; }
+        .task-title-row h2 { margin: 0; font-size: 1.35rem; }
+
+        #task-screen .task-bomb {
+            grid-column: 1;
+            grid-row: 2;
+            font-size: 3rem;
+            margin: 0;
+        }
+
         #task-prompt {
-            width: min(680px, 100%);
-            margin: 0 auto 22px;
-            font-size: clamp(1.6rem, 4vw, 2.6rem);
+            grid-column: 1;
+            grid-row: 3;
+            align-self: stretch;
+            display: grid;
+            place-items: center;
+            width: 100%;
+            min-height: 0;
+            margin: 0;
+            font-size: 2.25rem;
+            line-height: 1.12;
+            overflow-wrap: anywhere;
         }
 
         .active-player-banner {
             width: fit-content;
             max-width: 100%;
-            margin: 0 auto 16px;
+            grid-column: 1;
+            grid-row: 2;
+            justify-self: end;
+            align-self: center;
+            margin: 0;
             padding: 10px 16px;
             border: 1px solid rgba(255,92,122,0.35);
             border-radius: 12px;
@@ -446,6 +503,51 @@
         }
 
         .active-player-banner span { margin-right: 8px; }
+
+        #task-screen > h3 {
+            grid-column: 1;
+            grid-row: 4;
+            margin: 0;
+        }
+
+        #task-player-list {
+            grid-column: 2;
+            grid-row: 1 / 7;
+            align-self: stretch;
+            min-height: 0;
+            max-height: 100%;
+            overflow-y: auto;
+            display: grid;
+            align-content: start;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 6px;
+            margin: 0;
+            padding: 0 6px 0 0;
+        }
+
+        #task-player-list li {
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+            padding: 8px 10px;
+            font-size: 0.9rem;
+        }
+
+        #bomb-lock-status {
+            grid-column: 1;
+            grid-row: 5;
+            justify-self: start;
+            margin: 0;
+        }
+
+        #unlock-bomb-btn {
+            grid-column: 1;
+            grid-row: 6;
+            width: min(100%, 380px);
+            margin: 0;
+        }
+
+        #unlock-bomb-btn:disabled { cursor: wait; filter: saturate(0.65); }
 
         .team-chip {
             display: inline-flex;
@@ -466,6 +568,8 @@
             background: var(--team-color, #64748b);
             box-shadow: 0 0 12px color-mix(in srgb, var(--team-color, #64748b) 60%, transparent);
         }
+
+        .team-chip { white-space: nowrap; }
 
         #lost-team-chip { font-size: 1.2rem; margin: 14px 0; }
 
@@ -546,6 +650,28 @@
 
         @media (max-width: 600px) {
             body { padding: 56px 12px 20px; }
+            body.bomb-round-active { padding: 8px; }
+            #task-screen {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: auto auto minmax(90px, 1fr) auto minmax(70px, 16vh) auto auto;
+                gap: 6px;
+                height: calc(100dvh - 16px);
+                padding: 12px;
+            }
+            .task-title-row { gap: 8px; }
+            .task-title-row h2 { font-size: 1.15rem; }
+            #task-screen .task-bomb { grid-row: 2; font-size: 2.2rem; }
+            .active-player-banner { grid-row: 2; justify-self: end; padding: 7px 9px; font-size: 0.82rem; }
+            #task-prompt { grid-row: 3; font-size: 1.55rem; }
+            #task-screen > h3 { grid-row: 4; }
+            #task-player-list {
+                grid-column: 1;
+                grid-row: 5;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            #task-player-list li { padding: 5px 7px; font-size: 0.75rem; }
+            #bomb-lock-status { grid-row: 6; }
+            #unlock-bomb-btn { grid-row: 7; }
             .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             #lobby-screen { padding: 22px 16px; }
@@ -598,8 +724,10 @@
 
     <!-- TASK PASSING SCREEN -->
     <div id="task-screen" class="screen">
-        <div class="status-chip">Bomb Round</div>
-        <h2>Pass the Bomb</h2>
+        <div class="task-title-row">
+            <div class="status-chip">Bomb Round</div>
+            <h2>Pass the Bomb</h2>
+        </div>
         <span class="task-bomb" aria-label="Bomb">💣</span>
         <div id="active-player-banner" class="active-player-banner"><span aria-hidden="true">💣</span><strong id="active-player-name">Choosing player...</strong> has the bomb · <span id="active-player-team" class="team-chip"></span></div>
         <h1 id="task-prompt">Get ready...</h1>
@@ -624,7 +752,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
-        import { TEAM_COLORS, TONGUE_TWISTERS } from "./game-data.js";
+        import { TEAM_COLORS, TONGUE_TWISTERS, MAX_PLAYERS } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -672,7 +800,8 @@
             status: "waiting",
             phase: "waiting",
             round: 1,
-            players: {}
+            players: {},
+            teams: {}
         });
 
         let audioCtx;
@@ -742,10 +871,12 @@
                 player && typeof player.name === "string" && player.name.trim()
             );
             const teams = new Set(players.map(([, player]) => player.teamId).filter(Boolean));
-            countEl.innerText = `${players.length} joined`;
+            countEl.innerText = `${players.length} / ${MAX_PLAYERS} joined`;
             teamCountEl.innerText = `${teams.size} teams`;
             emptyStateEl.hidden = players.length > 0 && teams.size >= 2;
-            emptyStateEl.innerText = players.length ? "Two teams are needed to start" : "Waiting for players to join";
+            emptyStateEl.innerText = players.length >= MAX_PLAYERS
+                ? `All ${MAX_PLAYERS} teams are full`
+                : players.length ? "Two teams are needed to start" : "Waiting for players to join";
             startButton.style.display = teams.size >= 2 && currentPhase === "waiting" ? "inline-block" : "none";
 
             players.forEach(([id, player]) => {
@@ -761,7 +892,7 @@
                 name.innerText = player.name;
                 const teamLabel = document.createElement("span");
                 teamLabel.className = "team-chip player-status";
-                teamLabel.innerText = team?.name || "No team";
+                teamLabel.innerText = player.teamName || team?.name || "No team";
                 li.append(avatar, name, teamLabel);
                 listEl.appendChild(li);
 
@@ -776,7 +907,7 @@
                 statusName.innerText = player.name;
                 const status = document.createElement("span");
                 status.className = "player-status";
-                status.innerText = currentPhase === "bomb" && id === activePlayerId ? "💣 Has bomb" : team?.name || "No team";
+                status.innerText = currentPhase === "bomb" && id === activePlayerId ? "💣 Has bomb" : player.teamName || team?.name || "No team";
                 statusRow.append(statusAvatar, statusName, status);
                 if (currentPhase === "bomb" && id === activePlayerId) statusRow.classList.add("result-team-player");
                 taskListEl.appendChild(statusRow);
@@ -816,6 +947,7 @@
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("task-screen").classList.add("active");
+            document.body.classList.add("bomb-round-active");
             renderActivePlayer();
             renderHostPlayerLists(hostPlayers);
             renderBombLockState();
@@ -851,7 +983,7 @@
             const team = getTeam(player?.teamId);
             document.getElementById("active-player-name").innerText = player?.name || "A player";
             const teamEl = document.getElementById("active-player-team");
-            teamEl.innerText = team ? `Team ${team.name}` : "Unknown team";
+            teamEl.innerText = player?.teamName || team?.name || "Unknown team";
             teamEl.style.setProperty("--team-color", team?.hex || "#64748b");
             document.getElementById("task-prompt").innerText = currentTask;
         }
@@ -871,11 +1003,13 @@
             hostPlayers = snapshot.val() || hostPlayers;
             const losingPlayer = hostPlayers[activePlayerId];
             const losingTeam = getTeam(losingPlayer?.teamId);
+            const losingTeamName = losingPlayer?.teamName || losingTeam?.name || "Unknown Team";
             const losingPlayers = Object.values(hostPlayers).filter((player) => player?.teamId === losingPlayer?.teamId);
             document.getElementById("task-screen").classList.remove("active");
+            document.body.classList.remove("bomb-round-active");
             document.getElementById("bomb-result-screen").classList.add("active");
-            document.getElementById("lost-team-title").innerText = `${losingTeam?.name || "Unknown"} Team Lost`;
-            document.getElementById("lost-team-chip").innerText = `Team ${losingTeam?.name || "Unknown"}`;
+            document.getElementById("lost-team-title").innerText = `${losingTeamName} Lost`;
+            document.getElementById("lost-team-chip").innerText = losingTeamName;
             document.getElementById("lost-team-chip").style.setProperty("--team-color", losingTeam?.hex || "#64748b");
             document.getElementById("lost-player-name").innerText = `Bomb holder: ${losingPlayer?.name || "Unknown player"}`;
             const membersList = document.getElementById("lost-team-players");
@@ -891,7 +1025,7 @@
                 status: "bomb-exploded",
                 phase: "finished",
                 losingTeamId: losingPlayer?.teamId || "",
-                losingTeamName: losingTeam?.name || "Unknown",
+                losingTeamName,
                 losingTeamColor: losingTeam?.hex || "#64748b",
                 losingPlayerId: activePlayerId,
                 losingPlayerName: losingPlayer?.name || "Unknown player"
@@ -907,8 +1041,9 @@
             currentTask = "";
             currentPhase = "waiting";
             bombLocked = true;
-            await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {} });
+            await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {}, teams: {} });
             document.getElementById("task-screen").classList.remove("active");
+            document.body.classList.remove("bomb-round-active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("lobby-screen").classList.add("active");
             renderHostPlayerLists({});

@@ -14,7 +14,32 @@ export const TEAM_COLORS = [
     { id: "purple", name: "Purple", hex: "#9333ea" },
     { id: "fuchsia", name: "Fuchsia", hex: "#c026d3" },
     { id: "pink", name: "Pink", hex: "#db2777" },
-    { id: "slate", name: "Slate", hex: "#475569" }
+    { id: "slate", name: "Slate", hex: "#475569" },
+    { id: "silver", name: "Silver", hex: "#cbd5e1" },
+    { id: "brown", name: "Brown", hex: "#92400e" }
+];
+
+export const MAX_PLAYERS = 18;
+
+export const TEAM_ANIMALS = [
+    { id: "fox", name: "Fox", plural: "Foxes", avatar: "🦊" },
+    { id: "panda", name: "Panda", plural: "Pandas", avatar: "🐼" },
+    { id: "frog", name: "Frog", plural: "Frogs", avatar: "🐸" },
+    { id: "tiger", name: "Tiger", plural: "Tigers", avatar: "🐯" },
+    { id: "octopus", name: "Octopus", plural: "Octopuses", avatar: "🐙" },
+    { id: "owl", name: "Owl", plural: "Owls", avatar: "🦉" },
+    { id: "penguin", name: "Penguin", plural: "Penguins", avatar: "🐧" },
+    { id: "unicorn", name: "Unicorn", plural: "Unicorns", avatar: "🦄" },
+    { id: "koala", name: "Koala", plural: "Koalas", avatar: "🐨" },
+    { id: "lion", name: "Lion", plural: "Lions", avatar: "🦁" },
+    { id: "monkey", name: "Monkey", plural: "Monkeys", avatar: "🐵" },
+    { id: "turtle", name: "Turtle", plural: "Turtles", avatar: "🐢" },
+    { id: "wolf", name: "Wolf", plural: "Wolves", avatar: "🐺" },
+    { id: "rabbit", name: "Rabbit", plural: "Rabbits", avatar: "🐰" },
+    { id: "bear", name: "Bear", plural: "Bears", avatar: "🐻" },
+    { id: "dolphin", name: "Dolphin", plural: "Dolphins", avatar: "🐬" },
+    { id: "whale", name: "Whale", plural: "Whales", avatar: "🐳" },
+    { id: "dinosaur", name: "Dinosaur", plural: "Dinosaurs", avatar: "🦖" }
 ];
 
 export const TONGUE_TWISTERS = [
