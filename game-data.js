@@ -21,6 +21,15 @@ export const TEAM_COLORS = [
 
 export const MAX_PLAYERS = 18;
 
+export function shuffle(items) {
+    const shuffled = [...items];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+    }
+    return shuffled;
+}
+
 export const TEAM_ANIMALS = [
     { id: "fox", name: "Fox", plural: "Foxes", avatar: "🦊" },
     { id: "panda", name: "Panda", plural: "Pandas", avatar: "🐼" },
@@ -51,7 +60,7 @@ export const TONGUE_TWISTERS = [
     "I'm not the pheasant plucker, I'm the pheasant plucker's son, And I'm only plucking pheasants 'til the pheasant plucker comes",
     "If a dog chews shoes, whose shoes does he choose?",
     "A skunk sat on a stump and thunk the stump stunk, but the stump thunk the skunk stunk.",
-    "I thought a thought. But the thought I thought wasn’t the thought I thought I thought.",
+    "I thought a thought. But the thought I thought wasn't the thought I thought I thought.",
     "The big black bug bit a big black bear and the big black bear bled blue-black blood.",
     "Dead in the middle of Little Italy, little did we know that we riddled some middleman who didn't do diddly.",
     "He thrusts his fists against the posts and still insists he sees the ghosts."

@@ -569,6 +569,108 @@
 
         .result-team-player { border-left: 5px solid var(--team-color, #64748b); }
 
+        #round-score-list {
+            width: min(520px, 100%);
+            margin: 12px auto 20px;
+        }
+
+        #round-score-list li {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin: 7px 0;
+        }
+
+        #round-score-list strong { margin-left: auto; color: var(--success-2); white-space: nowrap; }
+
+        .quiz-surprise {
+            display: inline-block;
+            margin: 4px auto 12px;
+            padding: 8px 16px;
+            border: 2px solid #ffc857;
+            border-radius: 10px;
+            background: #ff6b35;
+            color: #20120d;
+            font-size: clamp(1.4rem, 4vw, 2.1rem);
+            font-weight: 900;
+            animation: surpriseReveal 700ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+        }
+
+        .quiz-question-content { animation: fadeInUp 450ms 250ms ease both; }
+
+        .quiz-question-image {
+            display: block;
+            width: min(100%, 520px);
+            max-height: 34vh;
+            margin: 14px auto;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .quiz-timer {
+            color: var(--success-2);
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .quiz-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #263044 0%, #080d18 68%);
+            color: #fff8d8;
+        }
+
+        .quiz-splash[hidden] { display: none; }
+
+        .quiz-splash-light {
+            position: absolute;
+            inset: -15%;
+            background: linear-gradient(180deg, rgba(255,255,220,0.88), rgba(255,210,92,0.22) 48%, transparent 82%);
+            clip-path: polygon(43% 0, 57% 0, 94% 100%, 6% 100%);
+            filter: blur(8px);
+            opacity: 0;
+            animation: spotlightZoom 2.3s ease-out both;
+        }
+
+        .quiz-splash-title {
+            position: relative;
+            z-index: 1;
+            margin: 0;
+            color: #fff8d8;
+            font-size: 4rem;
+            font-weight: 900;
+            text-shadow: 0 0 18px #ff9f1c, 0 0 54px rgba(255,194,74,0.9);
+            opacity: 0;
+            transform: scale(0.12);
+            animation: quizTitlePop 1.35s 650ms cubic-bezier(0.18, 1.7, 0.4, 1) both;
+        }
+
+        @keyframes spotlightZoom {
+            0% { opacity: 0; transform: scale(0.2); }
+            55% { opacity: 0.95; transform: scale(1.2); }
+            100% { opacity: 0.65; transform: scale(1); }
+        }
+
+        @keyframes quizTitlePop {
+            0% { opacity: 0; transform: scale(0.12); }
+            72% { opacity: 1; transform: scale(1.16); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            .quiz-splash-title { font-size: 2.5rem; }
+        }
+
+        @keyframes surpriseReveal {
+            0% { opacity: 0; transform: scale(0.25) rotate(-12deg); }
+            65% { opacity: 1; transform: scale(1.12) rotate(3deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
         @keyframes bombPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.13); }
@@ -731,20 +833,46 @@
 
     <!-- BOMB RESULT SCREEN -->
     <div id="bomb-result-screen" class="screen">
-        <div class="results-badge">Bomb Exploded</div>
+        <div id="results-badge" class="results-badge">Bomb Exploded</div>
         <h1 id="lost-team-title">Team lost</h1>
         <div id="lost-team-chip" class="team-chip"></div>
         <p id="lost-player-name"></p>
+        <h2 id="score-heading">Round 1 Scores</h2>
+        <ul id="round-score-list"></ul>
         <ul id="lost-team-players"></ul>
+        <button id="round-result-action" onclick="resetGame()">Back to Lobby</button>
+    </div>
+
+    <!-- POP QUIZ -->
+    <div id="quiz-screen" class="screen">
+        <div class="quiz-surprise">Surprise!</div>
+        <h1>Pop Quiz</h1>
+        <div class="quiz-question-content">
+            <img id="quiz-question-image" class="quiz-question-image" alt="" hidden>
+            <h2 id="quiz-question-text"></h2>
+            <p id="quiz-timer" class="quiz-timer">60 seconds</p>
+            <p id="quiz-answer-count">0 of 0 teams answered</p>
+        </div>
+    </div>
+
+    <div id="round-two-placeholder-screen" class="screen">
+        <div class="results-badge">Round 2</div>
+        <h1>New Game Coming Soon</h1>
+        <p>The next game will be added here.</p>
         <button onclick="resetGame()">Back to Lobby</button>
+    </div>
+
+    <div id="quiz-splash" class="quiz-splash" role="status" aria-live="assertive" hidden>
+        <div class="quiz-splash-light"></div>
+        <div class="quiz-splash-title">POP QUIZ</div>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
-        import { TEAM_COLORS, TONGUE_TWISTERS, MAX_PLAYERS } from "./game-data.js";
+        import { TEAM_COLORS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -766,7 +894,7 @@
         new QRCode(document.getElementById("qrcode"), playerUrl);
 
         const questions = [
-            { text: "Solve the crossword.", image: "crossword.webp", imageAlt: "Crossword puzzle with a question-mark clue and intersecting entries", answer: "question mark" },
+            { text: "Which JHS in Ichikawa did Atsuko Maeda (AKB48) attend?", image: "Maeda.webp", imageAlt: "Atsuko Maeda performing with a microphone", choices: ["1中", "7中", "東国分", "8中", "下貝塚", "妙典"], answerIndex: 1 },
             { text: "What color is a clear daytime sky?", answer: "blue" },
             { text: "What is the capital of France?", answer: "paris" }
         ];
@@ -774,7 +902,10 @@
         const getPlayerAvatar = (player) => playerAvatars.has(player.avatar) ? player.avatar : "🎮";
 
         let currentRoundIndex = 0;
+        let currentBombRound = 1;
         let countdownInterval;
+        let quizCountdownInterval;
+        let quizIntroTimeout;
         let fuseBeepTimeout;
         let activePlayerId = "";
         let previousActivePlayerId = "";
@@ -783,6 +914,7 @@
         let currentPhase = "waiting";
         let bombLocked = true;
         let hostPlayers = {};
+        let currentQuizQuestion;
         const getTeam = (teamId) => TEAM_COLORS.find((team) => team.id === teamId);
 
         // Global game database reference
@@ -983,29 +1115,48 @@
 
         onValue(gameRef, (snapshot) => {
             const gameData = snapshot.val();
-            if (!gameData || gameData.phase !== "bomb" || currentPhase !== "bomb") return;
-            activePlayerId = gameData.activePlayerId || activePlayerId;
-            currentTask = gameData.task || currentTask;
-            bombLocked = gameData.bombLocked !== false;
-            hostPlayers = gameData.players || hostPlayers;
-            renderActivePlayer();
-            renderHostPlayerLists(hostPlayers);
-            renderBombLockState();
+            if (!gameData) return;
+            if (gameData.phase === "bomb" && currentPhase === "bomb") {
+                activePlayerId = gameData.activePlayerId || activePlayerId;
+                currentTask = gameData.task || currentTask;
+                bombLocked = gameData.bombLocked !== false;
+                hostPlayers = gameData.players || hostPlayers;
+                renderActivePlayer();
+                renderHostPlayerLists(hostPlayers);
+                renderBombLockState();
+                return;
+            }
+            if (gameData.phase === "quiz" && currentPhase === "quiz") {
+                hostPlayers = gameData.players || hostPlayers;
+                const playerIds = Object.entries(hostPlayers)
+                    .filter(([, player]) => player?.teamId)
+                    .map(([id]) => id);
+                const answers = gameData.quizAnswers || {};
+                document.getElementById("quiz-answer-count").innerText = `${Object.keys(answers).length} of ${playerIds.length} teams answered`;
+                if (playerIds.length && playerIds.every((id) => answers[id])) finishPopQuiz();
+            }
         });
 
-        window.startNextRound = async function() {
+        window.startNextRound = function() {
+            startBombRound();
+        };
+
+        async function startBombRound() {
             if (currentPhase !== "waiting") return;
             const snapshot = await get(playersRef);
             const players = Object.entries(snapshot.val() || {}).filter(([, player]) => player?.name && player.teamId);
             if (!players.length) return;
             hostPlayers = snapshot.val() || {};
             activePlayerId = players[Math.floor(Math.random() * players.length)][0];
-            currentTask = TONGUE_TWISTERS[Math.floor(Math.random() * TONGUE_TWISTERS.length)];
+            const taskQueue = shuffle(TONGUE_TWISTERS);
+            currentTask = taskQueue.pop();
+            currentBombRound = 1;
             currentPhase = "bomb";
             bombLocked = true;
             fuseStartedAt = Date.now();
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("bomb-result-screen").classList.remove("active");
+            document.getElementById("quiz-screen").classList.remove("active");
             document.getElementById("task-screen").classList.add("active");
             document.body.classList.add("bomb-round-active");
             renderActivePlayer();
@@ -1013,7 +1164,20 @@
             renderBombLockState();
             playUiTone(440, 0.12, "triangle", 0.03);
 
-            await update(gameRef, { status: "bomb-round", phase: "bomb", round: 1, task: currentTask, activePlayerId, bombLocked });
+            await update(gameRef, {
+                status: "bomb-round",
+                phase: "bomb",
+                round: currentBombRound,
+                task: currentTask,
+                taskQueue,
+                activePlayerId,
+                bombCyclePlayerIds: [activePlayerId],
+                bombLocked,
+                handoffTime: Date.now(),
+                quizQuestion: null,
+                quizAnswers: null,
+                quizResults: null
+            });
             updateHostFuse();
             clearInterval(countdownInterval);
             countdownInterval = setInterval(updateHostFuse, 250);
@@ -1024,7 +1188,7 @@
             if (currentPhase !== "bomb" || !bombLocked) return;
             bombLocked = false;
             renderBombLockState();
-            await update(gameRef, { bombLocked: false });
+            await update(gameRef, { bombLocked: false, handoffTime: Date.now() });
         };
 
         function renderBombLockState() {
@@ -1038,6 +1202,13 @@
         window.endTaskRound = function() {
             explodeBomb();
         };
+
+        document.addEventListener("keydown", (event) => {
+            const isSpaceKey = event.code === "Space" || event.key === " " || event.key === "Spacebar";
+            if (!isSpaceKey || event.repeat || event.altKey || event.ctrlKey || event.metaKey || currentPhase !== "bomb") return;
+            event.preventDefault();
+            explodeBomb();
+        }, true);
 
         function renderActivePlayer() {
             const player = hostPlayers[activePlayerId];
@@ -1070,10 +1241,17 @@
             document.getElementById("task-screen").classList.remove("active");
             document.body.classList.remove("bomb-round-active");
             document.getElementById("bomb-result-screen").classList.add("active");
+            document.getElementById("results-badge").innerText = `Round ${currentBombRound} Complete`;
             document.getElementById("lost-team-title").innerText = `${losingTeamName} Lost`;
+            document.getElementById("lost-team-title").hidden = false;
             document.getElementById("lost-team-chip").innerText = losingTeamName;
+            document.getElementById("lost-team-chip").hidden = false;
             document.getElementById("lost-team-chip").style.setProperty("--team-color", losingTeam?.hex || "#64748b");
             document.getElementById("lost-player-name").innerText = `Bomb holder: ${losingPlayer?.name || "Unknown player"}`;
+            document.getElementById("lost-player-name").hidden = false;
+            document.getElementById("score-heading").innerText = currentBombRound === 1 ? "Round 1 Scores" : "Final Standings";
+            document.getElementById("lost-team-players").hidden = false;
+            renderScoreList("round-score-list", hostPlayers);
             const membersList = document.getElementById("lost-team-players");
             membersList.innerHTML = "";
             losingPlayers.forEach((player) => {
@@ -1083,21 +1261,146 @@
                 row.innerText = `${getPlayerAvatar(player)} ${player.name}`;
                 membersList.appendChild(row);
             });
+            currentPhase = "round-results";
+            const resultButton = document.getElementById("round-result-action");
+            resultButton.innerText = "Next Round";
+            resultButton.onclick = startPopQuiz;
             await update(gameRef, {
-                status: "bomb-exploded",
-                phase: "finished",
+                status: "round-1-complete",
+                phase: "round-results",
+                round: 1,
                 losingTeamId: losingPlayer?.teamId || "",
                 losingTeamName,
                 losingTeamColor: losingTeam?.hex || "#64748b",
                 losingPlayerId: activePlayerId,
                 losingPlayerName: losingPlayer?.name || "Unknown player"
             });
-            currentPhase = "finished";
             renderHostPlayerLists(hostPlayers);
         };
 
+        async function startPopQuiz() {
+            if (currentPhase !== "round-results") return;
+            currentQuizQuestion = questions[0];
+            currentPhase = "quiz-intro";
+            clearTimeout(quizIntroTimeout);
+            clearInterval(quizCountdownInterval);
+            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.getElementById("quiz-splash").hidden = false;
+            await update(gameRef, { status: "quiz-intro", phase: "quiz-intro", round: 1 });
+            if (currentPhase !== "quiz-intro") return;
+            quizIntroTimeout = window.setTimeout(beginPopQuiz, 2400);
+        }
+
+        async function beginPopQuiz() {
+            if (currentPhase !== "quiz-intro") return;
+            const quizStartedAt = Date.now();
+            const quizEndsAt = quizStartedAt + 60000;
+            currentPhase = "quiz";
+            document.getElementById("quiz-splash").hidden = true;
+            document.getElementById("quiz-screen").classList.add("active");
+            document.getElementById("quiz-question-text").innerText = currentQuizQuestion.text;
+            const questionImage = document.getElementById("quiz-question-image");
+            questionImage.hidden = !currentQuizQuestion.image;
+            questionImage.src = currentQuizQuestion.image || "";
+            questionImage.alt = currentQuizQuestion.imageAlt || currentQuizQuestion.text;
+            document.getElementById("quiz-timer").innerText = "60 seconds";
+            document.getElementById("quiz-answer-count").innerText = "0 of 0 teams answered";
+            await update(gameRef, {
+                status: "pop-quiz",
+                phase: "quiz",
+                quizQuestion: {
+                    text: currentQuizQuestion.text,
+                    choices: currentQuizQuestion.choices,
+                    image: currentQuizQuestion.image || "",
+                    imageAlt: currentQuizQuestion.imageAlt || ""
+                },
+                quizStartedAt,
+                quizEndsAt,
+                quizAnswers: {},
+                quizResults: null
+            });
+            if (currentPhase !== "quiz") return;
+            clearInterval(quizCountdownInterval);
+            quizCountdownInterval = setInterval(() => {
+                const secondsLeft = Math.max(0, Math.ceil((quizEndsAt - Date.now()) / 1000));
+                document.getElementById("quiz-timer").innerText = `${secondsLeft} seconds`;
+                if (!secondsLeft) finishPopQuiz();
+            }, 200);
+        }
+
+        async function finishPopQuiz() {
+            if (currentPhase !== "quiz") return;
+            currentPhase = "quiz-results";
+            clearInterval(quizCountdownInterval);
+            const result = await runTransaction(gameRef, (gameData) => {
+                if (gameData?.phase !== "quiz") return;
+                const players = { ...(gameData.players || {}) };
+                const quizResults = {};
+                Object.entries(gameData.quizAnswers || {}).forEach(([id, answer]) => {
+                    const player = players[id];
+                    if (!player) return;
+                    const elapsedSeconds = Math.max(0, Math.floor((Number(answer.answeredAt) - Number(gameData.quizStartedAt)) / 1000));
+                    const correct = Number(answer.choiceIndex) === currentQuizQuestion.answerIndex;
+                    const points = correct ? Math.max(1, 60 - elapsedSeconds) : 0;
+                    if (correct) players[id] = { ...player, score: (Number(player.score) || 0) + points, quizPoints: points };
+                    quizResults[id] = { correct, points, elapsedSeconds };
+                });
+                return { ...gameData, players, quizResults, phase: "quiz-results", status: "quiz-results" };
+            }, { applyLocally: false });
+            if (!result.committed) {
+                currentPhase = "quiz";
+                return;
+            }
+            hostPlayers = result.snapshot.val()?.players || hostPlayers;
+            document.getElementById("quiz-screen").classList.remove("active");
+            document.getElementById("bomb-result-screen").classList.add("active");
+            document.getElementById("results-badge").innerText = "Pop Quiz Complete";
+            document.getElementById("lost-team-title").innerText = "Updated Standings";
+            document.getElementById("lost-team-title").hidden = false;
+            document.getElementById("lost-team-chip").hidden = true;
+            document.getElementById("lost-player-name").hidden = true;
+            document.getElementById("lost-team-players").hidden = true;
+            document.getElementById("score-heading").innerText = "Round 1 Scores";
+            renderScoreList("round-score-list", hostPlayers);
+            const resultButton = document.getElementById("round-result-action");
+            resultButton.innerText = "Go to Round 2";
+            resultButton.onclick = showRoundTwoPlaceholder;
+        }
+
+        async function showRoundTwoPlaceholder() {
+            if (currentPhase !== "quiz-results") return;
+            currentPhase = "round-2-placeholder";
+            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.getElementById("round-two-placeholder-screen").classList.add("active");
+            await update(gameRef, { status: "round-2-placeholder", phase: "round-2-placeholder", round: 2 });
+        }
+
+        function renderScoreList(listId, playersData) {
+            const list = document.getElementById(listId);
+            list.innerHTML = "";
+            Object.values(playersData || {})
+                .filter((player) => player?.teamId)
+                .sort((first, second) => (Number(second.score) || 0) - (Number(first.score) || 0))
+                .forEach((player) => {
+                    const row = document.createElement("li");
+                    row.className = "player-line";
+                    const avatar = document.createElement("span");
+                    avatar.className = "avatar-chip";
+                    avatar.innerText = getPlayerAvatar(player);
+                    const name = document.createElement("span");
+                    name.className = "player-name";
+                    name.innerText = player.name || player.teamName || "Player";
+                    const score = document.createElement("strong");
+                    score.innerText = `${Number(player.score) || 0} pts`;
+                    row.append(avatar, name, score);
+                    list.appendChild(row);
+                });
+        }
+
         window.resetGame = async function() {
             clearInterval(countdownInterval);
+            clearInterval(quizCountdownInterval);
+            clearTimeout(quizIntroTimeout);
             clearTimeout(fuseBeepTimeout);
             activePlayerId = "";
             previousActivePlayerId = "";
@@ -1106,6 +1409,9 @@
             bombLocked = true;
             await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {}, teams: {} });
             document.getElementById("task-screen").classList.remove("active");
+            document.getElementById("quiz-screen").classList.remove("active");
+            document.getElementById("quiz-splash").hidden = true;
+            document.getElementById("round-two-placeholder-screen").classList.remove("active");
             document.body.classList.remove("bomb-round-active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("lobby-screen").classList.add("active");

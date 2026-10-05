@@ -245,7 +245,6 @@
             outline-offset: 2px;
         }
 
-        #join-screen #name-input,
         #join-screen > button {
             width: min(100%, 360px);
         }
@@ -343,6 +342,122 @@
             text-transform: uppercase;
         }
 
+        .quiz-surprise {
+            display: inline-block;
+            margin: 4px auto 12px;
+            padding: 8px 16px;
+            border: 2px solid #ffc857;
+            border-radius: 10px;
+            background: #ff6b35;
+            color: #20120d;
+            font-size: 1.8rem;
+            font-weight: 900;
+            animation: surpriseReveal 700ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+        }
+
+        .quiz-question-content { animation: fadeInUp 450ms 250ms ease both; }
+
+        .quiz-question-image {
+            display: block;
+            width: min(100%, 420px);
+            max-height: 32vh;
+            margin: 12px auto;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        #player-quiz-timer {
+            color: #9deed0;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        #player-quiz-choices {
+            display: grid;
+            gap: 8px;
+            width: min(100%, 380px);
+            margin: 14px auto;
+        }
+
+        .quiz-choice {
+            width: 100%;
+            margin: 0;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .quiz-choice:disabled { cursor: default; filter: saturate(0.5); }
+
+        .quiz-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #263044 0%, #080d18 68%);
+            color: #fff8d8;
+        }
+
+        .quiz-splash[hidden] { display: none; }
+
+        .quiz-splash-light {
+            position: absolute;
+            inset: -15%;
+            background: linear-gradient(180deg, rgba(255,255,220,0.88), rgba(255,210,92,0.22) 48%, transparent 82%);
+            clip-path: polygon(43% 0, 57% 0, 94% 100%, 6% 100%);
+            filter: blur(8px);
+            opacity: 0;
+            animation: spotlightZoom 2.3s ease-out both;
+        }
+
+        .quiz-splash-title {
+            position: relative;
+            z-index: 1;
+            margin: 0;
+            color: #fff8d8;
+            font-size: 4rem;
+            font-weight: 900;
+            text-shadow: 0 0 18px #ff9f1c, 0 0 54px rgba(255,194,74,0.9);
+            opacity: 0;
+            transform: scale(0.12);
+            animation: quizTitlePop 1.35s 650ms cubic-bezier(0.18, 1.7, 0.4, 1) both;
+        }
+
+        @keyframes spotlightZoom {
+            0% { opacity: 0; transform: scale(0.2); }
+            55% { opacity: 0.95; transform: scale(1.2); }
+            100% { opacity: 0.65; transform: scale(1); }
+        }
+
+        @keyframes quizTitlePop {
+            0% { opacity: 0; transform: scale(0.12); }
+            72% { opacity: 1; transform: scale(1.16); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        #quiz-score-list li {
+            display: flex;
+            align-items: center;
+            width: min(100%, 420px);
+            margin: 7px auto;
+            text-align: left;
+        }
+
+        #quiz-score-list strong { margin-left: auto; color: #9deed0; white-space: nowrap; }
+
+        #round-two-placeholder-screen p { color: var(--muted); }
+
+        @media (max-width: 600px) {
+            .quiz-splash-title { font-size: 2.5rem; }
+        }
+
+        @keyframes surpriseReveal {
+            0% { opacity: 0; transform: scale(0.25) rotate(-12deg); }
+            65% { opacity: 1; transform: scale(1.12) rotate(3deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -358,7 +473,6 @@
             .avatar-picker legend { margin-bottom: 8px; }
             .avatar-options { gap: 5px; }
             .avatar-option span { border-radius: 11px; font-size: 1.45rem; }
-            #join-screen #name-input,
             #join-screen > button { width: min(100%, 360px); }
         }
 
@@ -376,8 +490,7 @@
 
     <!-- JOIN SCREEN -->
     <div id="join-screen" class="screen active">
-        <h2>Choose Your Name and Team</h2>
-        <input type="text" id="name-input" placeholder="Your Nickname" />
+        <h2>Choose Your Team</h2>
         <fieldset class="team-picker">
             <legend>Join a team or choose an open color</legend>
             <div id="team-color-options" class="team-color-options"></div>
@@ -415,6 +528,8 @@
         <h1 id="bomb-loss-heading" class="loss-heading">Your team lost</h1>
         <span id="bomb-loss-team" class="team-chip"></span>
         <p id="bomb-loss-copy"></p>
+        <h2>Round Scores</h2>
+        <ul id="bomb-loss-scores"></ul>
     </div>
 
     <div id="bomb-win-screen" class="screen">
@@ -423,6 +538,38 @@
         <h1 class="win-heading">Your team won!</h1>
         <p id="bomb-win-copy"></p>
         <span id="bomb-win-team" class="team-chip"></span>
+        <h2>Round Scores</h2>
+        <ul id="bomb-win-scores"></ul>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+        <div class="quiz-surprise">Surprise!</div>
+        <h1>Pop Quiz</h1>
+        <div class="quiz-question-content">
+            <img id="player-quiz-image" class="quiz-question-image" alt="" hidden>
+            <h2 id="player-quiz-question"></h2>
+            <p id="player-quiz-timer">60 seconds</p>
+            <div id="player-quiz-choices"></div>
+            <p id="player-quiz-status" aria-live="polite"></p>
+        </div>
+    </div>
+
+    <div id="quiz-results-screen" class="screen">
+        <div class="status-chip">Pop Quiz Complete</div>
+        <h1>Updated Standings</h1>
+        <p>Waiting for the host to start Round 2.</p>
+        <ul id="quiz-score-list"></ul>
+    </div>
+
+    <div id="round-two-placeholder-screen" class="screen">
+        <div class="status-chip">Round 2</div>
+        <h1>New Game Coming Soon</h1>
+        <p>Waiting for the host to set up the next game.</p>
+    </div>
+
+    <div id="quiz-splash" class="quiz-splash" role="status" aria-live="assertive" hidden>
+        <div class="quiz-splash-light"></div>
+        <div class="quiz-splash-title">POP QUIZ</div>
     </div>
 
     <!-- Firebase SDKs -->
@@ -430,7 +577,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
-        import { TEAM_COLORS, TEAM_ANIMALS, TONGUE_TWISTERS, MAX_PLAYERS } from "./game-data.js";
+        import { TEAM_COLORS, TEAM_ANIMALS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -455,6 +602,7 @@
 
         let activePhase = "waiting";
         let stopGameListener;
+        let playerQuizCountdownInterval;
         let currentGameData = {};
         let audioCtx;
         const funkyMusic = createFunkyMusic();
@@ -661,9 +809,6 @@
         });
 
         window.joinGame = async function() {
-            const name = document.getElementById("name-input").value.trim();
-            if (!name) return alert("Please enter a name!");
-
             const gameSnapshot = await get(gameRef);
             const currentGame = gameSnapshot.val() || {};
             const savedPlayer = currentGame.players?.[getSavedPlayerId()];
@@ -679,8 +824,10 @@
             const color = TEAM_COLORS.find((item) => item.id === teamColorId);
             if (!color) return alert("Choose a team color.");
             const teamAnimalId = document.querySelector('input[name="team-animal"]:checked')?.value;
+            const animal = TEAM_ANIMALS.find((item) => item.id === teamAnimalId);
+            if (!animal) return alert("Choose a team mascot.");
             playerId = "player_" + Math.random().toString(36).substring(2, 8);
-            playerName = name;
+            playerName = animal.name;
             let joinedTeam;
 
             try {
@@ -689,8 +836,7 @@
                     const teams = getGameTeams(gameData);
                     const players = { ...(gameData.players || {}) };
                     if (Object.keys(players).length >= MAX_PLAYERS || teams[color.id]) return;
-                    const animal = TEAM_ANIMALS.find((item) => item.id === teamAnimalId);
-                    if (!animal || Object.values(teams).some((existingTeam) => existingTeam.animalId === animal.id)) return;
+                    if (Object.values(teams).some((existingTeam) => existingTeam.animalId === animal.id)) return;
                     const team = {
                         id: color.id,
                         colorId: color.id,
@@ -746,6 +892,8 @@
 
                 if (gameData.phase === "bomb") {
                     activePhase = "bomb";
+                    clearInterval(playerQuizCountdownInterval);
+                    document.getElementById("quiz-splash").hidden = true;
                     const hasBomb = playerId === gameData.activePlayerId;
                     const passButton = document.getElementById("pass-bomb-btn");
                     passButton.hidden = true;
@@ -754,6 +902,8 @@
                     document.body.classList.toggle("safe", !hasBomb);
                     document.getElementById("bomb-loss-screen").classList.remove("active");
                     document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
                     document.getElementById("get-ready-player").hidden = false;
                     const activePlayer = gameData.players?.[gameData.activePlayerId];
                     const activeTeam = TEAM_COLORS.find((teamColor) => teamColor.id === activePlayer?.teamId);
@@ -778,11 +928,77 @@
                     return;
                 }
 
-                if (gameData.phase === "finished") {
-                    activePhase = "finished";
+                if (gameData.phase === "quiz-intro") {
+                    activePhase = "quiz-intro";
+                    clearInterval(playerQuizCountdownInterval);
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("quiz-splash").hidden = false;
+                    return;
+                }
+
+                if (gameData.phase === "quiz") {
+                    activePhase = "quiz";
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("quiz-splash").hidden = true;
+                    document.getElementById("quiz-screen").classList.add("active");
+                    renderPlayerQuiz(gameData);
+                    return;
+                }
+
+                if (gameData.phase === "quiz-results") {
+                    activePhase = "quiz-results";
+                    clearInterval(playerQuizCountdownInterval);
+                    document.getElementById("quiz-splash").hidden = true;
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    renderScoreList("quiz-score-list", gameData.players);
+                    document.getElementById("quiz-results-screen").classList.add("active");
+                    return;
+                }
+
+                if (gameData.phase === "round-2-placeholder") {
+                    activePhase = "round-2-placeholder";
+                    clearInterval(playerQuizCountdownInterval);
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("quiz-splash").hidden = true;
+                    document.getElementById("round-two-placeholder-screen").classList.add("active");
+                    return;
+                }
+
+                if (gameData.phase === "round-results" || gameData.phase === "finished") {
+                    activePhase = gameData.phase;
+                    clearInterval(playerQuizCountdownInterval);
                     document.getElementById("pass-bomb-btn").hidden = true;
                     document.getElementById("task-screen").classList.remove("active");
                     document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("quiz-splash").hidden = true;
+                    renderScoreList("bomb-loss-scores", gameData.players);
+                    renderScoreList("bomb-win-scores", gameData.players);
                     const lostTeam = TEAM_COLORS.find((teamColor) => teamColor.id === gameData.losingTeamId);
                     const lost = playerTeamId === gameData.losingTeamId;
                     document.body.classList.toggle("has-bomb", lost);
@@ -807,11 +1023,16 @@
 
                 if (gameData.phase === "waiting") {
                     activePhase = "waiting";
+                    clearInterval(playerQuizCountdownInterval);
                     document.getElementById("pass-bomb-btn").hidden = true;
                     document.body.classList.remove("has-bomb", "safe");
                     document.getElementById("task-screen").classList.remove("active");
                     document.getElementById("bomb-loss-screen").classList.remove("active");
                     document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("quiz-splash").hidden = true;
                     if (playerId && !gameData.players?.[playerId]) {
                         playerId = "";
                         playerName = "";
@@ -831,6 +1052,89 @@
             });
         }
 
+        function renderPlayerQuiz(gameData) {
+            const question = gameData.quizQuestion;
+            if (!question) return;
+            document.getElementById("player-quiz-question").innerText = question.text || "Pop quiz";
+            const image = document.getElementById("player-quiz-image");
+            image.hidden = !question.image;
+            image.src = question.image || "";
+            image.alt = question.imageAlt || question.text || "";
+
+            const hasAnswered = Boolean(gameData.quizAnswers?.[playerId]);
+            const choices = document.getElementById("player-quiz-choices");
+            choices.innerHTML = "";
+            (question.choices || []).forEach((choice, index) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "quiz-choice";
+                button.innerText = choice;
+                button.disabled = hasAnswered;
+                button.addEventListener("click", () => submitQuizAnswer(index));
+                choices.appendChild(button);
+            });
+            document.getElementById("player-quiz-status").innerText = hasAnswered
+                ? "Answer submitted. Waiting for other teams."
+                : "Choose one answer.";
+
+            const updateTimer = () => {
+                const secondsLeft = Math.max(0, Math.ceil((Number(gameData.quizEndsAt) - Date.now()) / 1000));
+                document.getElementById("player-quiz-timer").innerText = `${secondsLeft} seconds remaining`;
+                if (!secondsLeft) {
+                    choices.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+                    if (!hasAnswered) document.getElementById("player-quiz-status").innerText = "Time is up.";
+                }
+            };
+            clearInterval(playerQuizCountdownInterval);
+            updateTimer();
+            playerQuizCountdownInterval = window.setInterval(updateTimer, 200);
+        }
+
+        window.submitQuizAnswer = async function(choiceIndex) {
+            if (!playerId || activePhase !== "quiz") return;
+            document.querySelectorAll("#player-quiz-choices button").forEach((button) => { button.disabled = true; });
+            const result = await runTransaction(gameRef, (gameData) => {
+                if (gameData?.phase !== "quiz" || !gameData.players?.[playerId]) return;
+                if (gameData.quizAnswers?.[playerId] || Date.now() > Number(gameData.quizEndsAt)) return;
+                if (!Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex >= gameData.quizQuestion?.choices?.length) return;
+                return {
+                    ...gameData,
+                    quizAnswers: {
+                        ...(gameData.quizAnswers || {}),
+                        [playerId]: { choiceIndex, answeredAt: Date.now() }
+                    }
+                };
+            }, { applyLocally: false });
+
+            if (result.committed) {
+                document.getElementById("player-quiz-status").innerText = "Answer submitted. Waiting for other teams.";
+            } else if (activePhase === "quiz") {
+                renderPlayerQuiz(currentGameData);
+            }
+        };
+
+        function renderScoreList(listId, playersData) {
+            const list = document.getElementById(listId);
+            list.innerHTML = "";
+            Object.values(playersData || {})
+                .filter((player) => player?.teamId)
+                .sort((first, second) => (Number(second.score) || 0) - (Number(first.score) || 0))
+                .forEach((player) => {
+                    const row = document.createElement("li");
+                    row.className = "player-line";
+                    const avatar = document.createElement("span");
+                    avatar.className = "avatar-chip";
+                    avatar.innerText = player.avatar || "🎮";
+                    const name = document.createElement("span");
+                    name.className = "player-name";
+                    name.innerText = player.name || player.teamName || "Player";
+                    const score = document.createElement("strong");
+                    score.innerText = `${Number(player.score) || 0} pts`;
+                    row.append(avatar, name, score);
+                    list.appendChild(row);
+                });
+        }
+
         window.passBomb = async function() {
             const passButton = document.getElementById("pass-bomb-btn");
             if (!playerId || activePhase !== "bomb" || passButton.hidden) return;
@@ -838,18 +1142,38 @@
 
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "bomb" || gameData.bombLocked !== false || gameData.activePlayerId !== playerId) return;
-                const players = Object.entries(gameData.players || {}).filter(([, player]) => player?.name);
-                const otherPlayers = players.filter(([id]) => id !== playerId);
-                const eligiblePlayers = otherPlayers.length ? otherPlayers : players;
+                const players = Object.entries(gameData.players || {}).filter(([, player]) => player?.teamId);
+                const previouslyHeld = Array.isArray(gameData.bombCyclePlayerIds)
+                    ? gameData.bombCyclePlayerIds
+                    : [playerId];
+                let eligiblePlayers = players.filter(([id]) => id !== playerId && !previouslyHeld.includes(id));
+                let nextCycle = previouslyHeld;
+                if (!eligiblePlayers.length) {
+                    eligiblePlayers = players.filter(([id]) => id !== playerId);
+                    nextCycle = [playerId];
+                }
+                if (!eligiblePlayers.length) eligiblePlayers = players;
                 if (!eligiblePlayers.length) return;
                 const [nextPlayerId] = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
-                const availableTwisters = TONGUE_TWISTERS.filter((twister) => twister !== gameData.task);
-                const nextTask = availableTwisters[Math.floor(Math.random() * availableTwisters.length)];
+                const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
+                if (!taskQueue.length) taskQueue.push(...shuffle(TONGUE_TWISTERS));
+                const nextTask = taskQueue.pop();
+                const elapsedSeconds = Math.floor(Math.max(0, Date.now() - (Number(gameData.handoffTime) || Date.now())) / 1000);
+                const pointsEarned = Math.max(1, 10 - elapsedSeconds);
+                const gamePlayers = { ...gameData.players };
+                gamePlayers[playerId] = {
+                    ...gamePlayers[playerId],
+                    score: (Number(gamePlayers[playerId].score) || 0) + pointsEarned,
+                    lastPassPoints: pointsEarned
+                };
                 return {
                     ...gameData,
+                    players: gamePlayers,
                     activePlayerId: nextPlayerId,
                     previousActivePlayerId: playerId,
+                    bombCyclePlayerIds: [...new Set([...nextCycle, nextPlayerId])],
                     task: nextTask,
+                    taskQueue,
                     bombLocked: true,
                     handoffTime: Date.now()
                 };
