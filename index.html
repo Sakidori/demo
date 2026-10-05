@@ -437,7 +437,7 @@
         #task-screen {
             display: none;
             grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
-            grid-template-rows: auto auto minmax(120px, 1fr) auto auto auto;
+            grid-template-rows: auto auto minmax(120px, 1fr) auto auto;
             gap: 8px 24px;
             width: min(1100px, 100%);
             height: calc(100dvh - 24px);
@@ -504,15 +504,9 @@
 
         .active-player-banner span { margin-right: 8px; }
 
-        #task-screen > h3 {
-            grid-column: 1;
-            grid-row: 4;
-            margin: 0;
-        }
-
         #task-player-list {
             grid-column: 2;
-            grid-row: 1 / 7;
+            grid-row: 1 / 6;
             align-self: stretch;
             min-height: 0;
             max-height: 100%;
@@ -535,14 +529,14 @@
 
         #bomb-lock-status {
             grid-column: 1;
-            grid-row: 5;
+            grid-row: 4;
             justify-self: start;
             margin: 0;
         }
 
         #unlock-bomb-btn {
             grid-column: 1;
-            grid-row: 6;
+            grid-row: 5;
             width: min(100%, 380px);
             margin: 0;
         }
@@ -653,7 +647,7 @@
             body.bomb-round-active { padding: 8px; }
             #task-screen {
                 grid-template-columns: minmax(0, 1fr);
-                grid-template-rows: auto auto minmax(90px, 1fr) auto minmax(70px, 16vh) auto auto;
+                grid-template-rows: auto auto minmax(90px, 1fr) minmax(70px, 16vh) auto auto;
                 gap: 6px;
                 height: calc(100dvh - 16px);
                 padding: 12px;
@@ -663,15 +657,14 @@
             #task-screen .task-bomb { grid-row: 2; font-size: 2.2rem; }
             .active-player-banner { grid-row: 2; justify-self: end; padding: 7px 9px; font-size: 0.82rem; }
             #task-prompt { grid-row: 3; font-size: 1.55rem; }
-            #task-screen > h3 { grid-row: 4; }
             #task-player-list {
                 grid-column: 1;
-                grid-row: 5;
+                grid-row: 4;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             #task-player-list li { padding: 5px 7px; font-size: 0.75rem; }
-            #bomb-lock-status { grid-row: 6; }
-            #unlock-bomb-btn { grid-row: 7; }
+            #bomb-lock-status { grid-row: 5; }
+            #unlock-bomb-btn { grid-row: 6; }
             .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             #lobby-screen { padding: 22px 16px; }
@@ -731,7 +724,6 @@
         <span class="task-bomb" aria-label="Bomb">💣</span>
         <div id="active-player-banner" class="active-player-banner"><span aria-hidden="true">💣</span><strong id="active-player-name">Choosing player...</strong> has the bomb · <span id="active-player-team" class="team-chip"></span></div>
         <h1 id="task-prompt">Get ready...</h1>
-        <h3>Time Remaining: <span id="task-timer">120</span>s</h3>
         <ul id="task-player-list" aria-label="Players in the task round"></ul>
         <p id="bomb-lock-status" class="status-chip">Bomb Locked</p>
         <button id="unlock-bomb-btn" onclick="unlockBomb()">Release Bomb Lock</button>
@@ -783,6 +775,7 @@
 
         let currentRoundIndex = 0;
         let countdownInterval;
+        let fuseBeepTimeout;
         let activePlayerId = "";
         let previousActivePlayerId = "";
         let currentTask = "";
@@ -826,10 +819,17 @@
             musicLabel.innerText = funkyMusic.isPlaying ? "Music on" : "Music off";
         });
 
-        function playUiTone(frequency, duration, type = "sine", volume = 0.05) {
+        function getAudioContext() {
             const AudioCtor = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtor) return;
+            if (!AudioCtor) return null;
             if (!audioCtx) audioCtx = new AudioCtor();
+            if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+            return audioCtx;
+        }
+
+        function playUiTone(frequency, duration, type = "sine", volume = 0.05) {
+            const context = getAudioContext();
+            if (!context) return;
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
 
@@ -841,6 +841,66 @@
             gainNode.connect(audioCtx.destination);
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playFuseBeep(pitch, duration) {
+            const context = getAudioContext();
+            if (!context) return;
+            const now = context.currentTime;
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = "square";
+            oscillator.frequency.value = pitch;
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(now);
+            oscillator.stop(now + duration);
+        }
+
+        function startFuseBeepLoop() {
+            clearTimeout(fuseBeepTimeout);
+
+            function scheduleNextBeep() {
+                if (currentPhase !== "bomb") return;
+                const timeLeft = Math.max(0, 120 - (Date.now() - fuseStartedAt) / 1000);
+                if (timeLeft <= 0) return;
+
+                const progress = 1 - (timeLeft / 120);
+                const interval = Math.max(100, 1200 - progress * 1100);
+                const pitch = 450 + progress * 950;
+                playFuseBeep(pitch, 0.05);
+                fuseBeepTimeout = window.setTimeout(scheduleNextBeep, interval);
+            }
+
+            scheduleNextBeep();
+        }
+
+        let explosionBufferPromise;
+
+        async function playExplosionSound() {
+            const context = getAudioContext();
+            if (!context) return;
+
+            try {
+                if (!explosionBufferPromise) {
+                    explosionBufferPromise = fetch("./explosion.mp3")
+                        .then((response) => {
+                            if (!response.ok) throw new Error("Could not load the explosion sound.");
+                            return response.arrayBuffer();
+                        })
+                        .then((audioData) => context.decodeAudioData(audioData));
+                }
+                const buffer = await explosionBufferPromise;
+                const source = context.createBufferSource();
+                source.buffer = buffer;
+                source.connect(context.destination);
+                source.start();
+            } catch (error) {
+                explosionBufferPromise = null;
+                console.error("Could not play the explosion sound.", error);
+            }
         }
 
         function renderQuestion(question) {
@@ -873,11 +933,11 @@
             const teams = new Set(players.map(([, player]) => player.teamId).filter(Boolean));
             countEl.innerText = `${players.length} / ${MAX_PLAYERS} joined`;
             teamCountEl.innerText = `${teams.size} teams`;
-            emptyStateEl.hidden = players.length > 0 && teams.size >= 2;
+            emptyStateEl.hidden = players.length > 0;
             emptyStateEl.innerText = players.length >= MAX_PLAYERS
                 ? `All ${MAX_PLAYERS} teams are full`
-                : players.length ? "Two teams are needed to start" : "Waiting for players to join";
-            startButton.style.display = teams.size >= 2 && currentPhase === "waiting" ? "inline-block" : "none";
+                : players.length ? "Ready to start" : "Waiting for players to join";
+            startButton.style.display = players.length > 0 && currentPhase === "waiting" ? "inline-block" : "none";
 
             players.forEach(([id, player]) => {
                 const team = getTeam(player.teamId);
@@ -937,7 +997,7 @@
             if (currentPhase !== "waiting") return;
             const snapshot = await get(playersRef);
             const players = Object.entries(snapshot.val() || {}).filter(([, player]) => player?.name && player.teamId);
-            if (new Set(players.map(([, player]) => player.teamId)).size < 2) return;
+            if (!players.length) return;
             hostPlayers = snapshot.val() || {};
             activePlayerId = players[Math.floor(Math.random() * players.length)][0];
             currentTask = TONGUE_TWISTERS[Math.floor(Math.random() * TONGUE_TWISTERS.length)];
@@ -957,6 +1017,7 @@
             updateHostFuse();
             clearInterval(countdownInterval);
             countdownInterval = setInterval(updateHostFuse, 250);
+            startFuseBeepLoop();
         };
 
         window.unlockBomb = async function() {
@@ -991,7 +1052,6 @@
         function updateHostFuse() {
             if (currentPhase !== "bomb") return;
             const timeLeft = Math.max(0, 120 - Math.floor((Date.now() - fuseStartedAt) / 1000));
-            document.getElementById("task-timer").innerText = timeLeft;
             if (timeLeft <= 0) explodeBomb();
         }
 
@@ -999,6 +1059,8 @@
             if (currentPhase !== "bomb") return;
             currentPhase = "exploding";
             clearInterval(countdownInterval);
+            clearTimeout(fuseBeepTimeout);
+            playExplosionSound();
             const snapshot = await get(playersRef);
             hostPlayers = snapshot.val() || hostPlayers;
             const losingPlayer = hostPlayers[activePlayerId];
@@ -1036,6 +1098,7 @@
 
         window.resetGame = async function() {
             clearInterval(countdownInterval);
+            clearTimeout(fuseBeepTimeout);
             activePlayerId = "";
             previousActivePlayerId = "";
             currentTask = "";

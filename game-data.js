@@ -44,15 +44,15 @@ export const TEAM_ANIMALS = [
 
 export const TONGUE_TWISTERS = [
     "She sells seashells by the seashore.",
-    "Red lorry, yellow lorry.",
-    "Peter Piper picked a peck of pickled peppers.",
-    "Unique New York, unique New York.",
-    "Six slippery snails slid slowly seaward.",
-    "Freshly fried flying fish.",
-    "Toy boat, toy boat, toy boat.",
-    "A proper copper coffee pot.",
-    "Which wristwatches are Swiss wristwatches?",
-    "Four fine fresh fish for you.",
-    "Truly rural, truly rural.",
-    "Black bug bit a big black bear."
+    "How much wood could a woodchuck chuck if a woodchuck could chuck wood?",
+    "Peter Piper picked a pack of pickled peppers.",
+    "How can a clam cram in a clean cream can?",
+    "Susie works in a shoeshine shop. Where she shines she sits, and where she sits she shines.",
+    "I'm not the pheasant plucker, I'm the pheasant plucker's son, And I'm only plucking pheasants 'til the pheasant plucker comes",
+    "If a dog chews shoes, whose shoes does he choose?",
+    "A skunk sat on a stump and thunk the stump stunk, but the stump thunk the skunk stunk.",
+    "I thought a thought. But the thought I thought wasn’t the thought I thought I thought.",
+    "The big black bug bit a big black bear and the big black bear bled blue-black blood.",
+    "Dead in the middle of Little Italy, little did we know that we riddled some middleman who didn't do diddly.",
+    "He thrusts his fists against the posts and still insists he sees the ghosts."
 ];

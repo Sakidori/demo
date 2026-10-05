@@ -838,7 +838,9 @@
 
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "bomb" || gameData.bombLocked !== false || gameData.activePlayerId !== playerId) return;
-                const eligiblePlayers = Object.entries(gameData.players || {}).filter(([id, player]) => id !== playerId && player?.name);
+                const players = Object.entries(gameData.players || {}).filter(([, player]) => player?.name);
+                const otherPlayers = players.filter(([id]) => id !== playerId);
+                const eligiblePlayers = otherPlayers.length ? otherPlayers : players;
                 if (!eligiblePlayers.length) return;
                 const [nextPlayerId] = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
                 const availableTwisters = TONGUE_TWISTERS.filter((twister) => twister !== gameData.task);
