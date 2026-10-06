@@ -877,6 +877,7 @@
         <div id="lost-team-chip" class="team-chip"></div>
         <p id="lost-player-name"></p>
         <h2 id="score-heading">Round 1 Scores</h2>
+        <p id="quiz-answer-reveal" hidden></p>
         <ul id="round-score-list"></ul>
         <ul id="lost-team-players"></ul>
         <button id="round-result-action" onclick="resetGame()">Back to Lobby</button>
@@ -898,7 +899,6 @@
         <div class="results-badge">Round 2 · Spyfall</div>
         <h1 id="spyfall-host-title">Spyfall</h1>
         <p id="spyfall-host-status">Start the game to assign roles.</p>
-        <img id="spyfall-result-location" class="spyfall-art" src="location.webp" alt="Spyfall location" hidden>
         <p id="spyfall-host-turn"></p>
         <p id="spyfall-host-timer" class="spyfall-timer" hidden></p>
         <p id="spyfall-host-vote-count" hidden></p>
@@ -1334,7 +1334,7 @@
             currentPhase = "round-results";
             const resultButton = document.getElementById("round-result-action");
             resultButton.innerText = "Next Round";
-            resultButton.onclick = startPopQuiz;
+            resultButton.onclick = () => startPopQuiz(0);
             await update(gameRef, {
                 status: "round-1-complete",
                 phase: "round-results",
@@ -1427,7 +1427,10 @@
                     if (correct) players[id] = { ...player, score: (Number(player.score) || 0) + points, quizPoints: points };
                     quizResults[id] = { correct, points, elapsedSeconds };
                 });
-                return { ...gameData, players, quizResults, phase: "quiz-results", status: "quiz-results" };
+                const quizCorrectAnswer = typeof currentQuizQuestion.answer === "string"
+                    ? currentQuizQuestion.answer
+                    : currentQuizQuestion.choices[currentQuizQuestion.answerIndex];
+                return { ...gameData, players, quizResults, quizCorrectAnswer, phase: "quiz-results", status: "quiz-results" };
             }, { applyLocally: false });
             if (!result.committed) {
                 currentPhase = "quiz";
@@ -1443,6 +1446,9 @@
             document.getElementById("lost-player-name").hidden = true;
             document.getElementById("lost-team-players").hidden = true;
             document.getElementById("score-heading").innerText = currentQuizQuestionIndex === 0 ? "Round 1 Scores" : "Final Standings";
+            const answerReveal = document.getElementById("quiz-answer-reveal");
+            answerReveal.innerText = `Correct answer: ${result.snapshot.val()?.quizCorrectAnswer || ""}`;
+            answerReveal.hidden = !result.snapshot.val()?.quizCorrectAnswer;
             renderScoreList("round-score-list", hostPlayers);
             const resultButton = document.getElementById("round-result-action");
             if (currentQuizQuestionIndex === 0) {
@@ -1470,7 +1476,6 @@
             document.getElementById("spyfall-host-title").innerText = "Spyfall";
             document.getElementById("spyfall-host-status").innerText = "Start the game to assign roles.";
             document.getElementById("spyfall-host-turn").innerText = "";
-            document.getElementById("spyfall-result-location").hidden = true;
             document.getElementById("spyfall-host-timer").hidden = true;
             document.getElementById("spyfall-host-vote-count").hidden = true;
             document.getElementById("spyfall-host-votes").hidden = true;
@@ -1710,7 +1715,6 @@
             document.getElementById("spyfall-host-title").innerText = "Spyfall Results";
             document.getElementById("spyfall-host-timer").hidden = true;
             document.getElementById("spyfall-host-turn").innerText = "";
-            document.getElementById("spyfall-result-location").hidden = false;
             document.getElementById("spyfall-host-status").innerText = `The spies were ${spyNames.join(", ") || "unknown"}. Most votes went to ${popularName}.`;
             document.getElementById("spyfall-host-score-heading").hidden = false;
             document.getElementById("spyfall-host-scores").hidden = false;

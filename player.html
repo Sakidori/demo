@@ -631,6 +631,7 @@
     <div id="quiz-results-screen" class="screen">
         <div class="status-chip">Pop Quiz Complete</div>
         <h1>Updated Standings</h1>
+        <p id="player-quiz-answer-reveal"></p>
         <p id="quiz-results-waiting">Waiting for the host to start Spyfall.</p>
         <ul id="quiz-score-list"></ul>
     </div>
@@ -1094,6 +1095,9 @@
                     document.getElementById("quiz-results-waiting").innerText = Number(gameData.quizQuestionIndex) === 0
                         ? "Waiting for the host to start Spyfall."
                         : "Waiting for the host to start the final round.";
+                    document.getElementById("player-quiz-answer-reveal").innerText = gameData.quizCorrectAnswer
+                        ? `Correct answer: ${gameData.quizCorrectAnswer}`
+                        : "";
                     renderScoreList("quiz-score-list", gameData.players);
                     document.getElementById("quiz-results-screen").classList.add("active");
                     return;
