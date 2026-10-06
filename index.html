@@ -583,6 +583,45 @@
 
         #round-score-list strong { margin-left: auto; color: var(--success-2); white-space: nowrap; }
 
+        .spyfall-art {
+            display: block;
+            width: min(100%, 520px);
+            max-height: 50vh;
+            margin: 14px auto;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        #spyfall-host-votes {
+            width: min(520px, 100%);
+            margin: 14px auto;
+        }
+
+        #spyfall-host-votes li {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 6px 0;
+        }
+
+        #spyfall-host-scores {
+            width: min(520px, 100%);
+            margin: 14px auto;
+        }
+
+        #spyfall-host-scores li {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 6px 0;
+        }
+
+        .spyfall-timer {
+            color: var(--success-2);
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
         .quiz-surprise {
             display: inline-block;
             margin: 4px auto 12px;
@@ -856,9 +895,24 @@
     </div>
 
     <div id="round-two-placeholder-screen" class="screen">
-        <div class="results-badge">Round 2</div>
-        <h1>New Game Coming Soon</h1>
-        <p>The next game will be added here.</p>
+        <div class="results-badge">Round 2 · Spyfall</div>
+        <h1 id="spyfall-host-title">Spyfall</h1>
+        <p id="spyfall-host-status">Start the game to assign roles.</p>
+        <img id="spyfall-result-location" class="spyfall-art" src="location.webp" alt="Spyfall location" hidden>
+        <p id="spyfall-host-turn"></p>
+        <p id="spyfall-host-timer" class="spyfall-timer" hidden></p>
+        <p id="spyfall-host-vote-count" hidden></p>
+        <ul id="spyfall-host-votes" hidden></ul>
+        <h2 id="spyfall-host-score-heading" hidden>Score Standings</h2>
+        <ul id="spyfall-host-scores" hidden></ul>
+        <button id="spyfall-host-action" onclick="startSpyfall()">Start Spyfall</button>
+        <button onclick="resetGame()">Back to Lobby</button>
+    </div>
+
+    <div id="final-round-placeholder-screen" class="screen">
+        <div class="results-badge">Final Round</div>
+        <h1>Final Game Coming Soon</h1>
+        <p>The final game will be added here.</p>
         <button onclick="resetGame()">Back to Lobby</button>
     </div>
 
@@ -895,16 +949,18 @@
 
         const questions = [
             { text: "Which JHS in Ichikawa did Atsuko Maeda (AKB48) attend?", image: "Maeda.webp", imageAlt: "Atsuko Maeda performing with a microphone", choices: ["1中", "7中", "東国分", "8中", "下貝塚", "妙典"], answerIndex: 1 },
-            { text: "What color is a clear daytime sky?", answer: "blue" },
+            { text: "Which city do these clues represent?", image: "emoji.webp", imageAlt: "Rebus showing a clock, a park, and city buildings", answer: "Ichikawa City" },
             { text: "What is the capital of France?", answer: "paris" }
         ];
         const playerAvatars = new Set(["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢", "🐺", "🐰", "🐻", "🐬", "🐳", "🦖"]);
         const getPlayerAvatar = (player) => playerAvatars.has(player.avatar) ? player.avatar : "🎮";
 
         let currentRoundIndex = 0;
+        let currentQuizQuestionIndex = 0;
         let currentBombRound = 1;
         let countdownInterval;
         let quizCountdownInterval;
+        let spyfallTimerInterval;
         let quizIntroTimeout;
         let fuseBeepTimeout;
         let activePlayerId = "";
@@ -915,6 +971,12 @@
         let bombLocked = true;
         let hostPlayers = {};
         let currentQuizQuestion;
+        let spyfallPlayerOrder = [];
+        let spyfallSpyIds = new Set();
+        let spyfallRevealIndex = -1;
+        let spyfallTurnIndex = -1;
+        let spyfallTurnEndsAt = 0;
+        let spyfallVoteEndsAt = 0;
         const getTeam = (teamId) => TEAM_COLORS.find((team) => team.id === teamId);
 
         // Global game database reference
@@ -928,6 +990,7 @@
             players: {},
             teams: {}
         });
+        set(ref(db, "spyfallRoles"), {});
 
         let audioCtx;
         const funkyMusic = createFunkyMusic();
@@ -1135,6 +1198,13 @@
                 document.getElementById("quiz-answer-count").innerText = `${Object.keys(answers).length} of ${playerIds.length} teams answered`;
                 if (playerIds.length && playerIds.every((id) => answers[id])) finishPopQuiz();
             }
+            if (gameData.phase === "spyfall-vote" && currentPhase === "spyfall-vote") {
+                hostPlayers = gameData.players || hostPlayers;
+                renderSpyfallVotes(gameData);
+                const playerCount = Object.values(hostPlayers).filter((player) => player?.teamId).length;
+                const voteCount = Object.keys(gameData.spyfallVotes || {}).length;
+                if (playerCount && voteCount >= playerCount) finishSpyfallVote();
+            }
         });
 
         window.startNextRound = function() {
@@ -1278,15 +1348,22 @@
             renderHostPlayerLists(hostPlayers);
         };
 
-        async function startPopQuiz() {
-            if (currentPhase !== "round-results") return;
-            currentQuizQuestion = questions[0];
+        async function startPopQuiz(questionIndex = 0) {
+            const expectedPhase = questionIndex === 0 ? "round-results" : "spyfall-results";
+            if (currentPhase !== expectedPhase || !questions[questionIndex]) return;
+            currentQuizQuestionIndex = questionIndex;
+            currentQuizQuestion = questions[currentQuizQuestionIndex];
             currentPhase = "quiz-intro";
             clearTimeout(quizIntroTimeout);
             clearInterval(quizCountdownInterval);
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("quiz-splash").hidden = false;
-            await update(gameRef, { status: "quiz-intro", phase: "quiz-intro", round: 1 });
+            await update(gameRef, {
+                status: `quiz-${questionIndex + 1}-intro`,
+                phase: "quiz-intro",
+                round: questionIndex + 1,
+                quizQuestionIndex: questionIndex
+            });
             if (currentPhase !== "quiz-intro") return;
             quizIntroTimeout = window.setTimeout(beginPopQuiz, 2400);
         }
@@ -1308,11 +1385,14 @@
             await update(gameRef, {
                 status: "pop-quiz",
                 phase: "quiz",
+                round: currentQuizQuestionIndex + 1,
+                quizQuestionIndex: currentQuizQuestionIndex,
                 quizQuestion: {
                     text: currentQuizQuestion.text,
                     choices: currentQuizQuestion.choices,
                     image: currentQuizQuestion.image || "",
-                    imageAlt: currentQuizQuestion.imageAlt || ""
+                    imageAlt: currentQuizQuestion.imageAlt || "",
+                    responseType: currentQuizQuestion.answer ? "text" : "choice"
                 },
                 quizStartedAt,
                 quizEndsAt,
@@ -1340,7 +1420,9 @@
                     const player = players[id];
                     if (!player) return;
                     const elapsedSeconds = Math.max(0, Math.floor((Number(answer.answeredAt) - Number(gameData.quizStartedAt)) / 1000));
-                    const correct = Number(answer.choiceIndex) === currentQuizQuestion.answerIndex;
+                    const correct = typeof currentQuizQuestion.answer === "string"
+                        ? answer.answerText === currentQuizQuestion.answer
+                        : Number(answer.choiceIndex) === currentQuizQuestion.answerIndex;
                     const points = correct ? Math.max(1, 60 - elapsedSeconds) : 0;
                     if (correct) players[id] = { ...player, score: (Number(player.score) || 0) + points, quizPoints: points };
                     quizResults[id] = { correct, points, elapsedSeconds };
@@ -1354,17 +1436,30 @@
             hostPlayers = result.snapshot.val()?.players || hostPlayers;
             document.getElementById("quiz-screen").classList.remove("active");
             document.getElementById("bomb-result-screen").classList.add("active");
-            document.getElementById("results-badge").innerText = "Pop Quiz Complete";
+            document.getElementById("results-badge").innerText = `Pop Quiz ${currentQuizQuestionIndex + 1} Complete`;
             document.getElementById("lost-team-title").innerText = "Updated Standings";
             document.getElementById("lost-team-title").hidden = false;
             document.getElementById("lost-team-chip").hidden = true;
             document.getElementById("lost-player-name").hidden = true;
             document.getElementById("lost-team-players").hidden = true;
-            document.getElementById("score-heading").innerText = "Round 1 Scores";
+            document.getElementById("score-heading").innerText = currentQuizQuestionIndex === 0 ? "Round 1 Scores" : "Final Standings";
             renderScoreList("round-score-list", hostPlayers);
             const resultButton = document.getElementById("round-result-action");
-            resultButton.innerText = "Go to Round 2";
-            resultButton.onclick = showRoundTwoPlaceholder;
+            if (currentQuizQuestionIndex === 0) {
+                resultButton.innerText = "Go to Spyfall";
+                resultButton.onclick = showRoundTwoPlaceholder;
+            } else {
+                resultButton.innerText = "Go to Final Round";
+                resultButton.onclick = showFinalRoundPlaceholder;
+            }
+        }
+
+        async function showFinalRoundPlaceholder() {
+            if (currentPhase !== "quiz-results" || currentQuizQuestionIndex !== 1) return;
+            currentPhase = "final-round-placeholder";
+            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.getElementById("final-round-placeholder-screen").classList.add("active");
+            await update(gameRef, { status: "final-round-placeholder", phase: "final-round-placeholder", round: 3 });
         }
 
         async function showRoundTwoPlaceholder() {
@@ -1372,7 +1467,257 @@
             currentPhase = "round-2-placeholder";
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("round-two-placeholder-screen").classList.add("active");
+            document.getElementById("spyfall-host-title").innerText = "Spyfall";
+            document.getElementById("spyfall-host-status").innerText = "Start the game to assign roles.";
+            document.getElementById("spyfall-host-turn").innerText = "";
+            document.getElementById("spyfall-result-location").hidden = true;
+            document.getElementById("spyfall-host-timer").hidden = true;
+            document.getElementById("spyfall-host-vote-count").hidden = true;
+            document.getElementById("spyfall-host-votes").hidden = true;
+            document.getElementById("spyfall-host-score-heading").hidden = true;
+            document.getElementById("spyfall-host-scores").hidden = true;
+            const action = document.getElementById("spyfall-host-action");
+            action.innerText = "Start Spyfall";
+            action.hidden = false;
+            action.onclick = startSpyfall;
             await update(gameRef, { status: "round-2-placeholder", phase: "round-2-placeholder", round: 2 });
+        }
+
+        window.startSpyfall = async function() {
+            if (currentPhase !== "round-2-placeholder") return;
+            const snapshot = await get(playersRef);
+            hostPlayers = snapshot.val() || {};
+            spyfallPlayerOrder = Object.entries(hostPlayers)
+                .filter(([, player]) => player?.teamId)
+                .map(([id]) => id);
+            spyfallPlayerOrder = shuffle(spyfallPlayerOrder);
+            if (spyfallPlayerOrder.length < 4) {
+                document.getElementById("spyfall-host-status").innerText = "Spyfall needs at least four players for three spies and a location.";
+                return;
+            }
+
+            spyfallSpyIds = new Set(shuffle(spyfallPlayerOrder).slice(0, 3));
+            spyfallRevealIndex = -1;
+            spyfallTurnIndex = -1;
+            currentPhase = "spyfall-setup";
+            document.getElementById("spyfall-host-title").innerText = "Spyfall";
+            document.getElementById("spyfall-host-timer").hidden = true;
+            document.getElementById("spyfall-host-vote-count").hidden = true;
+            document.getElementById("spyfall-host-votes").hidden = true;
+            document.getElementById("spyfall-host-score-heading").hidden = true;
+            document.getElementById("spyfall-host-scores").hidden = true;
+            document.getElementById("spyfall-host-action").hidden = false;
+            await set(ref(db, "spyfallRoles"), {});
+            await update(gameRef, {
+                status: "spyfall-setup",
+                phase: "spyfall-setup",
+                round: 2,
+                spyfallPlayerOrder,
+                spyfallRevealIndex: -1,
+                spyfallVotes: null,
+                spyfallVoteCounts: null
+            });
+            document.getElementById("spyfall-host-status").innerText = `Have ${hostPlayers[spyfallPlayerOrder[0]].name} open their phone. Reveal roles one player at a time.`;
+            const action = document.getElementById("spyfall-host-action");
+            action.innerText = "Reveal First Role";
+            action.onclick = revealNextSpyfallRole;
+        };
+
+        async function revealNextSpyfallRole() {
+            if (currentPhase !== "spyfall-setup" && currentPhase !== "spyfall-reveal") return;
+            const nextIndex = spyfallRevealIndex + 1;
+            if (nextIndex >= spyfallPlayerOrder.length) {
+                startSpyfallGame();
+                return;
+            }
+
+            const playerId = spyfallPlayerOrder[nextIndex];
+            const role = spyfallSpyIds.has(playerId) ? "spy" : "location";
+            await set(ref(db, `spyfallRoles/${playerId}`), role);
+            spyfallRevealIndex = nextIndex;
+            currentPhase = "spyfall-reveal";
+            await update(gameRef, {
+                status: "spyfall-reveal",
+                phase: "spyfall-reveal",
+                spyfallRevealPlayerId: playerId,
+                spyfallRevealIndex
+            });
+
+            const playerName = hostPlayers[playerId]?.name || "the next player";
+            document.getElementById("spyfall-host-status").innerText = `Role sent to ${playerName}. Wait for them to confirm before continuing.`;
+            const action = document.getElementById("spyfall-host-action");
+            action.innerText = nextIndex === spyfallPlayerOrder.length - 1 ? "Start Game" : "Next Player";
+            action.onclick = nextIndex === spyfallPlayerOrder.length - 1 ? startSpyfallGame : revealNextSpyfallRole;
+        }
+
+        async function startSpyfallGame() {
+            if (currentPhase !== "spyfall-reveal" || spyfallRevealIndex !== spyfallPlayerOrder.length - 1) return;
+            currentPhase = "spyfall-active";
+            spyfallTurnIndex = 0;
+            spyfallTurnEndsAt = Date.now() + 20000;
+            const activeTeamId = hostPlayers[spyfallPlayerOrder[0]].teamId;
+            await update(gameRef, {
+                status: "spyfall-active",
+                phase: "spyfall-active",
+                spyfallTeamOrder: spyfallPlayerOrder,
+                spyfallTurnIndex,
+                spyfallActiveTeamId: activeTeamId,
+                spyfallTurnEndsAt,
+                spyfallVotes: null
+            });
+            document.getElementById("spyfall-host-status").innerText = "Give one hint for the location.";
+            document.getElementById("spyfall-host-turn").innerText = `Team 1 of ${spyfallPlayerOrder.length}: ${hostPlayers[spyfallPlayerOrder[0]].teamName || hostPlayers[spyfallPlayerOrder[0]].name}`;
+            document.getElementById("spyfall-host-title").innerText = "Spyfall";
+            document.getElementById("spyfall-host-timer").hidden = false;
+            const action = document.getElementById("spyfall-host-action");
+            action.hidden = false;
+            action.innerText = "Next Team";
+            action.onclick = advanceSpyfallTeam;
+            clearInterval(spyfallTimerInterval);
+            spyfallTimerInterval = window.setInterval(updateSpyfallTimer, 200);
+        }
+
+        function updateSpyfallTimer() {
+            if (currentPhase !== "spyfall-active") return;
+            const secondsLeft = Math.max(0, Math.ceil((spyfallTurnEndsAt - Date.now()) / 1000));
+            document.getElementById("spyfall-host-timer").innerText = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+            if (!secondsLeft) advanceSpyfallTeam();
+        }
+
+        async function advanceSpyfallTeam() {
+            if (currentPhase !== "spyfall-active") return;
+            const nextIndex = spyfallTurnIndex + 1;
+            if (nextIndex >= spyfallPlayerOrder.length) {
+                startSpyfallVote();
+                return;
+            }
+            spyfallTurnIndex = nextIndex;
+            spyfallTurnEndsAt = Date.now() + 20000;
+            const nextPlayerId = spyfallPlayerOrder[nextIndex];
+            await update(gameRef, {
+                status: "spyfall-active",
+                phase: "spyfall-active",
+                spyfallTurnIndex,
+                spyfallActiveTeamId: hostPlayers[nextPlayerId].teamId,
+                spyfallTurnEndsAt
+            });
+            document.getElementById("spyfall-host-status").innerText = "Give one hint for the location.";
+            document.getElementById("spyfall-host-turn").innerText = `Team ${nextIndex + 1} of ${spyfallPlayerOrder.length}: ${hostPlayers[nextPlayerId].teamName || hostPlayers[nextPlayerId].name}`;
+            clearInterval(spyfallTimerInterval);
+            updateSpyfallTimer();
+            spyfallTimerInterval = window.setInterval(updateSpyfallTimer, 200);
+        }
+
+        async function startSpyfallVote() {
+            if (currentPhase !== "spyfall-active") return;
+            clearInterval(spyfallTimerInterval);
+            currentPhase = "spyfall-vote";
+            spyfallVoteEndsAt = Date.now() + 30000;
+            await update(gameRef, {
+                status: "spyfall-vote",
+                phase: "spyfall-vote",
+                spyfallVotes: {},
+                spyfallVoteEndsAt
+            });
+            if (currentPhase !== "spyfall-vote") return;
+            document.getElementById("spyfall-host-timer").hidden = false;
+            document.getElementById("spyfall-host-timer").innerText = "0:30";
+            document.getElementById("spyfall-host-title").innerText = "Choose the spy";
+            document.getElementById("spyfall-host-turn").innerText = "";
+            document.getElementById("spyfall-host-status").innerText = "Players are choosing the spy on their phones.";
+            document.getElementById("spyfall-host-action").hidden = false;
+            document.getElementById("spyfall-host-action").innerText = "Reveal Results";
+            document.getElementById("spyfall-host-action").onclick = finishSpyfallVote;
+            document.getElementById("spyfall-host-vote-count").hidden = false;
+            document.getElementById("spyfall-host-votes").hidden = false;
+            spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
+        }
+
+        function updateSpyfallVoteTimer() {
+            if (currentPhase !== "spyfall-vote") return;
+            const secondsLeft = Math.max(0, Math.ceil((spyfallVoteEndsAt - Date.now()) / 1000));
+            document.getElementById("spyfall-host-timer").innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
+            if (!secondsLeft) finishSpyfallVote();
+        }
+
+        function renderSpyfallVotes(gameData) {
+            const votes = gameData.spyfallVotes || {};
+            const voteCounts = Object.values(votes).flat().reduce((counts, playerId) => {
+                counts[playerId] = (counts[playerId] || 0) + 1;
+                return counts;
+            }, {});
+            const voteCountEl = document.getElementById("spyfall-host-vote-count");
+            const eligibleVoters = Object.values(gameData.players || {}).filter((player) => player?.teamId).length;
+            voteCountEl.innerText = `${Object.keys(votes).length} of ${eligibleVoters} votes`;
+            const list = document.getElementById("spyfall-host-votes");
+            list.innerHTML = "";
+            spyfallPlayerOrder.forEach((playerId) => {
+                const row = document.createElement("li");
+                const name = document.createElement("span");
+                name.innerText = hostPlayers[playerId]?.name || "Player";
+                const count = document.createElement("strong");
+                count.innerText = String(voteCounts[playerId] || 0);
+                row.append(name, count);
+                list.appendChild(row);
+            });
+        }
+
+        async function finishSpyfallVote() {
+            if (currentPhase !== "spyfall-vote") return;
+            clearInterval(spyfallTimerInterval);
+            currentPhase = "spyfall-results";
+            const result = await runTransaction(gameRef, (gameData) => {
+                if (gameData?.phase !== "spyfall-vote") return;
+                const players = { ...(gameData.players || {}) };
+                const spyIds = Array.from(spyfallSpyIds);
+                Object.entries(gameData.spyfallVotes || {}).forEach(([voterId, selectedPlayerIds]) => {
+                    const player = players[voterId];
+                    if (!player) return;
+                    const points = Array.isArray(selectedPlayerIds)
+                        ? selectedPlayerIds.filter((id) => spyIds.includes(id)).length * 60
+                        : 0;
+                    players[voterId] = {
+                        ...player,
+                        score: (Number(player.score) || 0) + points,
+                        spyfallPoints: points
+                    };
+                });
+                const voteCounts = Object.values(gameData.spyfallVotes || {}).flat().reduce((counts, playerId) => {
+                    counts[playerId] = (counts[playerId] || 0) + 1;
+                    return counts;
+                }, {});
+                return {
+                    ...gameData,
+                    players,
+                    phase: "spyfall-results",
+                    status: "spyfall-results",
+                    spyfallVoteCounts: voteCounts,
+                    spyfallSpyIds: spyIds
+                };
+            }, { applyLocally: false });
+            if (!result.committed) {
+                currentPhase = "spyfall-vote";
+                return;
+            }
+
+            const gameData = result.snapshot.val();
+            const spyNames = (gameData.spyfallSpyIds || [])
+                .map((id) => gameData.players?.[id]?.name)
+                .filter(Boolean);
+            const popularId = Object.entries(gameData.spyfallVoteCounts || {})
+                .sort((first, second) => second[1] - first[1])[0]?.[0];
+            const popularName = gameData.players?.[popularId]?.name || "No votes";
+            document.getElementById("spyfall-host-title").innerText = "Spyfall Results";
+            document.getElementById("spyfall-host-timer").hidden = true;
+            document.getElementById("spyfall-host-turn").innerText = "";
+            document.getElementById("spyfall-result-location").hidden = false;
+            document.getElementById("spyfall-host-status").innerText = `The spies were ${spyNames.join(", ") || "unknown"}. Most votes went to ${popularName}.`;
+            document.getElementById("spyfall-host-score-heading").hidden = false;
+            document.getElementById("spyfall-host-scores").hidden = false;
+            renderScoreList("spyfall-host-scores", gameData.players);
+            document.getElementById("spyfall-host-action").innerText = "Start Pop Quiz 2";
+            document.getElementById("spyfall-host-action").onclick = () => startPopQuiz(1);
+            document.getElementById("spyfall-host-vote-count").hidden = true;
         }
 
         function renderScoreList(listId, playersData) {
@@ -1400,6 +1745,7 @@
         window.resetGame = async function() {
             clearInterval(countdownInterval);
             clearInterval(quizCountdownInterval);
+            clearInterval(spyfallTimerInterval);
             clearTimeout(quizIntroTimeout);
             clearTimeout(fuseBeepTimeout);
             activePlayerId = "";
@@ -1408,10 +1754,12 @@
             currentPhase = "waiting";
             bombLocked = true;
             await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {}, teams: {} });
+            await set(ref(db, "spyfallRoles"), {});
             document.getElementById("task-screen").classList.remove("active");
             document.getElementById("quiz-screen").classList.remove("active");
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("round-two-placeholder-screen").classList.remove("active");
+            document.getElementById("final-round-placeholder-screen").classList.remove("active");
             document.body.classList.remove("bomb-round-active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("lobby-screen").classList.add("active");

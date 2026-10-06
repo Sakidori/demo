@@ -379,6 +379,17 @@
             margin: 14px auto;
         }
 
+        #player-quiz-text-answer {
+            width: min(100%, 380px);
+            margin: 14px auto;
+        }
+
+        #player-quiz-text-answer input,
+        #player-quiz-text-answer button {
+            width: 100%;
+            margin: 8px 0;
+        }
+
         .quiz-choice {
             width: 100%;
             margin: 0;
@@ -445,6 +456,65 @@
         }
 
         #quiz-score-list strong { margin-left: auto; color: #9deed0; white-space: nowrap; }
+
+        .spyfall-art {
+            display: block;
+            width: min(100%, 520px);
+            max-height: 50vh;
+            margin: 14px auto;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        #spyfall-player-timer {
+            color: #9deed0;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        #spyfall-screen.my-team-turn {
+            animation: spyfallTurnFlash 650ms ease-in-out 3;
+            border-color: #ffc857;
+        }
+
+        @keyframes spyfallTurnFlash {
+            0%, 100% { box-shadow: var(--shadow); }
+            50% { box-shadow: 0 0 38px rgba(255,200,87,0.75); }
+        }
+
+        #spyfall-player-choices {
+            display: grid;
+            gap: 8px;
+            width: min(100%, 380px);
+            margin: 14px auto;
+        }
+
+        .spyfall-vote-option {
+            width: 100%;
+            margin: 0;
+            border-radius: 12px;
+        }
+
+        .spyfall-vote-option[aria-pressed="true"] {
+            border: 2px solid #ffc857;
+            background: linear-gradient(135deg, #9a571c, #d88528);
+        }
+
+        #spyfall-player-tally li {
+            display: flex;
+            justify-content: space-between;
+            width: min(100%, 420px);
+            margin: 6px auto;
+            text-align: left;
+        }
+
+        #spyfall-player-scores li {
+            display: flex;
+            justify-content: space-between;
+            width: min(100%, 420px);
+            margin: 6px auto;
+            text-align: left;
+        }
 
         #round-two-placeholder-screen p { color: var(--muted); }
 
@@ -550,6 +620,10 @@
             <h2 id="player-quiz-question"></h2>
             <p id="player-quiz-timer">60 seconds</p>
             <div id="player-quiz-choices"></div>
+            <div id="player-quiz-text-answer" hidden>
+                <input id="player-quiz-answer-input" type="text" autocomplete="off" aria-label="Your answer">
+                <button id="player-quiz-answer-submit" type="button" onclick="submitTypedQuizAnswer()">Submit Answer</button>
+            </div>
             <p id="player-quiz-status" aria-live="polite"></p>
         </div>
     </div>
@@ -557,14 +631,40 @@
     <div id="quiz-results-screen" class="screen">
         <div class="status-chip">Pop Quiz Complete</div>
         <h1>Updated Standings</h1>
-        <p>Waiting for the host to start Round 2.</p>
+        <p id="quiz-results-waiting">Waiting for the host to start Spyfall.</p>
         <ul id="quiz-score-list"></ul>
     </div>
 
     <div id="round-two-placeholder-screen" class="screen">
         <div class="status-chip">Round 2</div>
-        <h1>New Game Coming Soon</h1>
-        <p>Waiting for the host to set up the next game.</p>
+        <h1>Spyfall</h1>
+        <p>Waiting for the host to begin role assignments.</p>
+    </div>
+
+    <div id="spyfall-screen" class="screen">
+        <div id="spyfall-player-heading" class="status-chip">Spyfall</div>
+        <h1 id="spyfall-player-title">Get Ready</h1>
+        <img id="spyfall-role-image" class="spyfall-art" alt="" hidden>
+        <p id="spyfall-player-turn"></p>
+        <p id="spyfall-player-timer" hidden></p>
+        <div id="spyfall-player-choices"></div>
+        <button id="spyfall-submit-vote" onclick="submitSpyfallVote()" disabled hidden>Submit Spies</button>
+        <p id="spyfall-player-status" aria-live="polite">Waiting for the host.</p>
+    </div>
+
+    <div id="spyfall-results-screen" class="screen">
+        <div class="status-chip">Spyfall Results</div>
+        <h1 id="spyfall-results-title">The spy was...</h1>
+        <img id="spyfall-results-location" class="spyfall-art" src="location.webp" alt="Spyfall location" hidden>
+        <h2>Score Standings</h2>
+        <ul id="spyfall-player-tally"></ul>
+        <ul id="spyfall-player-scores"></ul>
+    </div>
+
+    <div id="final-round-placeholder-screen" class="screen">
+        <div class="status-chip">Final Round</div>
+        <h1>Final Game Coming Soon</h1>
+        <p>Waiting for the host to set up the final game.</p>
     </div>
 
     <div id="quiz-splash" class="quiz-splash" role="status" aria-live="assertive" hidden>
@@ -602,7 +702,13 @@
 
         let activePhase = "waiting";
         let stopGameListener;
+        let stopSpyfallRoleListener;
         let playerQuizCountdownInterval;
+        let playerSpyfallTimerInterval;
+        let spyfallRole = "";
+        let lastSpyfallTurnKey = "";
+        let spyfallSelectedVotes = new Set();
+        let currentPlayerQuizQuestionIndex = null;
         let currentGameData = {};
         let audioCtx;
         const funkyMusic = createFunkyMusic();
@@ -886,9 +992,15 @@
 
         function listenToPlayerGame() {
             if (stopGameListener) stopGameListener();
+            if (stopSpyfallRoleListener) stopSpyfallRoleListener();
+            stopSpyfallRoleListener = onValue(ref(db, `spyfallRoles/${playerId}`), (snapshot) => {
+                spyfallRole = snapshot.val() || "";
+                if (currentGameData.phase === "spyfall-reveal") renderSpyfallReveal(currentGameData);
+            });
             stopGameListener = onValue(gameRef, (snapshot) => {
                 const gameData = snapshot.val();
                 if (!gameData) return;
+                currentGameData = gameData;
 
                 if (gameData.phase === "bomb") {
                     activePhase = "bomb";
@@ -931,6 +1043,7 @@
                 if (gameData.phase === "quiz-intro") {
                     activePhase = "quiz-intro";
                     clearInterval(playerQuizCountdownInterval);
+                    clearInterval(playerSpyfallTimerInterval);
                     document.body.classList.remove("has-bomb", "safe");
                     document.getElementById("task-screen").classList.remove("active");
                     document.getElementById("waiting-screen").classList.remove("active");
@@ -939,12 +1052,16 @@
                     document.getElementById("quiz-screen").classList.remove("active");
                     document.getElementById("quiz-results-screen").classList.remove("active");
                     document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.remove("active");
                     document.getElementById("quiz-splash").hidden = false;
                     return;
                 }
 
                 if (gameData.phase === "quiz") {
                     activePhase = "quiz";
+                    clearInterval(playerSpyfallTimerInterval);
                     document.body.classList.remove("has-bomb", "safe");
                     document.getElementById("task-screen").classList.remove("active");
                     document.getElementById("waiting-screen").classList.remove("active");
@@ -952,6 +1069,9 @@
                     document.getElementById("bomb-win-screen").classList.remove("active");
                     document.getElementById("quiz-results-screen").classList.remove("active");
                     document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.remove("active");
                     document.getElementById("quiz-splash").hidden = true;
                     document.getElementById("quiz-screen").classList.add("active");
                     renderPlayerQuiz(gameData);
@@ -967,8 +1087,137 @@
                     document.getElementById("waiting-screen").classList.remove("active");
                     document.getElementById("bomb-loss-screen").classList.remove("active");
                     document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.remove("active");
+                    document.getElementById("quiz-results-waiting").innerText = Number(gameData.quizQuestionIndex) === 0
+                        ? "Waiting for the host to start Spyfall."
+                        : "Waiting for the host to start the final round.";
                     renderScoreList("quiz-score-list", gameData.players);
                     document.getElementById("quiz-results-screen").classList.add("active");
+                    return;
+                }
+
+                if (gameData.phase === "spyfall-setup" || gameData.phase === "spyfall-reveal") {
+                    activePhase = gameData.phase;
+                    clearInterval(playerSpyfallTimerInterval);
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.add("active");
+                    if (gameData.phase === "spyfall-setup") {
+                        spyfallRole = "";
+                        spyfallSelectedVotes = new Set();
+                            document.getElementById("spyfall-screen").classList.remove("my-team-turn");
+                        document.getElementById("spyfall-player-title").innerText = "Spyfall";
+                        document.getElementById("spyfall-player-status").innerText = "Wait for the host to assign your role.";
+                            document.getElementById("spyfall-player-turn").innerText = "";
+                        document.getElementById("spyfall-role-image").removeAttribute("src");
+                        document.getElementById("spyfall-role-image").hidden = true;
+                    } else {
+                        renderSpyfallReveal(gameData);
+                    }
+                    return;
+                }
+
+                if (gameData.phase === "spyfall-active") {
+                    activePhase = "spyfall-active";
+                    clearInterval(playerSpyfallTimerInterval);
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.add("active");
+                    document.getElementById("spyfall-player-title").innerText = "Spyfall";
+                    document.getElementById("spyfall-role-image").hidden = true;
+                    document.getElementById("spyfall-role-image").removeAttribute("src");
+                    const turnIndex = Number(gameData.spyfallTurnIndex) || 0;
+                    const activePlayer = Object.values(gameData.players || {}).find((player) => player?.teamId === gameData.spyfallActiveTeamId);
+                    const activeTeamName = activePlayer?.teamName || activePlayer?.name || "Next team";
+                    document.getElementById("spyfall-player-turn").innerText = `Team ${turnIndex + 1} of ${gameData.spyfallTeamOrder?.length || 0}: ${activeTeamName}`;
+                    document.getElementById("spyfall-player-choices").innerHTML = "";
+                    const ownTeamTurn = gameData.spyfallActiveTeamId === playerTeamId;
+                    document.getElementById("spyfall-screen").classList.toggle("my-team-turn", ownTeamTurn);
+                    document.getElementById("spyfall-player-status").innerText = ownTeamTurn
+                        ? "Your team: give one hint now."
+                        : `${activeTeamName} is giving a hint.`;
+                    const turnKey = `${gameData.spyfallTurnIndex}:${gameData.spyfallActiveTeamId}`;
+                    if (ownTeamTurn && lastSpyfallTurnKey !== turnKey) window.navigator.vibrate?.([180, 80, 180]);
+                    lastSpyfallTurnKey = turnKey;
+                    document.getElementById("spyfall-player-timer").hidden = false;
+                    playerSpyfallTimerInterval = window.setInterval(() => renderSpyfallTimer(gameData), 200);
+                    renderSpyfallTimer(gameData);
+                    return;
+                }
+
+                if (gameData.phase === "spyfall-vote") {
+                    activePhase = "spyfall-vote";
+                    clearInterval(playerSpyfallTimerInterval);
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.add("active");
+                    document.getElementById("spyfall-player-title").innerText = "Choose the spy";
+                    document.getElementById("spyfall-role-image").hidden = true;
+                    document.getElementById("spyfall-role-image").removeAttribute("src");
+                    document.getElementById("spyfall-screen").classList.remove("my-team-turn");
+                    document.getElementById("spyfall-player-turn").innerText = "";
+                    document.getElementById("spyfall-player-timer").hidden = false;
+                    renderSpyfallVote(gameData);
+                    renderSpyfallVoteTimer(gameData);
+                    playerSpyfallTimerInterval = window.setInterval(() => renderSpyfallVoteTimer(gameData), 200);
+                    return;
+                }
+
+                if (gameData.phase === "spyfall-results") {
+                    activePhase = "spyfall-results";
+                    clearInterval(playerSpyfallTimerInterval);
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.remove("active");
+                    renderSpyfallResults(gameData);
+                    renderScoreList("spyfall-player-scores", gameData.players);
+                    document.getElementById("spyfall-results-screen").classList.add("active");
+                    return;
+                }
+
+                if (gameData.phase === "final-round-placeholder") {
+                    activePhase = "final-round-placeholder";
+                    clearInterval(playerSpyfallTimerInterval);
+                    document.body.classList.remove("has-bomb", "safe");
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("active");
+                    document.getElementById("bomb-loss-screen").classList.remove("active");
+                    document.getElementById("bomb-win-screen").classList.remove("active");
+                    document.getElementById("quiz-screen").classList.remove("active");
+                    document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.add("active");
                     return;
                 }
 
@@ -982,6 +1231,9 @@
                     document.getElementById("bomb-win-screen").classList.remove("active");
                     document.getElementById("quiz-screen").classList.remove("active");
                     document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.remove("active");
                     document.getElementById("quiz-splash").hidden = true;
                     document.getElementById("round-two-placeholder-screen").classList.add("active");
                     return;
@@ -995,6 +1247,8 @@
                     document.getElementById("waiting-screen").classList.remove("active");
                     document.getElementById("quiz-screen").classList.remove("active");
                     document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
                     document.getElementById("round-two-placeholder-screen").classList.remove("active");
                     document.getElementById("quiz-splash").hidden = true;
                     renderScoreList("bomb-loss-scores", gameData.players);
@@ -1024,6 +1278,7 @@
                 if (gameData.phase === "waiting") {
                     activePhase = "waiting";
                     clearInterval(playerQuizCountdownInterval);
+                    clearInterval(playerSpyfallTimerInterval);
                     document.getElementById("pass-bomb-btn").hidden = true;
                     document.body.classList.remove("has-bomb", "safe");
                     document.getElementById("task-screen").classList.remove("active");
@@ -1031,7 +1286,10 @@
                     document.getElementById("bomb-win-screen").classList.remove("active");
                     document.getElementById("quiz-screen").classList.remove("active");
                     document.getElementById("quiz-results-screen").classList.remove("active");
+                    document.getElementById("spyfall-screen").classList.remove("active");
+                    document.getElementById("spyfall-results-screen").classList.remove("active");
                     document.getElementById("round-two-placeholder-screen").classList.remove("active");
+                    document.getElementById("final-round-placeholder-screen").classList.remove("active");
                     document.getElementById("quiz-splash").hidden = true;
                     if (playerId && !gameData.players?.[playerId]) {
                         playerId = "";
@@ -1052,6 +1310,133 @@
             });
         }
 
+        function renderSpyfallReveal(gameData) {
+            const image = document.getElementById("spyfall-role-image");
+            document.getElementById("spyfall-screen").classList.remove("my-team-turn");
+            document.getElementById("spyfall-player-timer").hidden = true;
+            document.getElementById("spyfall-player-choices").innerHTML = "";
+            if (gameData.spyfallRevealPlayerId === playerId && spyfallRole) {
+                document.getElementById("spyfall-player-title").innerText = "Your secret role";
+                document.getElementById("spyfall-player-status").innerText = "Remember your role. The host will start the game after everyone has seen theirs.";
+                image.src = spyfallRole === "spy" ? "spy.webp" : "location.webp";
+                image.alt = spyfallRole === "spy" ? "Spy role" : "Location role";
+                image.hidden = false;
+                return;
+            }
+
+            const target = gameData.players?.[gameData.spyfallRevealPlayerId]?.name || "the next player";
+            document.getElementById("spyfall-player-title").innerText = "Spyfall";
+            document.getElementById("spyfall-player-status").innerText = gameData.spyfallRevealPlayerId === playerId
+                ? "Your role is loading..."
+                : `Waiting while ${target} receives their role.`;
+            image.hidden = true;
+            image.removeAttribute("src");
+            image.alt = "";
+        }
+
+        function renderSpyfallTimer(gameData) {
+            const secondsLeft = Math.max(0, Math.ceil((Number(gameData.spyfallTurnEndsAt) - Date.now()) / 1000));
+            document.getElementById("spyfall-player-timer").innerText = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+            if (!secondsLeft && gameData.spyfallActiveTeamId === playerTeamId) {
+                document.getElementById("spyfall-player-status").innerText = "Time is up. The host will advance to the next team.";
+            }
+        }
+
+        function renderSpyfallVote(gameData) {
+            const list = document.getElementById("spyfall-player-choices");
+            list.innerHTML = "";
+            const existingVote = gameData.spyfallVotes?.[playerId];
+            if (Array.isArray(existingVote)) spyfallSelectedVotes = new Set(existingVote);
+            const hasVoted = Array.isArray(existingVote);
+            const timeExpired = Date.now() >= Number(gameData.spyfallVoteEndsAt);
+            document.getElementById("spyfall-player-status").innerText = existingVote
+                ? "Votes submitted. Waiting for the others."
+                : timeExpired ? "Voting time is up." : `Choose three players. Selected: ${spyfallSelectedVotes.size} of 3.`;
+            document.getElementById("spyfall-submit-vote").hidden = hasVoted;
+            document.getElementById("spyfall-submit-vote").disabled = hasVoted || timeExpired || spyfallSelectedVotes.size !== 3;
+            Object.entries(gameData.players || {})
+                .filter(([id, player]) => id !== playerId && player?.teamId)
+                .forEach(([id, player]) => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "spyfall-vote-option";
+                    button.innerText = player.name || player.teamName || "Player";
+                    button.setAttribute("aria-pressed", String(spyfallSelectedVotes.has(id)));
+                    button.disabled = hasVoted || timeExpired || (!spyfallSelectedVotes.has(id) && spyfallSelectedVotes.size >= 3);
+                    button.addEventListener("click", () => toggleSpyfallVote(id));
+                    list.appendChild(button);
+                });
+        }
+
+        function renderSpyfallVoteTimer(gameData) {
+            const secondsLeft = Math.max(0, Math.ceil((Number(gameData.spyfallVoteEndsAt) - Date.now()) / 1000));
+            document.getElementById("spyfall-player-timer").innerText = `Choose the spies · 0:${String(secondsLeft).padStart(2, "0")}`;
+            if (!secondsLeft) {
+                document.querySelectorAll("#spyfall-player-choices button").forEach((button) => { button.disabled = true; });
+                document.getElementById("spyfall-submit-vote").disabled = true;
+                if (!Array.isArray(currentGameData.spyfallVotes?.[playerId])) {
+                    document.getElementById("spyfall-player-status").innerText = "Voting time is up.";
+                }
+            }
+        }
+
+        function toggleSpyfallVote(targetPlayerId) {
+            if (activePhase !== "spyfall-vote" || spyfallSelectedVotes.size >= 3 && !spyfallSelectedVotes.has(targetPlayerId)) return;
+            if (spyfallSelectedVotes.has(targetPlayerId)) spyfallSelectedVotes.delete(targetPlayerId);
+            else spyfallSelectedVotes.add(targetPlayerId);
+            renderSpyfallVote(currentGameData);
+        }
+
+        window.submitSpyfallVote = async function() {
+            if (activePhase !== "spyfall-vote" || !playerId) return;
+            if (spyfallSelectedVotes.size !== 3) {
+                document.getElementById("spyfall-player-status").innerText = "Choose exactly three players.";
+                return;
+            }
+            const selectedPlayerIds = Array.from(spyfallSelectedVotes);
+            document.getElementById("spyfall-submit-vote").disabled = true;
+            document.querySelectorAll("#spyfall-player-choices button").forEach((button) => { button.disabled = true; });
+            const result = await runTransaction(gameRef, (gameData) => {
+                if (gameData?.phase !== "spyfall-vote" || !gameData.players?.[playerId]) return;
+                if (Date.now() >= Number(gameData.spyfallVoteEndsAt)) return;
+                if (gameData.spyfallVotes?.[playerId]) return;
+                if (selectedPlayerIds.length !== 3 || new Set(selectedPlayerIds).size !== 3) return;
+                if (selectedPlayerIds.some((id) => id === playerId || !gameData.players?.[id])) return;
+                return {
+                    ...gameData,
+                    spyfallVotes: { ...(gameData.spyfallVotes || {}), [playerId]: selectedPlayerIds }
+                };
+            }, { applyLocally: false });
+            if (result.committed) {
+                document.getElementById("spyfall-submit-vote").hidden = true;
+                document.getElementById("spyfall-player-status").innerText = "Votes submitted. Waiting for the others.";
+            } else if (activePhase === "spyfall-vote") {
+                renderSpyfallVote(currentGameData);
+            }
+        };
+
+        function renderSpyfallResults(gameData) {
+            const spyNames = (gameData.spyfallSpyIds || [])
+                .map((id) => gameData.players?.[id]?.name)
+                .filter(Boolean);
+            document.getElementById("spyfall-results-title").innerText = `The spies were ${spyNames.join(", ") || "unknown"}`;
+            document.getElementById("spyfall-results-location").hidden = false;
+            const tally = document.getElementById("spyfall-player-tally");
+            tally.innerHTML = "";
+            Object.entries(gameData.players || {})
+                .filter(([, player]) => player?.teamId)
+                .sort((first, second) => (gameData.spyfallVoteCounts?.[second[0]] || 0) - (gameData.spyfallVoteCounts?.[first[0]] || 0))
+                .forEach(([id, player]) => {
+                    const row = document.createElement("li");
+                    const name = document.createElement("span");
+                    name.innerText = player.name || player.teamName || "Player";
+                    const votes = document.createElement("strong");
+                    votes.innerText = `${gameData.spyfallVoteCounts?.[id] || 0} votes`;
+                    row.append(name, votes);
+                    tally.appendChild(row);
+                });
+        }
+
         function renderPlayerQuiz(gameData) {
             const question = gameData.quizQuestion;
             if (!question) return;
@@ -1063,6 +1448,12 @@
 
             const hasAnswered = Boolean(gameData.quizAnswers?.[playerId]);
             const choices = document.getElementById("player-quiz-choices");
+            const textAnswer = document.getElementById("player-quiz-text-answer");
+            const answerInput = document.getElementById("player-quiz-answer-input");
+            const answerSubmit = document.getElementById("player-quiz-answer-submit");
+            const expectsText = question.responseType === "text";
+            choices.hidden = expectsText;
+            textAnswer.hidden = !expectsText;
             choices.innerHTML = "";
             (question.choices || []).forEach((choice, index) => {
                 const button = document.createElement("button");
@@ -1073,15 +1464,32 @@
                 button.addEventListener("click", () => submitQuizAnswer(index));
                 choices.appendChild(button);
             });
+            const savedAnswer = gameData.quizAnswers?.[playerId]?.answerText;
+            if (currentPlayerQuizQuestionIndex !== gameData.quizQuestionIndex) {
+                answerInput.value = typeof savedAnswer === "string" ? savedAnswer : "";
+                currentPlayerQuizQuestionIndex = gameData.quizQuestionIndex;
+            } else if (typeof savedAnswer === "string") {
+                answerInput.value = savedAnswer;
+            }
+            answerInput.disabled = hasAnswered;
+            answerSubmit.disabled = hasAnswered;
+            answerSubmit.onclick = submitTypedQuizAnswer;
+            answerInput.onkeydown = (event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                submitTypedQuizAnswer();
+            };
             document.getElementById("player-quiz-status").innerText = hasAnswered
                 ? "Answer submitted. Waiting for other teams."
-                : "Choose one answer.";
+                : expectsText ? "Type your answer exactly." : "Choose one answer.";
 
             const updateTimer = () => {
                 const secondsLeft = Math.max(0, Math.ceil((Number(gameData.quizEndsAt) - Date.now()) / 1000));
                 document.getElementById("player-quiz-timer").innerText = `${secondsLeft} seconds remaining`;
                 if (!secondsLeft) {
                     choices.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+                    answerInput.disabled = true;
+                    answerSubmit.disabled = true;
                     if (!hasAnswered) document.getElementById("player-quiz-status").innerText = "Time is up.";
                 }
             };
@@ -1090,18 +1498,35 @@
             playerQuizCountdownInterval = window.setInterval(updateTimer, 200);
         }
 
-        window.submitQuizAnswer = async function(choiceIndex) {
+        window.submitTypedQuizAnswer = function() {
+            submitQuizAnswer(document.getElementById("player-quiz-answer-input").value);
+        };
+
+        window.submitQuizAnswer = async function(answer) {
             if (!playerId || activePhase !== "quiz") return;
+            const isTextAnswer = typeof answer === "string";
+            if (isTextAnswer && !answer.trim()) {
+                document.getElementById("player-quiz-status").innerText = "Enter an answer first.";
+                return;
+            }
             document.querySelectorAll("#player-quiz-choices button").forEach((button) => { button.disabled = true; });
+            document.getElementById("player-quiz-answer-input").disabled = true;
+            document.getElementById("player-quiz-answer-submit").disabled = true;
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "quiz" || !gameData.players?.[playerId]) return;
-                if (gameData.quizAnswers?.[playerId] || Date.now() > Number(gameData.quizEndsAt)) return;
-                if (!Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex >= gameData.quizQuestion?.choices?.length) return;
+                if (gameData.quizAnswers?.[playerId] || Date.now() >= Number(gameData.quizEndsAt)) return;
+                if (gameData.quizQuestion?.responseType === "text") {
+                    if (typeof answer !== "string" || !answer.trim()) return;
+                } else if (!Number.isInteger(answer) || answer < 0 || answer >= gameData.quizQuestion?.choices?.length) {
+                    return;
+                }
                 return {
                     ...gameData,
                     quizAnswers: {
                         ...(gameData.quizAnswers || {}),
-                        [playerId]: { choiceIndex, answeredAt: Date.now() }
+                        [playerId]: gameData.quizQuestion.responseType === "text"
+                            ? { answerText: answer, answeredAt: Date.now() }
+                            : { choiceIndex: answer, answeredAt: Date.now() }
                     }
                 };
             }, { applyLocally: false });
