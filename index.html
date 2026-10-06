@@ -565,6 +565,20 @@
 
         .team-chip { white-space: nowrap; }
 
+        .host-pause-btn {
+            position: fixed;
+            top: 16px;
+            right: 150px;
+            z-index: 20;
+            width: auto;
+            min-width: 110px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
         #lost-team-chip { font-size: 1.2rem; margin: 14px 0; }
 
         .result-team-player { border-left: 5px solid var(--team-color, #64748b); }
@@ -856,6 +870,8 @@
         </div>
     </div>
 
+    <button id="pause-game-btn" class="host-pause-btn" type="button" onclick="togglePauseGame()">Pause Game</button>
+
     <!-- TASK PASSING SCREEN -->
     <div id="task-screen" class="screen">
         <div class="task-title-row">
@@ -977,11 +993,17 @@
         let spyfallTurnIndex = -1;
         let spyfallTurnEndsAt = 0;
         let spyfallVoteEndsAt = 0;
+        let isGamePaused = false;
         const getTeam = (teamId) => TEAM_COLORS.find((team) => team.id === teamId);
+        const getSpyfallSpyCount = (playerCount) => {
+            if (playerCount <= 4) return 1;
+            if (playerCount <= 6) return 2;
+            return 3;
+        };
 
         // Global game database reference
         const gameRef = ref(db, `game`);
-        
+
         // Reset/Initialize game state on load
         set(gameRef, {
             status: "waiting",
@@ -1179,6 +1201,18 @@
         onValue(gameRef, (snapshot) => {
             const gameData = snapshot.val();
             if (!gameData) return;
+            const pauseButton = document.getElementById("pause-game-btn");
+            if (pauseButton) {
+                pauseButton.innerText = gameData.paused ? "Resume Game" : "Pause Game";
+            }
+            if (gameData.paused) {
+                isGamePaused = true;
+                clearInterval(countdownInterval);
+                clearInterval(quizCountdownInterval);
+                clearInterval(spyfallTimerInterval);
+                return;
+            }
+            isGamePaused = false;
             if (gameData.phase === "bomb" && currentPhase === "bomb") {
                 activePlayerId = gameData.activePlayerId || activePlayerId;
                 currentTask = gameData.task || currentTask;
@@ -1203,9 +1237,53 @@
                 renderSpyfallVotes(gameData);
                 const playerCount = Object.values(hostPlayers).filter((player) => player?.teamId).length;
                 const voteCount = Object.keys(gameData.spyfallVotes || {}).length;
-                if (playerCount && voteCount >= playerCount) finishSpyfallVote();
+                if (Date.now() >= Number(gameData.spyfallVoteEndsAt) && playerCount && voteCount >= playerCount) {
+                    finishSpyfallVote();
+                }
             }
         });
+
+        window.togglePauseGame = async function() {
+            const snapshot = await get(gameRef);
+            const currentGameData = snapshot.val() || {};
+            const paused = !Boolean(currentGameData.paused);
+            await update(gameRef, { paused });
+            const pauseButton = document.getElementById("pause-game-btn");
+            if (pauseButton) {
+                pauseButton.innerText = paused ? "Resume Game" : "Pause Game";
+            }
+            if (paused) {
+                clearInterval(countdownInterval);
+                clearInterval(quizCountdownInterval);
+                clearInterval(spyfallTimerInterval);
+                isGamePaused = true;
+                return;
+            }
+            isGamePaused = false;
+            if (currentPhase === "bomb") {
+                updateHostFuse();
+                clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateHostFuse, 250);
+            } else if (currentPhase === "quiz") {
+                const quizEndsAt = Number(currentGameData.quizEndsAt || 0);
+                if (quizEndsAt) {
+                    clearInterval(quizCountdownInterval);
+                    quizCountdownInterval = setInterval(() => {
+                        const secondsLeft = Math.max(0, Math.ceil((quizEndsAt - Date.now()) / 1000));
+                        document.getElementById("quiz-timer").innerText = `${secondsLeft} seconds`;
+                        if (!secondsLeft) finishPopQuiz();
+                    }, 200);
+                }
+            } else if (currentPhase === "spyfall-active") {
+                updateSpyfallTimer();
+                clearInterval(spyfallTimerInterval);
+                spyfallTimerInterval = window.setInterval(updateSpyfallTimer, 200);
+            } else if (currentPhase === "spyfall-vote") {
+                updateSpyfallVoteTimer();
+                clearInterval(spyfallTimerInterval);
+                spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
+            }
+        };
 
         window.startNextRound = function() {
             startBombRound();
@@ -1497,11 +1575,12 @@
                 .map(([id]) => id);
             spyfallPlayerOrder = shuffle(spyfallPlayerOrder);
             if (spyfallPlayerOrder.length < 4) {
-                document.getElementById("spyfall-host-status").innerText = "Spyfall needs at least four players for three spies and a location.";
+                document.getElementById("spyfall-host-status").innerText = "Spyfall needs at least four players to make the rounds work.";
                 return;
             }
 
-            spyfallSpyIds = new Set(shuffle(spyfallPlayerOrder).slice(0, 3));
+            const spyCount = getSpyfallSpyCount(spyfallPlayerOrder.length);
+            spyfallSpyIds = new Set(shuffle(spyfallPlayerOrder).slice(0, spyCount));
             spyfallRevealIndex = -1;
             spyfallTurnIndex = -1;
             currentPhase = "spyfall-setup";
@@ -1520,43 +1599,56 @@
                 spyfallPlayerOrder,
                 spyfallRevealIndex: -1,
                 spyfallVotes: null,
-                spyfallVoteCounts: null
+                spyfallVoteCounts: null,
+                spyfallRevealEndsAt: 0,
+                paused: false
             });
-            document.getElementById("spyfall-host-status").innerText = `Have ${hostPlayers[spyfallPlayerOrder[0]].name} open their phone. Reveal roles one player at a time.`;
+            document.getElementById("spyfall-host-status").innerText = "All role cards are about to be revealed at once.";
             const action = document.getElementById("spyfall-host-action");
-            action.innerText = "Reveal First Role";
+            action.innerText = "Reveal Team Roles";
             action.onclick = revealNextSpyfallRole;
         };
 
         async function revealNextSpyfallRole() {
             if (currentPhase !== "spyfall-setup" && currentPhase !== "spyfall-reveal") return;
-            const nextIndex = spyfallRevealIndex + 1;
-            if (nextIndex >= spyfallPlayerOrder.length) {
-                startSpyfallGame();
-                return;
+            const revealEndsAt = Date.now() + 15000;
+            const roleMap = {};
+
+            for (const playerId of spyfallPlayerOrder) {
+                roleMap[playerId] = spyfallSpyIds.has(playerId) ? "spy" : "location";
+                await set(ref(db, `spyfallRoles/${playerId}`), roleMap[playerId]);
             }
 
-            const playerId = spyfallPlayerOrder[nextIndex];
-            const role = spyfallSpyIds.has(playerId) ? "spy" : "location";
-            await set(ref(db, `spyfallRoles/${playerId}`), role);
-            spyfallRevealIndex = nextIndex;
+            spyfallRevealIndex = spyfallPlayerOrder.length - 1;
             currentPhase = "spyfall-reveal";
             await update(gameRef, {
                 status: "spyfall-reveal",
                 phase: "spyfall-reveal",
-                spyfallRevealPlayerId: playerId,
-                spyfallRevealIndex
+                spyfallRevealPlayerId: "all",
+                spyfallRevealIndex,
+                spyfallRevealEndsAt: revealEndsAt,
+                paused: false,
+                spyfallRoles: roleMap
             });
 
-            const playerName = hostPlayers[playerId]?.name || "the next player";
-            document.getElementById("spyfall-host-status").innerText = `Role sent to ${playerName}. Wait for them to confirm before continuing.`;
+            document.getElementById("spyfall-host-status").innerText = "Everyone sees their role. The role cards vanish in 15 seconds.";
+            document.getElementById("spyfall-host-timer").hidden = false;
+            document.getElementById("spyfall-host-timer").innerText = "Role reveal · 0:15";
             const action = document.getElementById("spyfall-host-action");
-            action.innerText = nextIndex === spyfallPlayerOrder.length - 1 ? "Start Game" : "Next Player";
-            action.onclick = nextIndex === spyfallPlayerOrder.length - 1 ? startSpyfallGame : revealNextSpyfallRole;
+            action.innerText = "Start Round";
+            action.onclick = startSpyfallGame;
+            clearInterval(spyfallTimerInterval);
+            spyfallTimerInterval = window.setInterval(() => {
+                if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
+                const secondsLeft = Math.max(0, Math.ceil((revealEndsAt - Date.now()) / 1000));
+                document.getElementById("spyfall-host-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
+                if (!secondsLeft) startSpyfallGame();
+            }, 200);
         }
 
         async function startSpyfallGame() {
-            if (currentPhase !== "spyfall-reveal" || spyfallRevealIndex !== spyfallPlayerOrder.length - 1) return;
+            if (currentPhase !== "spyfall-reveal" && currentPhase !== "spyfall-setup") return;
+            clearInterval(spyfallTimerInterval);
             currentPhase = "spyfall-active";
             spyfallTurnIndex = 0;
             spyfallTurnEndsAt = Date.now() + 20000;
@@ -1622,14 +1714,16 @@
                 status: "spyfall-vote",
                 phase: "spyfall-vote",
                 spyfallVotes: {},
-                spyfallVoteEndsAt
+                spyfallVoteEndsAt,
+                spyfallDiscussionEndsAt: spyfallVoteEndsAt,
+                paused: false
             });
             if (currentPhase !== "spyfall-vote") return;
             document.getElementById("spyfall-host-timer").hidden = false;
             document.getElementById("spyfall-host-timer").innerText = "0:30";
             document.getElementById("spyfall-host-title").innerText = "Choose the spy";
             document.getElementById("spyfall-host-turn").innerText = "";
-            document.getElementById("spyfall-host-status").innerText = "Players are choosing the spy on their phones.";
+            document.getElementById("spyfall-host-status").innerText = "Discussion in progress. Voting opens after the timer ends.";
             document.getElementById("spyfall-host-action").hidden = false;
             document.getElementById("spyfall-host-action").innerText = "Reveal Results";
             document.getElementById("spyfall-host-action").onclick = finishSpyfallVote;
@@ -1639,10 +1733,12 @@
         }
 
         function updateSpyfallVoteTimer() {
-            if (currentPhase !== "spyfall-vote") return;
+            if (currentPhase !== "spyfall-vote" || isGamePaused) return;
             const secondsLeft = Math.max(0, Math.ceil((spyfallVoteEndsAt - Date.now()) / 1000));
-            document.getElementById("spyfall-host-timer").innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
-            if (!secondsLeft) finishSpyfallVote();
+            document.getElementById("spyfall-host-timer").innerText = `Discussion · 0:${String(secondsLeft).padStart(2, "0")}`;
+            if (!secondsLeft) {
+                document.getElementById("spyfall-host-status").innerText = "Discussion time is up. Players can now submit their spy votes.";
+            }
         }
 
         function renderSpyfallVotes(gameData) {

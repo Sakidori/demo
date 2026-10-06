@@ -711,6 +711,11 @@
         let spyfallSelectedVotes = new Set();
         let currentPlayerQuizQuestionIndex = null;
         let currentGameData = {};
+        const getSpyfallSpyCount = (playerCount) => {
+            if (playerCount <= 4) return 1;
+            if (playerCount <= 6) return 2;
+            return 3;
+        };
         let audioCtx;
         const funkyMusic = createFunkyMusic();
         const musicToggle = document.getElementById("music-toggle");
@@ -1317,22 +1322,28 @@
         function renderSpyfallReveal(gameData) {
             const image = document.getElementById("spyfall-role-image");
             document.getElementById("spyfall-screen").classList.remove("my-team-turn");
-            document.getElementById("spyfall-player-timer").hidden = true;
             document.getElementById("spyfall-player-choices").innerHTML = "";
-            if (gameData.spyfallRevealPlayerId === playerId && spyfallRole) {
+            const revealEndsAt = Number(gameData.spyfallRevealEndsAt || 0);
+            const secondsLeft = revealEndsAt ? Math.max(0, Math.ceil((revealEndsAt - Date.now()) / 1000)) : 0;
+            if (spyfallRole) {
                 document.getElementById("spyfall-player-title").innerText = "Your secret role";
-                document.getElementById("spyfall-player-status").innerText = "Remember your role. The host will start the game after everyone has seen theirs.";
+                document.getElementById("spyfall-player-status").innerText = spyfallRole === "spy"
+                    ? "You are a spy. Keep it secret until the host starts the round."
+                    : "You are on the location team. Keep it secret until the host starts the round.";
+                document.getElementById("spyfall-player-timer").hidden = false;
+                document.getElementById("spyfall-player-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
                 image.src = spyfallRole === "spy" ? "spy.webp" : "location.webp";
                 image.alt = spyfallRole === "spy" ? "Spy role" : "Location role";
                 image.hidden = false;
                 return;
             }
 
-            const target = gameData.players?.[gameData.spyfallRevealPlayerId]?.name || "the next player";
             document.getElementById("spyfall-player-title").innerText = "Spyfall";
-            document.getElementById("spyfall-player-status").innerText = gameData.spyfallRevealPlayerId === playerId
-                ? "Your role is loading..."
-                : `Waiting while ${target} receives their role.`;
+            document.getElementById("spyfall-player-status").innerText = revealEndsAt ? "Waiting for everyone to receive their role." : "Waiting for the host to assign roles.";
+            document.getElementById("spyfall-player-timer").hidden = revealEndsAt ? false : true;
+            if (revealEndsAt) {
+                document.getElementById("spyfall-player-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
+            }
             image.hidden = true;
             image.removeAttribute("src");
             image.alt = "";
@@ -1352,12 +1363,14 @@
             const existingVote = gameData.spyfallVotes?.[playerId];
             if (Array.isArray(existingVote)) spyfallSelectedVotes = new Set(existingVote);
             const hasVoted = Array.isArray(existingVote);
-            const timeExpired = Date.now() >= Number(gameData.spyfallVoteEndsAt);
+            const voteDeadline = Number(gameData.spyfallVoteEndsAt || 0);
+            const discussionEnded = Date.now() >= voteDeadline;
+            const requiredSelections = Math.max(1, getSpyfallSpyCount(Object.values(gameData.players || {}).filter((player) => player?.teamId).length));
             document.getElementById("spyfall-player-status").innerText = existingVote
                 ? "Votes submitted. Waiting for the others."
-                : timeExpired ? "Voting time is up." : `Choose three players. Selected: ${spyfallSelectedVotes.size} of 3.`;
-            document.getElementById("spyfall-submit-vote").hidden = hasVoted;
-            document.getElementById("spyfall-submit-vote").disabled = hasVoted || timeExpired || spyfallSelectedVotes.size !== 3;
+                : discussionEnded ? `Choose ${requiredSelections} players. Selected: ${spyfallSelectedVotes.size} of ${requiredSelections}.` : "Discuss the location. Voting opens when the timer ends.";
+            document.getElementById("spyfall-submit-vote").hidden = hasVoted || !discussionEnded;
+            document.getElementById("spyfall-submit-vote").disabled = hasVoted || !discussionEnded || spyfallSelectedVotes.size !== requiredSelections;
             Object.entries(gameData.players || {})
                 .filter(([id, player]) => id !== playerId && player?.teamId)
                 .forEach(([id, player]) => {
@@ -1366,7 +1379,7 @@
                     button.className = "spyfall-vote-option";
                     button.innerText = player.name || player.teamName || "Player";
                     button.setAttribute("aria-pressed", String(spyfallSelectedVotes.has(id)));
-                    button.disabled = hasVoted || timeExpired || (!spyfallSelectedVotes.has(id) && spyfallSelectedVotes.size >= 3);
+                    button.disabled = hasVoted || !discussionEnded || (!spyfallSelectedVotes.has(id) && spyfallSelectedVotes.size >= requiredSelections);
                     button.addEventListener("click", () => toggleSpyfallVote(id));
                     list.appendChild(button);
                 });
@@ -1374,8 +1387,14 @@
 
         function renderSpyfallVoteTimer(gameData) {
             const secondsLeft = Math.max(0, Math.ceil((Number(gameData.spyfallVoteEndsAt) - Date.now()) / 1000));
-            document.getElementById("spyfall-player-timer").innerText = `Choose the spies · 0:${String(secondsLeft).padStart(2, "0")}`;
-            if (!secondsLeft) {
+            const revealAllowsVotes = Date.now() >= Number(gameData.spyfallVoteEndsAt);
+            document.getElementById("spyfall-player-timer").innerText = revealAllowsVotes
+                ? `Choose the spies · 0:${String(secondsLeft).padStart(2, "0")}`
+                : `Discussion · 0:${String(secondsLeft).padStart(2, "0")}`;
+            if (!revealAllowsVotes) {
+                document.getElementById("spyfall-player-status").innerText = "Discuss the location. Voting opens when the timer ends.";
+            }
+            if (secondsLeft <= 0) {
                 document.querySelectorAll("#spyfall-player-choices button").forEach((button) => { button.disabled = true; });
                 document.getElementById("spyfall-submit-vote").disabled = true;
                 if (!Array.isArray(currentGameData.spyfallVotes?.[playerId])) {
@@ -1385,7 +1404,9 @@
         }
 
         function toggleSpyfallVote(targetPlayerId) {
-            if (activePhase !== "spyfall-vote" || spyfallSelectedVotes.size >= 3 && !spyfallSelectedVotes.has(targetPlayerId)) return;
+            const requiredSelections = Math.max(1, getSpyfallSpyCount(Object.values(currentGameData.players || {}).filter((player) => player?.teamId).length));
+            if (activePhase !== "spyfall-vote" || Date.now() < Number(currentGameData.spyfallVoteEndsAt)) return;
+            if (spyfallSelectedVotes.size >= requiredSelections && !spyfallSelectedVotes.has(targetPlayerId)) return;
             if (spyfallSelectedVotes.has(targetPlayerId)) spyfallSelectedVotes.delete(targetPlayerId);
             else spyfallSelectedVotes.add(targetPlayerId);
             renderSpyfallVote(currentGameData);
@@ -1393,8 +1414,13 @@
 
         window.submitSpyfallVote = async function() {
             if (activePhase !== "spyfall-vote" || !playerId) return;
-            if (spyfallSelectedVotes.size !== 3) {
-                document.getElementById("spyfall-player-status").innerText = "Choose exactly three players.";
+            const requiredSelections = Math.max(1, getSpyfallSpyCount(Object.values(currentGameData.players || {}).filter((player) => player?.teamId).length));
+            if (Date.now() < Number(currentGameData.spyfallVoteEndsAt)) {
+                document.getElementById("spyfall-player-status").innerText = "Wait for the discussion timer to end before submitting.";
+                return;
+            }
+            if (spyfallSelectedVotes.size !== requiredSelections) {
+                document.getElementById("spyfall-player-status").innerText = `Choose exactly ${requiredSelections} players.`;
                 return;
             }
             const selectedPlayerIds = Array.from(spyfallSelectedVotes);
@@ -1402,9 +1428,9 @@
             document.querySelectorAll("#spyfall-player-choices button").forEach((button) => { button.disabled = true; });
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "spyfall-vote" || !gameData.players?.[playerId]) return;
-                if (Date.now() >= Number(gameData.spyfallVoteEndsAt)) return;
+                if (Date.now() < Number(gameData.spyfallVoteEndsAt)) return;
                 if (gameData.spyfallVotes?.[playerId]) return;
-                if (selectedPlayerIds.length !== 3 || new Set(selectedPlayerIds).size !== 3) return;
+                if (selectedPlayerIds.length !== requiredSelections || new Set(selectedPlayerIds).size !== requiredSelections) return;
                 if (selectedPlayerIds.some((id) => id === playerId || !gameData.players?.[id])) return;
                 return {
                     ...gameData,
