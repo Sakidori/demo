@@ -51,6 +51,14 @@
             overflow: hidden;
         }
 
+        body.spyfall-host-active {
+            min-height: 100dvh;
+            height: 100dvh;
+            align-items: center;
+            padding: 0;
+            overflow: hidden;
+        }
+
         body::before {
             content: "";
             position: fixed;
@@ -211,6 +219,12 @@
             font-size: 1.25rem;
         }
 
+        #player-list .avatar-chip {
+            border-color: color-mix(in srgb, var(--team-color, #64748b) 70%, white);
+            background: color-mix(in srgb, var(--team-color, #64748b) 44%, #101522);
+            box-shadow: inset 0 0 10px color-mix(in srgb, var(--team-color, #64748b) 35%, transparent);
+        }
+
         .player-name {
             min-width: 0;
             overflow-wrap: anywhere;
@@ -221,6 +235,26 @@
             color: var(--muted);
             font-size: 0.85rem;
             text-align: right;
+        }
+
+        .remove-player-btn {
+            flex: 0 0 auto;
+            width: auto;
+            margin: 0 0 0 auto;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(255, 110, 120, 0.16);
+            border: 1px solid rgba(255, 110, 120, 0.35);
+            color: #ffd8dd;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .remove-player-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         li:hover {
@@ -377,6 +411,10 @@
         }
 
         .podium-item {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            align-items: center;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 20px 20px 14px 14px;
@@ -397,7 +435,7 @@
 
         .podium-item.rank-3 {
             background: linear-gradient(180deg, rgba(255,126,93,0.12), rgba(255,92,122,0.1));
-            height: 110px;
+            height: 120px;
         }
 
         .podium-rank {
@@ -406,13 +444,21 @@
         }
 
         .podium-name {
+            max-width: 100%;
             font-weight: 700;
             margin: 6px 0 2px;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+            text-align: center;
         }
 
         .podium-score {
             font-size: 0.95rem;
             color: var(--muted);
+            max-width: 100%;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+            text-align: center;
         }
 
         #timer {
@@ -436,14 +482,14 @@
 
         #task-screen {
             display: none;
-            grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
-            grid-template-rows: auto auto minmax(120px, 1fr) auto auto;
-            gap: 8px 24px;
+            grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+            grid-template-rows: auto auto minmax(110px, 1fr) auto auto;
+            gap: 8px 20px;
             width: min(1100px, 100%);
             height: calc(100dvh - 24px);
             max-height: 860px;
             min-height: 0;
-            padding: 16px 24px;
+            padding: 16px 20px;
             overflow: hidden;
         }
 
@@ -453,23 +499,18 @@
         }
 
         .task-title-row {
-            grid-column: 1;
+            grid-column: 1 / 3;
             grid-row: 1;
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: 12px;
             min-width: 0;
+            padding-right: 110px;
         }
 
         .task-title-row .status-chip { flex: 0 0 auto; margin: 0; }
         .task-title-row h2 { margin: 0; font-size: 1.35rem; }
-
-        #task-screen .task-bomb {
-            grid-column: 1;
-            grid-row: 2;
-            font-size: 3rem;
-            margin: 0;
-        }
 
         #task-prompt {
             grid-column: 1;
@@ -486,27 +527,75 @@
         }
 
         .active-player-banner {
-            width: fit-content;
-            max-width: 100%;
+            position: relative;
             grid-column: 1;
             grid-row: 2;
-            justify-self: end;
-            align-self: center;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: none;
+            min-height: 0;
+            align-self: stretch;
+            justify-self: stretch;
             margin: 0;
-            padding: 10px 16px;
-            border: 1px solid rgba(255,92,122,0.35);
-            border-radius: 12px;
-            background: rgba(255,92,122,0.1);
-            color: #ffd4dc;
-            font-weight: 700;
+            padding: 12px 14px;
+            border: 3px solid color-mix(in srgb, var(--team-color, #ff4d5e) 72%, white 28%);
+            border-radius: 22px;
+            background:
+                linear-gradient(135deg, color-mix(in srgb, var(--team-color, #ff4d5e) 78%, #101522 22%), color-mix(in srgb, var(--team-color, #ff4d5e) 48%, #101522 52%));
+            box-shadow: inset 0 0 28px rgba(255,255,255,0.1), 0 18px 40px color-mix(in srgb, var(--team-color, #ff4d5e) 28%, transparent);
+            color: white;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        .active-player-bomb {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            font-size: 2.7rem;
+            line-height: 1;
+            animation: bombPulse 1s ease-in-out infinite;
+            filter: drop-shadow(0 0 12px rgba(255,92,122,0.7));
+            pointer-events: none;
+        }
+
+        .active-player-avatar {
+            display: grid;
+            place-items: center;
+            width: 76px;
+            height: 76px;
+            flex: 0 0 76px;
+            border: 4px solid rgba(255,255,255,0.7);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--team-color, #ff4d5e) 58%, white 42%);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.3), inset 0 0 22px rgba(255,255,255,0.35);
+            font-size: 3rem;
+        }
+
+        .active-player-copy {
+            min-width: 0;
+        }
+
+        .active-player-copy strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: clamp(1.15rem, 2.6vw, 1.65rem);
             overflow-wrap: anywhere;
         }
 
-        .active-player-banner span { margin-right: 8px; }
+        .active-player-copy span {
+            display: block;
+            color: rgba(255,255,255,0.82);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
 
         #task-player-list {
             grid-column: 2;
-            grid-row: 1 / 6;
+            grid-row: 2 / 6;
             align-self: stretch;
             min-height: 0;
             max-height: 100%;
@@ -531,17 +620,52 @@
             grid-column: 1;
             grid-row: 4;
             justify-self: start;
-            margin: 0;
-        }
-
-        #unlock-bomb-btn {
-            grid-column: 1;
-            grid-row: 5;
-            width: min(100%, 380px);
+            align-self: end;
             margin: 0;
         }
 
         #unlock-bomb-btn:disabled { cursor: wait; filter: saturate(0.65); }
+
+        .task-actions {
+            grid-column: 1;
+            grid-row: 5;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: stretch;
+            gap: 7px;
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+        }
+
+        .task-actions button {
+            width: 100%;
+            min-width: 0;
+            margin: 0;
+            padding: 9px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        #unlock-bomb-btn {
+            grid-column: 1 / -1;
+            min-height: 46px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .task-actions button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .task-actions #force-pass-btn {
+            border: 2px solid rgba(255, 185, 71, 0.55);
+            background: linear-gradient(135deg, #9a4d12, #d07522);
+            box-shadow: 0 12px 24px rgba(255, 153, 42, 0.22);
+        }
 
         .team-chip {
             display: inline-flex;
@@ -565,18 +689,72 @@
 
         .team-chip { white-space: nowrap; }
 
-        .host-pause-btn {
+        .host-dev-tools {
             position: fixed;
-            top: 16px;
-            right: 150px;
+            top: 14px;
+            left: 16px;
             z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: calc(100vw - 24px);
+            padding: 5px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(18,26,42,0.96);
+        }
+
+        #host-dev-tools[open] {
+            display: grid;
+            grid-template-columns: auto minmax(100px, 190px) auto;
+        }
+
+        .host-dev-tools summary {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 6px;
+            list-style: none;
+            cursor: pointer;
+            font-size: 1.25rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .host-dev-tools summary::-webkit-details-marker { display: none; }
+
+        .host-dev-tools select,
+        .host-dev-tools button {
             width: auto;
-            min-width: 110px;
-            padding: 10px 14px;
-            border-radius: 999px;
+            margin: 0;
+            padding: 7px 9px;
+            font-size: 0.8rem;
+        }
+
+        .spyfall-location-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: min(440px, 100%);
+            margin: 12px auto 0;
+            color: var(--muted);
             font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 0.03em;
+        }
+
+        .spyfall-location-control select {
+            width: auto;
+            min-width: 180px;
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+        }
+
+        .spyfall-location-control--lobby {
+            width: min(440px, 100%);
+            margin: 14px auto 0;
         }
 
         #lost-team-chip { font-size: 1.2rem; margin: 14px 0; }
@@ -606,6 +784,104 @@
             border-radius: 12px;
         }
 
+        .spyfall-art[hidden] { display: none; }
+
+        #round-two-placeholder-screen.active {
+            width: min(1400px, 100%);
+            height: 100dvh;
+            max-height: 100dvh;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 24px 12px;
+            overflow: hidden;
+        }
+
+        #round-two-placeholder-screen h1,
+        #round-two-placeholder-screen h2,
+        #round-two-placeholder-screen p {
+            margin: 0;
+        }
+
+        #round-two-placeholder-screen h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+        }
+
+        #round-two-placeholder-screen .results-badge {
+            margin-bottom: 2px;
+        }
+
+        .spyfall-host-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .spyfall-host-actions button {
+            min-width: 150px;
+            padding: 9px 18px;
+            font-size: 1rem;
+        }
+
+        .spyfall-host-team-card {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 22px;
+            width: min(760px, 100%);
+            min-height: 0;
+            margin: 2px auto;
+            padding: 10px 24px;
+            border: 3px solid color-mix(in srgb, var(--team-color, #ffc857) 72%, white 28%);
+            border-radius: 8px;
+            background: linear-gradient(145deg, color-mix(in srgb, var(--team-color, #ffc857) 88%, #101522 12%), color-mix(in srgb, var(--team-color, #ffc857) 58%, #101522 42%));
+            box-shadow: inset 0 0 32px rgba(255,255,255,0.12), 0 16px 40px color-mix(in srgb, var(--team-color, #ffc857) 34%, transparent);
+            text-align: center;
+        }
+
+        .spyfall-host-team-card[hidden] { display: none; }
+
+        .spyfall-host-team-avatar {
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            width: 104px;
+            height: 104px;
+            border: 4px solid rgba(255,255,255,0.65);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--team-color, #ffc857) 62%, white 38%);
+            font-size: 3.5rem;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.28), inset 0 0 22px rgba(255,255,255,0.35);
+        }
+
+        .spyfall-host-team-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .spyfall-host-team-copy .status-chip {
+            margin-bottom: 0;
+            padding: 6px 10px;
+            background: rgba(10, 14, 20, 0.18);
+            border-color: rgba(255,255,255,0.18);
+        }
+
+        .spyfall-host-team-copy strong {
+            font-size: 1.65rem;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .spyfall-host-team-copy span:last-child {
+            opacity: 0.9;
+        }
+
         #spyfall-host-votes {
             width: min(520px, 100%);
             margin: 14px auto;
@@ -630,10 +906,451 @@
             margin: 6px 0;
         }
 
-        .spyfall-timer {
-            color: var(--success-2);
-            font-size: 2rem;
+        #spyfall-spy-results-list,
+        #spyfall-round-score-list,
+        #spyfall-final-standings-list {
+            width: min(520px, 100%);
+            margin: 14px auto;
+        }
+
+        #spyfall-spy-results-screen {
+            width: min(1180px, 100%);
+            padding: 12px 14px;
+        }
+
+        #spyfall-spy-results-screen h1 {
+            margin: 2px 0 5px;
+            font-size: 1.65rem;
+        }
+
+        #spyfall-spy-results-screen h2 {
+            margin: 4px 0;
+            font-size: 1rem;
+        }
+
+        #spyfall-spy-results-screen > p { margin: 4px 0; }
+
+        #spyfall-spy-results-screen > button {
+            margin-top: 8px;
+            padding: 10px 18px;
+            font-size: 1rem;
+        }
+
+        #spyfall-spy-results-list {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 6px;
+            width: 100%;
+            margin: 5px auto;
+            padding: 0;
+            list-style: none;
+        }
+
+        #spyfall-spy-results-list .spyfall-revealed-spy {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr) auto;
+            justify-items: center;
+            align-content: stretch;
+            gap: 10px;
+            flex: 1 1 0;
+            width: 100%;
+            min-width: 0;
+            min-height: 250px;
+            margin: 0;
+            padding: 14px 8px;
+            border: 2px solid color-mix(in srgb, var(--team-color, #64748b) 68%, white);
+            background: linear-gradient(145deg, color-mix(in srgb, var(--team-color, #64748b) 82%, #101522), color-mix(in srgb, var(--team-color, #64748b) 55%, #101522));
+            text-align: center;
+        }
+
+        .spyfall-vote-chart {
+            display: grid;
+            grid-template-columns: repeat(var(--vote-team-count, 18), minmax(0, 1fr));
+            align-items: stretch;
+            column-gap: 0;
+            row-gap: 2px;
+            width: 100%;
+            height: 180px;
+            margin: 4px auto;
+        }
+
+        .spyfall-vote-chart-row {
+            display: grid;
+            grid-template-rows: 16px minmax(0, 1fr) 26px;
+            justify-items: center;
+            align-items: end;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .spyfall-vote-chart-avatar {
+            display: grid;
+            place-items: center;
+            width: min(100%, 36px);
+            aspect-ratio: 1;
+            min-width: 0;
+            height: auto;
+            border: 2px solid color-mix(in srgb, var(--team-color) 55%, white);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--team-color) 40%, #101522);
+            font-size: 0.68rem;
+        }
+
+        .spyfall-vote-chart-track {
+            display: flex;
+            align-items: end;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-right: 1px solid rgba(255,255,255,0.24);
+            border-left: 1px solid rgba(255,255,255,0.08);
+            border-radius: 0;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .spyfall-vote-chart-bar {
+            width: 100%;
+            height: var(--vote-height, 0%);
+            background: var(--team-color);
+            transition: height 500ms ease;
+        }
+
+        .spyfall-vote-chart-count {
+            align-self: end;
+            max-width: 100%;
+            overflow: hidden;
+            font-size: 0.68rem;
+            font-variant-numeric: tabular-nums;
             font-weight: 800;
+        }
+
+        .spyfall-revealed-avatar {
+            display: grid;
+            place-items: center;
+            align-self: center;
+            justify-self: center;
+            margin-inline: auto;
+            width: 120px;
+            height: 120px;
+            border: 4px solid rgba(255,255,255,0.72);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--team-color, #64748b) 62%, white 38%);
+            font-size: 4rem;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.3), inset 0 0 22px rgba(255,255,255,0.3);
+        }
+
+        .spyfall-revealed-name {
+            display: grid;
+            place-items: center;
+            justify-self: center;
+            width: 100%;
+            max-width: 100%;
+            min-height: 2.3em;
+            font-size: 1.1rem;
+            line-height: 1.15;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        @media (orientation: landscape) and (min-width: 700px) {
+            .spyfall-revealed-name {
+                min-height: 1.5em;
+                font-size: 1.5rem;
+                white-space: nowrap;
+                overflow-wrap: normal;
+            }
+        }
+
+        #spyfall-spy-results-list li,
+        #spyfall-round-score-list li,
+        #spyfall-final-standings-list li {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 6px 0;
+        }
+
+        .spyfall-drumroll-icon {
+            display: block;
+            margin: 18px auto;
+            font-size: 7rem;
+            animation: drumrollShake 90ms linear infinite;
+        }
+
+        .spyfall-drumroll-bars {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            height: 42px;
+            margin: 10px auto 22px;
+        }
+
+        .spyfall-drumroll-bars span {
+            width: 7px;
+            height: 14px;
+            border-radius: 4px;
+            background: var(--success-2);
+            animation: drumrollBar 240ms ease-in-out infinite alternate;
+        }
+
+        .spyfall-drumroll-bars span:nth-child(2n) { animation-delay: 80ms; }
+        .spyfall-drumroll-bars span:nth-child(3n) { animation-delay: 150ms; }
+
+        @keyframes drumrollShake {
+            0%, 100% { transform: translateX(-3px) rotate(-4deg); }
+            50% { transform: translateX(3px) rotate(4deg); }
+        }
+
+        @keyframes drumrollBar {
+            from { height: 10px; opacity: 0.4; }
+            to { height: 38px; opacity: 1; }
+        }
+
+        .spyfall-timer {
+            color: #fff;
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+            margin: 14px auto;
+            text-shadow: 0 3px 16px rgba(0,0,0,0.42);
+        }
+
+        #bonus-round-timer {
+            margin: 12px auto;
+            color: var(--success-2);
+            font-size: 3.5rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 900;
+        }
+
+        .bonus-intro-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: none;
+            width: 100%;
+            height: 100dvh;
+            padding: 3vh 0;
+            overflow: hidden;
+            border: 0;
+            border-radius: 0;
+            background: #000;
+            box-shadow: none;
+            animation: none;
+        }
+
+        .bonus-intro-screen.active { display: grid; }
+
+        .bonus-intro-art {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            color: #fff;
+            font-size: clamp(3rem, 20vw, 20rem);
+            font-weight: 1000;
+            line-height: 0.78;
+            text-align: left;
+        }
+
+        .bonus-intro-word {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            transform: translate(var(--intro-x, 0), 28px) scale(var(--intro-scale-x, 1), 0.94);
+        }
+
+        .bonus-intro-word.visible {
+            visibility: visible;
+            animation: bonusIntroWordIn 420ms cubic-bezier(0.2, 1.25, 0.4, 1) both;
+        }
+
+        #bonus-intro-push { left: 1.7vw; top: 1.5vh; }
+        #bonus-intro-the { left: 50%; top: 36.5vh; --intro-x: -50%; font-size: 0.48em; line-height: 0.95; }
+        #bonus-intro-button-word { left: 1.7vw; bottom: 3vh; --intro-scale-x: 0.82; font-size: 25vw; transform-origin: left bottom; }
+
+        .bonus-intro-button-art {
+            display: block;
+            position: absolute;
+            top: 6vh;
+            right: 8vw;
+            width: min(23vw, 17rem);
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 12px 10px rgba(255, 53, 78, 0.2));
+        }
+
+        @keyframes bonusIntroWordIn {
+            to { opacity: 1; transform: translate(var(--intro-x, 0), 0) scale(var(--intro-scale-x, 1), 1); }
+        }
+
+        @media (max-width: 700px) {
+            .bonus-intro-screen { padding: 2vh 0; }
+            .bonus-intro-art { font-size: clamp(3rem, 19vw, 8rem); }
+            #bonus-intro-push { top: 3vh; left: 0; }
+            #bonus-intro-the { top: 40vh; font-size: 0.58em; }
+            #bonus-intro-button-word { left: 0; bottom: 4vh; --intro-scale-x: 1; font-size: 20vw; }
+            .bonus-intro-button-art { top: 6vh; right: 3vw; width: min(30vw, 9rem); }
+        }
+
+        #bonus-final-standings,
+        #bonus-podium-standings {
+            width: min(640px, 100%);
+            margin: 12px auto;
+        }
+
+        #bonus-podium-standings {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(var(--standing-rows, 8), minmax(30px, auto));
+            grid-auto-flow: column;
+            align-items: stretch;
+            gap: 3px;
+            width: min(100%, 900px);
+            margin: 12px auto;
+        }
+
+        #bonus-podium-standings .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-width: 0;
+            min-height: 30px;
+            margin: 0;
+            padding: 4px 5px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            line-height: 1.1;
+            overflow-wrap: anywhere;
+            text-align: center;
+        }
+
+        #bonus-podium {
+            width: min(760px, 100%);
+            gap: 20px;
+        }
+
+        #bonus-podium-screen {
+            isolation: isolate;
+            overflow: hidden;
+            background: radial-gradient(ellipse at 50% 0, #253046 0, #101725 44%, #080c14 100%);
+        }
+
+        #bonus-podium-screen::after {
+            position: absolute;
+            z-index: 0;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 5%, transparent 10%, rgba(0, 0, 0, 0.52) 90%), linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.32));
+            content: "";
+            pointer-events: none;
+        }
+
+        #bonus-podium-screen > :not(.bonus-podium-spotlight) { position: relative; z-index: 1; }
+
+        .bonus-podium-spotlight {
+            position: absolute;
+            z-index: 0;
+            top: -34%;
+            left: 10%;
+            width: 80%;
+            height: 110%;
+            margin: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 224, 0.9), rgba(255, 220, 138, 0.3) 48%, transparent 88%);
+            clip-path: polygon(43% 0, 57% 0, 100% 100%, 0 100%);
+            filter: blur(10px);
+            opacity: 0;
+            transform-origin: 50% 0;
+            animation: spotlightZoom 1.4s cubic-bezier(0.16, 0.78, 0.2, 1) both;
+            pointer-events: none;
+        }
+
+        .bonus-podium-spotlight::after {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 250, 220, 0.7), rgba(255, 192, 77, 0.18) 58%, transparent 95%);
+            clip-path: polygon(46% 0, 51% 0, 95% 100%, 12% 100%);
+            content: "";
+            animation: podiumSpotlightSweep 3.6s 1.2s ease-in-out infinite alternate;
+        }
+
+        #bonus-podium-screen h1 {
+            margin-bottom: 8px;
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+            text-shadow: 0 0 18px rgba(255, 224, 143, 0.72), 0 0 44px rgba(255, 183, 72, 0.36);
+            animation: podiumTitleReveal 850ms 180ms cubic-bezier(0.16, 0.85, 0.25, 1.2) both;
+        }
+
+        #bonus-podium .rank-1 { grid-column: 2; grid-row: 1; }
+        #bonus-podium .rank-2 { grid-column: 1; grid-row: 1; }
+        #bonus-podium .rank-3 { grid-column: 3; grid-row: 1; }
+
+        #bonus-podium .podium-item {
+            opacity: 0;
+            overflow-wrap: anywhere;
+            border-color: color-mix(in srgb, var(--team-color) 50%, white 30%);
+            box-shadow: 0 18px 35px rgba(0, 0, 0, 0.4), 0 0 28px color-mix(in srgb, var(--team-color) 25%, transparent);
+            animation: bonusPodiumRise 900ms cubic-bezier(0.18, 0.9, 0.26, 1.18) both;
+            animation-delay: var(--reveal-delay, 0ms);
+        }
+
+        #bonus-podium .podium-item.rank-1 {
+            background: linear-gradient(180deg, rgba(255, 211, 94, 0.34), rgba(255, 172, 30, 0.15));
+        }
+
+        #bonus-podium .podium-item.rank-2 {
+            background: linear-gradient(180deg, rgba(216, 225, 239, 0.24), rgba(115, 145, 184, 0.12));
+        }
+
+        #bonus-podium .podium-item.rank-3 {
+            background: linear-gradient(180deg, rgba(223, 128, 87, 0.25), rgba(151, 69, 52, 0.12));
+        }
+
+        .podium-avatar {
+            margin: 3px auto;
+            font-size: 2.2rem;
+            animation: podiumMedalPop 650ms cubic-bezier(0.18, 0.9, 0.26, 1.35) both;
+            animation-delay: calc(var(--reveal-delay, 0ms) + 420ms);
+        }
+
+        .podium-rank { filter: drop-shadow(0 4px 8px rgba(255, 205, 84, 0.42)); }
+
+        @keyframes bonusPodiumRise {
+            0% { opacity: 0; transform: translateY(100px) scale(0.72) rotate(-3deg); filter: blur(8px); }
+            72% { opacity: 1; transform: translateY(-9px) scale(1.04) rotate(1deg); filter: blur(0); }
+            100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); filter: blur(0); }
+        }
+
+        @keyframes podiumMedalPop {
+            0% { opacity: 0; transform: scale(0.25) rotate(-20deg); }
+            70% { opacity: 1; transform: scale(1.28) rotate(7deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
+        @keyframes podiumSpotlightSweep {
+            from { transform: translateX(-16%) rotate(-4deg); opacity: 0.25; }
+            to { transform: translateX(16%) rotate(4deg); opacity: 0.85; }
+        }
+
+        @keyframes podiumTitleReveal {
+            0% { opacity: 0; transform: translateY(18px) scale(0.68); letter-spacing: 0.18em; }
+            72% { opacity: 1; transform: translateY(-4px) scale(1.06); letter-spacing: 0; }
+            100% { opacity: 1; transform: translateY(0) scale(1); letter-spacing: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #bonus-podium .podium-item,
+            .podium-avatar,
+            .bonus-podium-spotlight,
+            .bonus-podium-spotlight::after,
+            #bonus-podium-screen h1 { animation-duration: 1ms; animation-delay: 0ms; }
+        }
+
+        .bonus-team-score {
+            color: var(--success-2);
+            font-variant-numeric: tabular-nums;
         }
 
         .quiz-surprise {
@@ -664,6 +1381,12 @@
             color: var(--success-2);
             font-size: 1.3rem;
             font-weight: 800;
+        }
+
+        #end-quiz-btn {
+            width: auto;
+            min-width: 140px;
+            margin: 8px auto 0;
         }
 
         .quiz-splash {
@@ -716,6 +1439,8 @@
 
         @media (max-width: 600px) {
             .quiz-splash-title { font-size: 2.5rem; }
+            #bonus-podium-standings { gap: 3px; }
+            #bonus-podium-standings .leaderboard-item { min-height: 28px; font-size: 0.74rem; }
         }
 
         @keyframes surpriseReveal {
@@ -772,6 +1497,32 @@
             color: var(--success-2);
         }
 
+        .host-player-controls {
+            position: fixed;
+            top: 62px;
+            right: 16px;
+            z-index: 12;
+            display: flex;
+            gap: 8px;
+        }
+
+        .host-player-controls button {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            margin: 0;
+            padding: 0;
+            border-radius: 8px;
+            background: rgba(18,26,42,0.96);
+            font-size: 1.2rem;
+        }
+
+        .host-player-controls button[aria-pressed="true"] {
+            border-color: var(--danger);
+            color: #ff9baa;
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -800,26 +1551,52 @@
         @media (max-width: 600px) {
             body { padding: 56px 12px 20px; }
             body.bomb-round-active { padding: 8px; }
+            #spyfall-spy-results-screen { padding: 10px 8px; }
+            #spyfall-spy-results-list .spyfall-revealed-spy { min-height: 160px; padding: 8px 4px; }
+            .spyfall-revealed-avatar { width: 76px; height: 76px; font-size: 2.55rem; }
+            .spyfall-vote-chart { height: 150px; }
+            body.spyfall-host-active { padding: 0; }
+            #round-two-placeholder-screen { padding: 12px; }
+            .spyfall-host-team-card {
+                gap: 14px;
+                min-height: 0;
+                padding: 8px 10px;
+            }
+            .spyfall-host-team-avatar { width: 78px; height: 78px; font-size: 2.7rem; }
+            .spyfall-host-team-copy strong { font-size: 1.15rem; }
+            .spyfall-host-actions { flex-wrap: wrap; margin-top: 2px; }
+            .spyfall-host-actions button { min-width: 120px; padding: 8px 12px; }
+            .spyfall-timer { font-size: 2.8rem; }
             #task-screen {
                 grid-template-columns: minmax(0, 1fr);
-                grid-template-rows: auto auto minmax(90px, 1fr) minmax(70px, 16vh) auto auto;
+                grid-template-rows: auto auto auto minmax(95px, 1fr) auto auto auto;
                 gap: 6px;
                 height: calc(100dvh - 16px);
                 padding: 12px;
             }
-            .task-title-row { gap: 8px; }
+            .task-title-row { flex-wrap: wrap; gap: 8px; padding-right: 38px; }
             .task-title-row h2 { font-size: 1.15rem; }
-            #task-screen .task-bomb { grid-row: 2; font-size: 2.2rem; }
-            .active-player-banner { grid-row: 2; justify-self: end; padding: 7px 9px; font-size: 0.82rem; }
-            #task-prompt { grid-row: 3; font-size: 1.55rem; }
+            .active-player-banner { grid-column: 1; grid-row: 2; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; justify-self: stretch; min-height: 90px; padding: 9px; }
+            .active-player-avatar { width: 64px; height: 64px; flex-basis: 64px; font-size: 2.6rem; }
+            .active-player-bomb { top: 8px; right: 8px; font-size: 1.6rem; }
+            .active-player-copy strong { font-size: 1rem; }
+            .active-player-copy span { font-size: 0.7rem; }
+            #task-prompt { grid-column: 1; grid-row: 3; font-size: 1.2rem; }
             #task-player-list {
                 grid-column: 1;
                 grid-row: 4;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
-            #task-player-list li { padding: 5px 7px; font-size: 0.75rem; }
-            #bomb-lock-status { grid-row: 5; }
-            #unlock-bomb-btn { grid-row: 6; }
+            #task-player-list li { padding: 5px 7px; font-size: 0.7rem; }
+            #bomb-lock-status { grid-column: 1; grid-row: 5; }
+            .task-actions {
+                grid-column: 1;
+                grid-row: 6;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                width: 100%;
+            }
+            #unlock-bomb-btn { grid-column: 1 / -1; min-height: 42px; }
+            .task-actions button { min-width: 0; padding: 8px 6px; font-size: 0.65rem; }
             .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             #lobby-screen { padding: 22px 16px; }
@@ -848,6 +1625,10 @@
     <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on">
         <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
     </button>
+    <div class="host-player-controls" role="group" aria-label="Player controls">
+        <button id="host-attention-btn" type="button" title="Alert all players" aria-label="Alert all players">📣</button>
+        <button id="freeze-players-btn" type="button" title="Freeze player screens" aria-label="Freeze player screens" aria-pressed="false">⏸</button>
+    </div>
 
     <!-- LOBBY SCREEN -->
     <div id="lobby-screen" class="screen active">
@@ -866,11 +1647,23 @@
             </section>
         </div>
         <div class="lobby-actions">
-            <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Bomb Round</button>
+            <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Game</button>
+            <button id="reset-lobby-btn" type="button" onclick="resetGame()">Reset Lobby</button>
         </div>
     </div>
 
-    <button id="pause-game-btn" class="host-pause-btn" type="button" onclick="togglePauseGame()">Pause Game</button>
+    <details id="host-dev-tools" class="host-dev-tools">
+        <summary aria-label="Development tools" title="Development tools"><span aria-label="Development tools" aria-hidden="true">&#9881;</span></summary>
+        <select id="dev-game-select" aria-label="Choose a game to launch">
+            <option value="lobby">Lobby</option>
+            <option value="bomb">Bomb Round</option>
+            <option value="quiz-1">Pop Quiz 1</option>
+            <option value="spyfall">Spyfall</option>
+            <option value="quiz-2">Pop Quiz 2</option>
+            <option value="bonus">Bonus Round</option>
+        </select>
+        <button type="button" onclick="devLaunchSelectedGame()">Launch</button>
+    </details>
 
     <!-- TASK PASSING SCREEN -->
     <div id="task-screen" class="screen">
@@ -878,12 +1671,24 @@
             <div class="status-chip">Bomb Round</div>
             <h2>Pass the Bomb</h2>
         </div>
-        <span class="task-bomb" aria-label="Bomb">💣</span>
-        <div id="active-player-banner" class="active-player-banner"><span aria-hidden="true">💣</span><strong id="active-player-name">Choosing player...</strong> has the bomb · <span id="active-player-team" class="team-chip"></span></div>
+        <div id="active-player-banner" class="active-player-banner" style="--team-color: #ff4d5e;">
+            <span id="active-player-avatar" class="active-player-avatar" aria-hidden="true">🎮</span>
+            <span id="active-player-bomb" class="active-player-bomb" aria-hidden="true">💣</span>
+            <div class="active-player-copy">
+                <strong id="active-player-name">Choosing player...</strong>
+                <span id="active-player-team">Team · Animal</span>
+                <span id="bomb-hold-time">0 seconds held · 0 penalty</span>
+            </div>
+        </div>
         <h1 id="task-prompt">Get ready...</h1>
         <ul id="task-player-list" aria-label="Players in the task round"></ul>
         <p id="bomb-lock-status" class="status-chip">Bomb Locked</p>
-        <button id="unlock-bomb-btn" onclick="unlockBomb()">Release Bomb Lock</button>
+        <div class="task-actions">
+            <button id="unlock-bomb-btn" type="button" onclick="unlockBomb()">Unlock</button>
+            <button id="force-pass-btn" type="button" onclick="forcePassBomb()" disabled>Force Pass · Anytime</button>
+            <button id="skip-round-btn" type="button" onclick="skipCurrentRound()" disabled>Skip Round</button>
+            <button id="pause-game-btn" type="button" onclick="togglePauseGame()">Pause Game</button>
+        </div>
     </div>
 
     <!-- BOMB RESULT SCREEN -->
@@ -902,33 +1707,114 @@
     <!-- POP QUIZ -->
     <div id="quiz-screen" class="screen">
         <div class="quiz-surprise">Surprise!</div>
-        <h1>Pop Quiz</h1>
+        <h1 id="quiz-title">Pop Quiz</h1>
         <div class="quiz-question-content">
             <img id="quiz-question-image" class="quiz-question-image" alt="" hidden>
             <h2 id="quiz-question-text"></h2>
-            <p id="quiz-timer" class="quiz-timer">60 seconds</p>
+            <p id="quiz-timer" class="quiz-timer">30 seconds</p>
             <p id="quiz-answer-count">0 of 0 teams answered</p>
+            <button id="end-quiz-btn" type="button" hidden>End Quiz</button>
         </div>
     </div>
 
     <div id="round-two-placeholder-screen" class="screen">
         <div class="results-badge">Round 2 · Spyfall</div>
         <h1 id="spyfall-host-title">Spyfall</h1>
-        <p id="spyfall-host-status">Start the game to assign roles.</p>
+        <p id="spyfall-host-status">Assign roles, then wait until everyone is ready to reveal them.</p>
+        <label class="spyfall-location-control" for="spyfall-location-select">
+            <span>Location</span>
+            <select id="spyfall-location-select" aria-label="Choose a Spyfall location image">
+                <option value="location.webp">Location 1</option>
+                <option value="location2.webp">Location 2</option>
+                <option value="location3.webp">Location 3</option>
+            </select>
+        </label>
         <p id="spyfall-host-turn"></p>
         <p id="spyfall-host-timer" class="spyfall-timer" hidden></p>
         <p id="spyfall-host-vote-count" hidden></p>
         <ul id="spyfall-host-votes" hidden></ul>
+        <div id="spyfall-host-current-team" class="spyfall-host-team-card" hidden>
+            <div id="spyfall-host-team-avatar" class="spyfall-host-team-avatar" aria-hidden="true">🎮</div>
+            <div class="spyfall-host-team-copy">
+                <span class="status-chip">Current team</span>
+                <strong id="spyfall-host-team-name">Waiting</strong>
+            </div>
+        </div>
         <h2 id="spyfall-host-score-heading" hidden>Score Standings</h2>
         <ul id="spyfall-host-scores" hidden></ul>
-        <button id="spyfall-host-action" onclick="startSpyfall()">Start Spyfall</button>
-        <button onclick="resetGame()">Back to Lobby</button>
+        <div class="spyfall-host-actions">
+            <button id="spyfall-host-action" onclick="startSpyfall()">Assign Roles</button>
+            <button id="spyfall-pause-btn" type="button" onclick="togglePauseGame()" hidden>Pause Game</button>
+        </div>
+        <button id="spyfall-start-voting" type="button" onclick="beginSpyfallVoting()" hidden>Start Voting</button>
+        <button id="spyfall-host-reveal-again" type="button" onclick="revealSpyfallRolesAgain()" hidden>Reveal Roles Again</button>
     </div>
 
-    <div id="final-round-placeholder-screen" class="screen">
-        <div class="results-badge">Final Round</div>
-        <h1>Final Game Coming Soon</h1>
-        <p>The final game will be added here.</p>
+    <div id="spyfall-drumroll-screen" class="screen" role="status" aria-live="polite">
+        <div class="results-badge">Spyfall Verdict</div>
+        <span class="spyfall-drumroll-icon" aria-hidden="true">🥁</span>
+        <h1>Who are the spies?</h1>
+        <div class="spyfall-drumroll-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <p>Revealing the results...</p>
+    </div>
+
+    <div id="spyfall-spy-results-screen" class="screen">
+        <div class="results-badge">Spyfall Results · 1 of 3</div>
+        <h1>The spies were...</h1>
+        <ul id="spyfall-spy-results-list"></ul>
+        <h2>Votes by Team</h2>
+        <div id="spyfall-vote-chart" class="spyfall-vote-chart" aria-label="Votes received by each team"></div>
+        <p id="spyfall-spy-results-summary"></p>
+        <button onclick="showSpyfallScoreScreen()">Show Team Scores</button>
+    </div>
+
+    <div id="spyfall-score-results-screen" class="screen">
+        <div class="results-badge">Spyfall Results · 2 of 3</div>
+        <h1>Round Scores</h1>
+        <ul id="spyfall-round-score-list"></ul>
+        <button onclick="showSpyfallStandingsScreen()">Show Standings</button>
+    </div>
+
+    <div id="spyfall-standings-screen" class="screen">
+        <div class="results-badge">Spyfall Results · 3 of 3</div>
+        <h1>Overall Standings</h1>
+        <ul id="spyfall-final-standings-list"></ul>
+        <button id="spyfall-next-round-action">Start Pop Quiz 2</button>
+        <button id="spyfall-play-again-action" type="button">Play Again</button>
+    </div>
+
+    <div id="bonus-intro-screen" class="screen bonus-intro-screen" aria-label="Push the button">
+        <div class="bonus-intro-art" aria-hidden="true">
+            <span id="bonus-intro-push" class="bonus-intro-word">PUSH</span>
+            <span id="bonus-intro-the" class="bonus-intro-word">THE</span>
+            <span id="bonus-intro-button-word" class="bonus-intro-word">BUTTON</span>
+            <img class="bonus-intro-button-art" src="button.webp" alt="">
+        </div>
+    </div>
+
+    <div id="bonus-round-screen" class="screen">
+        <div class="results-badge">Final Round · Live</div>
+        <h1>Bonus Round</h1>
+        <p>Tap your team button as many times as you can.</p>
+        <p id="bonus-round-timer">0:30</p>
+        <p id="bonus-round-status">The round is live.</p>
+        <button id="bonus-round-end-button" type="button" onclick="endBonusRound()">End Bonus Round</button>
+    </div>
+
+    <div id="bonus-standings-screen" class="screen">
+        <div class="results-badge">Bonus Round Complete</div>
+        <h1>Final Standings</h1>
+        <p>Bonus points have been added. The podium is locked until you reveal it.</p>
+        <ul id="bonus-final-standings"></ul>
+        <button type="button" onclick="revealBonusPodium()">Reveal Podium</button>
+    </div>
+
+    <div id="bonus-podium-screen" class="screen">
+        <div class="bonus-podium-spotlight" aria-hidden="true"></div>
+        <div class="results-badge">Final Results</div>
+        <h1>Top 3 Players</h1>
+        <div id="bonus-podium" class="podium"></div>
+        <ul id="bonus-podium-standings"></ul>
         <button onclick="resetGame()">Back to Lobby</button>
     </div>
 
@@ -942,7 +1828,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
-        import { TEAM_COLORS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
+        import { TEAM_ANIMALS, TEAM_COLORS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -965,11 +1851,15 @@
 
         const questions = [
             { text: "Which JHS in Ichikawa did Atsuko Maeda (AKB48) attend?", image: "Maeda.webp", imageAlt: "Atsuko Maeda performing with a microphone", choices: ["1中", "7中", "東国分", "8中", "下貝塚", "妙典"], answerIndex: 1 },
-            { text: "Which city do these clues represent?", image: "emoji.webp", imageAlt: "Rebus showing a clock, a park, and city buildings", answer: "Ichikawa City" },
+            { text: "Type in the answer", image: "emoji.webp", imageAlt: "Rebus showing a clock, a park, and city buildings", answer: "Ichikawa City" },
             { text: "What is the capital of France?", answer: "paris" }
         ];
         const playerAvatars = new Set(["🦊", "🐼", "🐸", "🐯", "🐙", "🦉", "🐧", "🦄", "🐨", "🦁", "🐵", "🐢", "🐺", "🐰", "🐻", "🐬", "🐳", "🦖"]);
         const getPlayerAvatar = (player) => playerAvatars.has(player.avatar) ? player.avatar : "🎮";
+        const getPlayerAnimal = (player) => {
+            const animal = TEAM_ANIMALS.find((item) => item.avatar === player?.avatar);
+            return animal?.name.toLowerCase() || "player";
+        };
 
         let currentRoundIndex = 0;
         let currentQuizQuestionIndex = 0;
@@ -977,7 +1867,8 @@
         let countdownInterval;
         let quizCountdownInterval;
         let spyfallTimerInterval;
-        let quizIntroTimeout;
+        let quizIntroTimeout = null;
+        let quizIntroEndsAt = 0;
         let fuseBeepTimeout;
         let activePlayerId = "";
         let previousActivePlayerId = "";
@@ -992,32 +1883,123 @@
         let spyfallRevealIndex = -1;
         let spyfallTurnIndex = -1;
         let spyfallTurnEndsAt = 0;
+        let spyfallRevealEndsAt = 0;
+        let spyfallVoteOpensAt = 0;
         let spyfallVoteEndsAt = 0;
+        let spyfallVotingStarted = false;
+        let spyfallVotingEnded = false;
+        let bonusRoundTimerInterval = null;
+        let bonusRoundStarting = false;
+        let bonusIntroTransitionTimeout = null;
+        let bonusIntroCueTimeouts = [];
+        let bonusIntroStartedAtKey = null;
+        const bonusIntroPlayedCues = new Set();
+        const bonusIntroAudioBuffers = new Map();
         let isGamePaused = false;
+        const BONUS_ROUND_SECONDS = 30;
+        const BONUS_INTRO_DURATION_MS = 7000;
+        const BONUS_INTRO_WORD_DELAY_MS = 1500;
+        const BONUS_INTRO_FIRST_SOUND_DURATION_MS = 3048;
+        const BONUS_TAPS_PER_POINT = 4;
+        const BOMB_PASS_BASE_POINTS = 20;
+        const BOMB_HOLD_PENALTY_INTERVAL = 10;
+        const BOMB_HOLD_PENALTY_PER_INTERVAL = 1;
+        const BOMB_FORCE_PASS_PENALTY = 5;
+        const BOMB_EXPLOSION_PENALTY = 5;
+        const BOMB_ROUND_SECONDS = 120;
         const getTeam = (teamId) => TEAM_COLORS.find((team) => team.id === teamId);
         const getSpyfallSpyCount = (playerCount) => {
             if (playerCount <= 4) return 1;
             if (playerCount <= 6) return 2;
             return 3;
         };
+        const renderSpyfallHostCurrentTeam = (teamId, labelText = "Current team") => {
+            const card = document.getElementById("spyfall-host-current-team");
+            const avatar = document.getElementById("spyfall-host-team-avatar");
+            const teamName = document.getElementById("spyfall-host-team-name");
+            const team = getTeam(teamId);
+            const members = Object.values(hostPlayers || {}).filter((player) => player?.teamId === teamId);
+            const leadPlayer = members[0] || null;
+            const displayName = labelText || leadPlayer?.teamName || team?.name || "Team";
+            card.hidden = !teamId;
+            if (!teamId) return;
+            card.style.setProperty("--team-color", team?.hex || "#ffc857");
+            avatar.innerText = getPlayerAvatar(leadPlayer || { avatar: "🎮" });
+            teamName.innerText = displayName;
+        };
 
         // Global game database reference
         const gameRef = ref(db, `game`);
-
-        // Reset/Initialize game state on load
-        set(gameRef, {
-            status: "waiting",
-            phase: "waiting",
-            round: 1,
-            players: {},
-            teams: {}
+        const spyfallLocationSelect = document.getElementById("spyfall-location-select");
+        const syncSpyfallLocationControls = (location) => {
+            const validLocation = ["location.webp", "location2.webp", "location3.webp"].includes(location)
+                ? location
+                : "location.webp";
+            spyfallLocationSelect.value = validLocation;
+        };
+        const updateSpyfallLocationControls = (phase) => {
+            const canChangeLocation = ["waiting", "round-2-placeholder", "spyfall-setup"].includes(phase);
+            spyfallLocationSelect.disabled = !canChangeLocation;
+            spyfallLocationSelect.hidden = !canChangeLocation;
+        };
+        spyfallLocationSelect.addEventListener("change", async () => {
+            await window.selectSpyfallBackupLocation(spyfallLocationSelect.value);
         });
-        set(ref(db, "spyfallRoles"), {});
+
+        // Initialize only when the game has not already started.
+        // Re-loading the host page should preserve the live round state instead of erasing it.
+        get(gameRef).then((snapshot) => {
+            if (!snapshot.exists()) {
+                set(gameRef, {
+                    status: "waiting",
+                    phase: "waiting",
+                    round: 1,
+                    players: {},
+                    teams: {}
+                });
+            }
+        }).catch(() => {});
+
+        get(ref(db, "spyfallRoles")).then((snapshot) => {
+            if (!snapshot.exists()) {
+                set(ref(db, "spyfallRoles"), {});
+            }
+        }).catch(() => {});
 
         let audioCtx;
         const funkyMusic = createFunkyMusic();
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
+        const hostAttentionButton = document.getElementById("host-attention-btn");
+        const freezePlayersButton = document.getElementById("freeze-players-btn");
+
+        function syncFreezePlayersButton(isFrozen) {
+            freezePlayersButton.innerText = isFrozen ? "▶" : "⏸";
+            freezePlayersButton.title = isFrozen ? "Unfreeze player screens" : "Freeze player screens";
+            freezePlayersButton.setAttribute("aria-label", freezePlayersButton.title);
+            freezePlayersButton.setAttribute("aria-pressed", String(isFrozen));
+        }
+
+        hostAttentionButton.addEventListener("click", async () => {
+            playAttentionSound();
+            try {
+                await update(gameRef, { playersFrozen: true });
+            } catch (error) {
+                console.error("Could not freeze player screens.", error);
+            }
+        });
+
+        freezePlayersButton.addEventListener("click", async () => {
+            freezePlayersButton.disabled = true;
+            try {
+                const snapshot = await get(gameRef);
+                await update(gameRef, { playersFrozen: !Boolean(snapshot.val()?.playersFrozen) });
+            } catch (error) {
+                console.error("Could not change player screen freeze state.", error);
+            } finally {
+                freezePlayersButton.disabled = false;
+            }
+        });
 
         musicToggle.addEventListener("click", async () => {
             if (funkyMusic.isPlaying) {
@@ -1060,6 +2042,32 @@
             oscillator.stop(audioCtx.currentTime + duration);
         }
 
+        let attentionAudioBufferPromise;
+
+        async function playAttentionSound() {
+            const context = getAudioContext();
+            if (!context) return;
+
+            try {
+                if (!attentionAudioBufferPromise) {
+                    attentionAudioBufferPromise = fetch("./alert.mp3")
+                        .then((response) => {
+                            if (!response.ok) throw new Error("Could not load the alert sound.");
+                            return response.arrayBuffer();
+                        })
+                        .then((audioData) => context.decodeAudioData(audioData));
+                }
+                const buffer = await attentionAudioBufferPromise;
+                const source = context.createBufferSource();
+                source.buffer = buffer;
+                source.connect(context.destination);
+                source.start();
+            } catch (error) {
+                attentionAudioBufferPromise = null;
+                console.error("Could not play the alert sound.", error);
+            }
+        }
+
         function playFuseBeep(pitch, duration) {
             const context = getAudioContext();
             if (!context) return;
@@ -1081,10 +2089,10 @@
 
             function scheduleNextBeep() {
                 if (currentPhase !== "bomb") return;
-                const timeLeft = Math.max(0, 120 - (Date.now() - fuseStartedAt) / 1000);
+                const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - (Date.now() - fuseStartedAt) / 1000);
                 if (timeLeft <= 0) return;
 
-                const progress = 1 - (timeLeft / 120);
+                const progress = 1 - (timeLeft / BOMB_ROUND_SECONDS);
                 const interval = Math.max(100, 1200 - progress * 1100);
                 const pitch = 450 + progress * 950;
                 playFuseBeep(pitch, 0.05);
@@ -1164,13 +2172,22 @@
                 const avatar = document.createElement("span");
                 avatar.className = "avatar-chip";
                 avatar.innerText = getPlayerAvatar(player);
+                avatar.style.setProperty("--team-color", team?.hex || player.teamColor || "#64748b");
                 const name = document.createElement("span");
                 name.className = "player-name";
-                name.innerText = player.name;
-                const teamLabel = document.createElement("span");
-                teamLabel.className = "team-chip player-status";
-                teamLabel.innerText = player.teamName || team?.name || "No team";
-                li.append(avatar, name, teamLabel);
+                name.innerText = `${team?.name || player.teamName || "Team"} ${getPlayerAnimal(player)}`;
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "remove-player-btn";
+                removeBtn.innerText = "Remove";
+                removeBtn.disabled = currentPhase !== "waiting";
+                removeBtn.setAttribute("aria-label", `Remove ${player.name}`);
+                removeBtn.addEventListener("click", async (event) => {
+                    event.stopPropagation();
+                    if (currentPhase !== "waiting") return;
+                    await set(ref(db, `game/players/${id}`), null);
+                });
+                li.append(avatar, name, removeBtn);
                 listEl.appendChild(li);
 
                 const statusRow = document.createElement("li");
@@ -1193,6 +2210,10 @@
 
         // Listen for players joining/updating
         const playersRef = ref(db, `game/players`);
+        window.removePlayer = async function(playerId) {
+            if (!playerId || currentPhase !== "waiting") return;
+            await set(ref(db, `game/players/${playerId}`), null);
+        };
         onValue(playersRef, (snapshot) => {
             hostPlayers = snapshot.val() || {};
             renderHostPlayerLists(hostPlayers);
@@ -1201,6 +2222,17 @@
         onValue(gameRef, (snapshot) => {
             const gameData = snapshot.val();
             if (!gameData) return;
+            syncFreezePlayersButton(Boolean(gameData.playersFrozen));
+            const selectedLocation = ["location.webp", "location2.webp", "location3.webp"].includes(gameData.spyfallLocation)
+                ? gameData.spyfallLocation
+                : "location.webp";
+            syncSpyfallLocationControls(selectedLocation);
+            updateSpyfallLocationControls(gameData.phase);
+            const skipButton = document.getElementById("skip-round-btn");
+            skipButton.disabled = !gameData.phase || [
+                "waiting", "exploding", "final-round-placeholder", "bonus-intro", "spyfall-setup",
+                "bonus-round", "bonus-standings", "bonus-podium"
+            ].includes(gameData.phase);
             const pauseButton = document.getElementById("pause-game-btn");
             if (pauseButton) {
                 pauseButton.innerText = gameData.paused ? "Resume Game" : "Pause Game";
@@ -1210,9 +2242,66 @@
                 clearInterval(countdownInterval);
                 clearInterval(quizCountdownInterval);
                 clearInterval(spyfallTimerInterval);
+                clearInterval(bonusRoundTimerInterval);
+                clearTimeout(quizIntroTimeout);
+                quizIntroTimeout = null;
+                clearTimeout(fuseBeepTimeout);
                 return;
             }
             isGamePaused = false;
+            if (gameData.phase !== "bonus-intro") {
+                clearTimeout(bonusIntroTransitionTimeout);
+                bonusIntroCueTimeouts.forEach(clearTimeout);
+                bonusIntroCueTimeouts = [];
+                bonusIntroStartedAtKey = null;
+                document.getElementById("bonus-intro-screen").classList.remove("active");
+            }
+            if (gameData.phase === "bonus-intro") {
+                currentPhase = "bonus-intro";
+                document.getElementById("bonus-round-screen").classList.remove("active");
+                document.getElementById("bonus-intro-screen").classList.add("active");
+                const startedAt = Number(gameData.bonusRoundIntroStartedAt || Date.now());
+                showBonusRoundIntro(startedAt);
+                clearTimeout(bonusIntroTransitionTimeout);
+                const remaining = Math.max(0, startedAt + BONUS_INTRO_DURATION_MS - Date.now());
+                bonusIntroTransitionTimeout = setTimeout(() => finishBonusRoundIntro(startedAt), remaining);
+                return;
+            }
+            if (gameData.phase === "final-round-placeholder") {
+                currentPhase = "final-round-placeholder";
+                startBonusRound();
+                return;
+            }
+            if (gameData.phase === "bonus-round") {
+                if (currentPhase !== "bonus-round") {
+                    currentPhase = "bonus-round";
+                    document.getElementById("bonus-round-screen").classList.add("active");
+                    document.getElementById("bonus-round-status").innerText = "The round is live.";
+                }
+                updateBonusRoundTimer(gameData);
+                if (Number(gameData.bonusRoundEndsAt || 0) <= Date.now()) {
+                    endBonusRound();
+                    return;
+                }
+                clearInterval(bonusRoundTimerInterval);
+                bonusRoundTimerInterval = setInterval(() => updateBonusRoundTimer(gameData), 250);
+                return;
+            }
+            if (gameData.phase === "bonus-standings") {
+                currentPhase = "bonus-standings";
+                clearInterval(bonusRoundTimerInterval);
+                showBonusStandings(gameData);
+                return;
+            }
+            if (gameData.phase === "bonus-podium") {
+                currentPhase = "bonus-podium";
+                clearInterval(bonusRoundTimerInterval);
+                showBonusPodium(gameData);
+                return;
+            }
+            if (gameData.phase === "quiz-intro" && currentPhase === "quiz-intro") {
+                ensureQuizIntroTimer(gameData.quizIntroEndsAt);
+            }
             if (gameData.phase === "bomb" && currentPhase === "bomb") {
                 activePlayerId = gameData.activePlayerId || activePlayerId;
                 currentTask = gameData.task || currentTask;
@@ -1234,11 +2323,15 @@
             }
             if (gameData.phase === "spyfall-vote" && currentPhase === "spyfall-vote") {
                 hostPlayers = gameData.players || hostPlayers;
+                spyfallVotingStarted = Boolean(gameData.spyfallVotingStarted);
+                spyfallVotingEnded = Boolean(gameData.spyfallVotingEnded);
+                spyfallVoteOpensAt = Number(gameData.spyfallDiscussionEndsAt || spyfallVoteOpensAt);
+                spyfallVoteEndsAt = Number(gameData.spyfallVoteEndsAt || 0);
                 renderSpyfallVotes(gameData);
-                const playerCount = Object.values(hostPlayers).filter((player) => player?.teamId).length;
+                const teamCount = Object.values(gameData.players || {}).filter((player) => player?.teamId).length;
                 const voteCount = Object.keys(gameData.spyfallVotes || {}).length;
-                if (Date.now() >= Number(gameData.spyfallVoteEndsAt) && playerCount && voteCount >= playerCount) {
-                    finishSpyfallVote();
+                if (spyfallVotingStarted && !spyfallVotingEnded && teamCount > 0 && voteCount >= teamCount) {
+                    endSpyfallVoting("All teams have voted. Reveal results when ready.");
                 }
             }
         });
@@ -1247,23 +2340,48 @@
             const snapshot = await get(gameRef);
             const currentGameData = snapshot.val() || {};
             const paused = !Boolean(currentGameData.paused);
-            await update(gameRef, { paused });
-            const pauseButton = document.getElementById("pause-game-btn");
-            if (pauseButton) {
-                pauseButton.innerText = paused ? "Resume Game" : "Pause Game";
-            }
+            const isSpyfallPhase = ["round-2-placeholder", "spyfall-setup", "spyfall-reveal", "spyfall-active", "spyfall-vote", "spyfall-results"].includes(currentPhase);
+            const pauseButton = document.getElementById(isSpyfallPhase ? "spyfall-pause-btn" : "pause-game-btn");
             if (paused) {
+                await update(gameRef, { paused: true, pausedAt: Date.now() });
+                if (pauseButton) pauseButton.innerText = "Resume Game";
                 clearInterval(countdownInterval);
                 clearInterval(quizCountdownInterval);
                 clearInterval(spyfallTimerInterval);
+                clearTimeout(quizIntroTimeout);
+                quizIntroTimeout = null;
+                clearTimeout(fuseBeepTimeout);
                 isGamePaused = true;
                 return;
             }
+
+            const pauseDuration = Math.max(0, Date.now() - Number(currentGameData.pausedAt || Date.now()));
+            const resumeUpdates = { paused: false, pausedAt: null };
+            ["quizEndsAt", "spyfallRevealEndsAt", "spyfallTurnEndsAt", "spyfallVoteEndsAt", "spyfallDiscussionEndsAt"]
+                .forEach((key) => {
+                    const deadline = Number(currentGameData[key] || 0);
+                    if (deadline) resumeUpdates[key] = deadline + pauseDuration;
+                });
+            if (currentPhase === "bomb") fuseStartedAt += pauseDuration;
+            if (currentPhase === "quiz-intro") quizIntroEndsAt += pauseDuration;
+            if (currentPhase === "spyfall-reveal") spyfallRevealEndsAt = Number(resumeUpdates.spyfallRevealEndsAt || spyfallRevealEndsAt);
+            if (currentPhase === "spyfall-active") spyfallTurnEndsAt = Number(resumeUpdates.spyfallTurnEndsAt || spyfallTurnEndsAt);
+            if (currentPhase === "spyfall-vote") {
+                spyfallVoteOpensAt = Number(resumeUpdates.spyfallDiscussionEndsAt || spyfallVoteOpensAt);
+                spyfallVoteEndsAt = Number(resumeUpdates.spyfallVoteEndsAt || spyfallVoteEndsAt);
+                spyfallVotingStarted = Boolean(currentGameData.spyfallVotingStarted);
+                spyfallVotingEnded = Boolean(currentGameData.spyfallVotingEnded);
+            }
+            await update(gameRef, resumeUpdates);
+            if (pauseButton) pauseButton.innerText = "Pause Game";
             isGamePaused = false;
-            if (currentPhase === "bomb") {
+            if (currentPhase === "quiz-intro") {
+                ensureQuizIntroTimer(quizIntroEndsAt);
+            } else if (currentPhase === "bomb") {
                 updateHostFuse();
                 clearInterval(countdownInterval);
                 countdownInterval = setInterval(updateHostFuse, 250);
+                startFuseBeepLoop();
             } else if (currentPhase === "quiz") {
                 const quizEndsAt = Number(currentGameData.quizEndsAt || 0);
                 if (quizEndsAt) {
@@ -1274,6 +2392,11 @@
                         if (!secondsLeft) finishPopQuiz();
                     }, 200);
                 }
+            } else if (currentPhase === "spyfall-reveal") {
+                spyfallRevealEndsAt = Number(currentGameData.spyfallRevealEndsAt || spyfallRevealEndsAt);
+                updateSpyfallRevealTimer();
+                clearInterval(spyfallTimerInterval);
+                spyfallTimerInterval = window.setInterval(updateSpyfallRevealTimer, 200);
             } else if (currentPhase === "spyfall-active") {
                 updateSpyfallTimer();
                 clearInterval(spyfallTimerInterval);
@@ -1289,12 +2412,151 @@
             startBombRound();
         };
 
+        window.skipCurrentRound = async function() {
+            if (isGamePaused) return;
+            switch (currentPhase) {
+                case "bomb":
+                    await skipBombRound();
+                    break;
+                case "quiz-intro":
+                    clearTimeout(quizIntroTimeout);
+                    quizIntroTimeout = null;
+                    await beginPopQuiz();
+                    await finishPopQuiz();
+                    break;
+                case "quiz":
+                    await finishPopQuiz();
+                    break;
+                case "round-results":
+                    await startPopQuiz(0);
+                    break;
+                case "quiz-results":
+                    if (currentQuizQuestionIndex === 0) await showRoundTwoPlaceholder();
+                    else await showFinalRoundPlaceholder();
+                    break;
+                case "round-2-placeholder":
+                    await startSpyfall();
+                    break;
+                case "spyfall-setup":
+                    await revealNextSpyfallRole();
+                    break;
+                case "spyfall-reveal":
+                    spyfallRevealEndsAt = Date.now();
+                    await startSpyfallGame();
+                    break;
+                case "spyfall-active":
+                    await startSpyfallVote();
+                    break;
+                case "spyfall-vote":
+                    if (spyfallVotingEnded) await finishSpyfallVote();
+                    else if (spyfallVotingStarted) await endSpyfallVoting();
+                    else await beginSpyfallVoting();
+                    break;
+                case "spyfall-results":
+                    await startPopQuiz(1);
+                    break;
+            }
+        };
+
+        async function skipBombRound() {
+            if (currentPhase !== "bomb") return;
+            clearInterval(countdownInterval);
+            clearTimeout(fuseBeepTimeout);
+            currentPhase = "round-results";
+            document.body.classList.remove("bomb-round-active");
+            document.getElementById("task-screen").classList.remove("active");
+            document.getElementById("bomb-result-screen").classList.add("active");
+            document.getElementById("results-badge").innerText = `Round ${currentBombRound} Skipped`;
+            document.getElementById("lost-team-title").innerText = "Round skipped";
+            document.getElementById("lost-team-title").hidden = false;
+            document.getElementById("lost-team-chip").hidden = true;
+            document.getElementById("lost-player-name").innerText = "No team was eliminated.";
+            document.getElementById("lost-player-name").hidden = false;
+            document.getElementById("lost-team-players").hidden = true;
+            document.getElementById("quiz-answer-reveal").hidden = true;
+            document.getElementById("score-heading").innerText = "Current Standings";
+            renderScoreList("round-score-list", hostPlayers, "bombRoundPoints");
+            const resultButton = document.getElementById("round-result-action");
+            resultButton.innerText = "Start Pop Quiz";
+            resultButton.onclick = () => startPopQuiz(0);
+            await update(gameRef, {
+                status: "round-skipped",
+                phase: "round-results",
+                round: currentBombRound,
+                paused: false,
+                pausedAt: null
+            });
+        }
+
+        window.devLaunchSelectedGame = async function() {
+            const selectedGame = document.getElementById("dev-game-select").value;
+            if (selectedGame === "lobby") {
+                await resetGame();
+                return;
+            }
+            const snapshot = await get(playersRef);
+            hostPlayers = snapshot.val() || {};
+            const players = Object.values(hostPlayers).filter((player) => player?.teamId);
+            if (!players.length) {
+                window.alert("Join at least one team before launching a game.");
+                return;
+            }
+            if (selectedGame === "spyfall" && players.length < 4) {
+                window.alert("Spyfall needs at least four teams.");
+                return;
+            }
+
+            const spyfallLocation = document.getElementById("spyfall-location-select").value;
+
+            clearInterval(countdownInterval);
+            clearInterval(quizCountdownInterval);
+            clearInterval(spyfallTimerInterval);
+            clearInterval(bonusRoundTimerInterval);
+            clearTimeout(quizIntroTimeout);
+            clearTimeout(fuseBeepTimeout);
+            clearTimeout(bonusIntroTransitionTimeout);
+            bonusIntroCueTimeouts.forEach(clearTimeout);
+            bonusIntroCueTimeouts = [];
+            bonusIntroStartedAtKey = null;
+            isGamePaused = false;
+            document.body.classList.remove("bomb-round-active", "has-bomb", "safe");
+            document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+            document.getElementById("quiz-splash").hidden = true;
+
+            if (selectedGame === "bonus") {
+                currentPhase = "final-round-placeholder";
+                await startBonusRound();
+                return;
+            }
+            await update(gameRef, { paused: false, pausedAt: null });
+            if (selectedGame === "bomb") {
+                currentPhase = "waiting";
+                await startBombRound();
+                return;
+            }
+            if (selectedGame === "quiz-1" || selectedGame === "quiz-2") {
+                const questionIndex = selectedGame === "quiz-1" ? 0 : 1;
+                currentPhase = questionIndex === 0 ? "round-results" : "spyfall-results";
+                currentQuizQuestionIndex = questionIndex;
+                await startPopQuiz(questionIndex);
+                return;
+            }
+
+            currentPhase = "quiz-results";
+            await showRoundTwoPlaceholder();
+            await startSpyfall();
+        };
+
         async function startBombRound() {
             if (currentPhase !== "waiting") return;
             const snapshot = await get(playersRef);
             const players = Object.entries(snapshot.val() || {}).filter(([, player]) => player?.name && player.teamId);
             if (!players.length) return;
             hostPlayers = snapshot.val() || {};
+            hostPlayers = Object.fromEntries(Object.entries(hostPlayers).map(([id, player]) => [
+                id,
+                player?.teamId ? { ...player, bombRoundPoints: 0 } : player
+            ]));
             activePlayerId = players[Math.floor(Math.random() * players.length)][0];
             const taskQueue = shuffle(TONGUE_TWISTERS);
             currentTask = taskQueue.pop();
@@ -1322,6 +2584,7 @@
                 bombCyclePlayerIds: [activePlayerId],
                 bombLocked,
                 handoffTime: Date.now(),
+                players: hostPlayers,
                 quizQuestion: null,
                 quizAnswers: null,
                 quizResults: null
@@ -1347,6 +2610,79 @@
             button.disabled = currentPhase !== "bomb" || !bombLocked;
         }
 
+        function selectNextBombHolder(gameData, currentPlayerId) {
+            const players = Object.entries(gameData.players || {}).filter(([, player]) => player?.teamId);
+            const previouslyHeld = Array.isArray(gameData.bombCyclePlayerIds)
+                ? gameData.bombCyclePlayerIds
+                : [currentPlayerId];
+            let eligiblePlayers = players.filter(([id]) => id !== currentPlayerId && !previouslyHeld.includes(id));
+            let nextCycle = previouslyHeld;
+            if (!eligiblePlayers.length) {
+                eligiblePlayers = players.filter(([id]) => id !== currentPlayerId);
+                nextCycle = [currentPlayerId];
+            }
+            if (!eligiblePlayers.length) eligiblePlayers = players;
+            return {
+                nextPlayerId: eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)][0],
+                nextCycle
+            };
+        }
+
+        async function passBombToPlayer(gameData, nextPlayerId, reason = "passed") {
+            if (currentPhase !== "bomb" || !nextPlayerId || !hostPlayers[nextPlayerId]) return false;
+            const currentPlayer = hostPlayers[activePlayerId];
+            const elapsedSeconds = getBombHoldElapsedSeconds();
+            const holdPenalty = getBombHoldPenalty(elapsedSeconds);
+            const pointsEarned = Math.max(0, BOMB_PASS_BASE_POINTS - holdPenalty);
+            const currentPlayerUpdated = {
+                ...currentPlayer,
+                score: (Number(currentPlayer.score) || 0) + pointsEarned,
+                bombRoundPoints: (Number(currentPlayer.bombRoundPoints) || 0) + pointsEarned,
+                lastPassPoints: pointsEarned,
+                lastHoldPenalty: holdPenalty
+            };
+            const currentPlayers = { ...hostPlayers, [activePlayerId]: currentPlayerUpdated };
+            const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
+            if (!taskQueue.length) taskQueue.push(...shuffle(TONGUE_TWISTERS));
+            const nextTask = taskQueue.pop();
+            const previousActivePlayerId = activePlayerId;
+            const newCycle = Array.isArray(gameData.bombCyclePlayerIds)
+                ? [...new Set([...gameData.bombCyclePlayerIds, nextPlayerId])]
+                : [previousActivePlayerId, nextPlayerId];
+            activePlayerId = nextPlayerId;
+            bombLocked = true;
+            fuseStartedAt = Date.now();
+            hostPlayers = currentPlayers;
+            renderActivePlayer();
+            renderHostPlayerLists(hostPlayers);
+            renderBombLockState();
+            const result = await update(gameRef, {
+                phase: "bomb",
+                task: nextTask,
+                taskQueue,
+                activePlayerId,
+                previousActivePlayerId,
+                bombCyclePlayerIds: newCycle,
+                bombLocked,
+                handoffTime: Date.now(),
+                players: hostPlayers,
+                lastBombPass: { from: previousActivePlayerId, to: nextPlayerId, reason, points: pointsEarned, penalty: holdPenalty }
+            });
+            if (result.committed) {
+                playUiTone(reason === "host" ? 620 : 560, 0.1, "triangle", 0.035);
+                return true;
+            }
+            return false;
+        }
+
+        window.forcePassBomb = async function() {
+            if (currentPhase !== "bomb") return;
+            const snapshot = await get(gameRef);
+            const gameData = snapshot.val() || {};
+            const { nextPlayerId } = selectNextBombHolder(gameData, activePlayerId);
+            if (nextPlayerId) await passBombToPlayer(gameData, nextPlayerId, "host");
+        };
+
         window.endTaskRound = function() {
             explodeBomb();
         };
@@ -1361,16 +2697,36 @@
         function renderActivePlayer() {
             const player = hostPlayers[activePlayerId];
             const team = getTeam(player?.teamId);
-            document.getElementById("active-player-name").innerText = player?.name || "A player";
+            const banner = document.getElementById("active-player-banner");
+            const avatar = document.getElementById("active-player-avatar");
             const teamEl = document.getElementById("active-player-team");
-            teamEl.innerText = player?.teamName || team?.name || "Unknown team";
-            teamEl.style.setProperty("--team-color", team?.hex || "#64748b");
+            const teamName = team?.name || player?.teamName || "Unknown team";
+            const animalName = getPlayerAnimal(player);
+            document.getElementById("active-player-name").innerText = player?.name || "A player";
+            avatar.innerText = getPlayerAvatar(player);
+            teamEl.innerText = `${teamName} ${animalName}`;
+            banner.style.setProperty("--team-color", team?.hex || player?.teamColor || "#ff4d5e");
             document.getElementById("task-prompt").innerText = currentTask;
+        }
+
+        function getBombHoldElapsedSeconds() {
+            return Math.max(0, Math.floor((Date.now() - Number(fuseStartedAt || Date.now())) / 1000));
+        }
+
+        function getBombHoldPenalty(elapsedSeconds) {
+            const intervalPenalty = Math.floor(elapsedSeconds / BOMB_HOLD_PENALTY_INTERVAL) * BOMB_HOLD_PENALTY_PER_INTERVAL;
+            return Math.min(10, intervalPenalty);
         }
 
         function updateHostFuse() {
             if (currentPhase !== "bomb") return;
-            const timeLeft = Math.max(0, 120 - Math.floor((Date.now() - fuseStartedAt) / 1000));
+            const elapsedSeconds = getBombHoldElapsedSeconds();
+            const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - elapsedSeconds);
+            const holdPenalty = getBombHoldPenalty(elapsedSeconds);
+            const holdTimeEl = document.getElementById("bomb-hold-time");
+            const forcePassButton = document.getElementById("force-pass-btn");
+            holdTimeEl.innerText = `${elapsedSeconds} seconds held · ${holdPenalty} penalty`;
+            forcePassButton.disabled = currentPhase !== "bomb";
             if (timeLeft <= 0) explodeBomb();
         }
 
@@ -1382,7 +2738,13 @@
             playExplosionSound();
             const snapshot = await get(playersRef);
             hostPlayers = snapshot.val() || hostPlayers;
-            const losingPlayer = hostPlayers[activePlayerId];
+            const previousLosingPlayer = hostPlayers[activePlayerId];
+            const losingPlayer = previousLosingPlayer ? {
+                ...previousLosingPlayer,
+                score: (Number(previousLosingPlayer.score) || 0) - BOMB_EXPLOSION_PENALTY,
+                bombRoundPoints: (Number(previousLosingPlayer.bombRoundPoints) || 0) - BOMB_EXPLOSION_PENALTY
+            } : null;
+            if (losingPlayer) hostPlayers = { ...hostPlayers, [activePlayerId]: losingPlayer };
             const losingTeam = getTeam(losingPlayer?.teamId);
             const losingTeamName = losingPlayer?.teamName || losingTeam?.name || "Unknown Team";
             const losingPlayers = Object.values(hostPlayers).filter((player) => player?.teamId === losingPlayer?.teamId);
@@ -1399,7 +2761,7 @@
             document.getElementById("lost-player-name").hidden = false;
             document.getElementById("score-heading").innerText = currentBombRound === 1 ? "Round 1 Scores" : "Final Standings";
             document.getElementById("lost-team-players").hidden = false;
-            renderScoreList("round-score-list", hostPlayers);
+            renderScoreList("round-score-list", hostPlayers, "bombRoundPoints");
             const membersList = document.getElementById("lost-team-players");
             membersList.innerHTML = "";
             losingPlayers.forEach((player) => {
@@ -1417,6 +2779,8 @@
                 status: "round-1-complete",
                 phase: "round-results",
                 round: 1,
+                players: hostPlayers,
+                bombPenalty: BOMB_EXPLOSION_PENALTY,
                 losingTeamId: losingPlayer?.teamId || "",
                 losingTeamName,
                 losingTeamColor: losingTeam?.hex || "#64748b",
@@ -1429,37 +2793,60 @@
         async function startPopQuiz(questionIndex = 0) {
             const expectedPhase = questionIndex === 0 ? "round-results" : "spyfall-results";
             if (currentPhase !== expectedPhase || !questions[questionIndex]) return;
+            document.body.classList.remove("spyfall-host-active");
             currentQuizQuestionIndex = questionIndex;
             currentQuizQuestion = questions[currentQuizQuestionIndex];
             currentPhase = "quiz-intro";
             clearTimeout(quizIntroTimeout);
+            quizIntroTimeout = null;
             clearInterval(quizCountdownInterval);
+            quizIntroEndsAt = Date.now() + 2400;
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("quiz-splash").hidden = false;
             await update(gameRef, {
                 status: `quiz-${questionIndex + 1}-intro`,
                 phase: "quiz-intro",
                 round: questionIndex + 1,
-                quizQuestionIndex: questionIndex
+                quizQuestionIndex: questionIndex,
+                quizIntroEndsAt,
+                paused: false,
+                pausedAt: null
             });
             if (currentPhase !== "quiz-intro") return;
-            quizIntroTimeout = window.setTimeout(beginPopQuiz, 2400);
+            ensureQuizIntroTimer(quizIntroEndsAt);
+        }
+
+        function ensureQuizIntroTimer(deadline) {
+            quizIntroEndsAt = Number(deadline) || quizIntroEndsAt || Date.now() + 2400;
+            if (quizIntroTimeout !== null) return;
+            const remaining = Math.max(0, quizIntroEndsAt - Date.now());
+            quizIntroTimeout = window.setTimeout(() => {
+                quizIntroTimeout = null;
+                if (currentPhase === "quiz-intro" && !isGamePaused) beginPopQuiz();
+            }, remaining);
         }
 
         async function beginPopQuiz() {
             if (currentPhase !== "quiz-intro") return;
+            clearTimeout(quizIntroTimeout);
+            quizIntroTimeout = null;
             const quizStartedAt = Date.now();
-            const quizEndsAt = quizStartedAt + 60000;
+            const quizEndsAt = quizStartedAt + 30000;
             currentPhase = "quiz";
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("quiz-screen").classList.add("active");
+            document.getElementById("quiz-title").innerText = currentQuizQuestionIndex === 1 ? "Emoji Quiz" : "Pop Quiz";
             document.getElementById("quiz-question-text").innerText = currentQuizQuestion.text;
             const questionImage = document.getElementById("quiz-question-image");
             questionImage.hidden = !currentQuizQuestion.image;
             questionImage.src = currentQuizQuestion.image || "";
             questionImage.alt = currentQuizQuestion.imageAlt || currentQuizQuestion.text;
-            document.getElementById("quiz-timer").innerText = "60 seconds";
+            document.getElementById("quiz-timer").innerText = "30 seconds";
             document.getElementById("quiz-answer-count").innerText = "0 of 0 teams answered";
+            const endQuizButton = document.getElementById("end-quiz-btn");
+            endQuizButton.disabled = false;
+            endQuizButton.hidden = false;
+            endQuizButton.onclick = finishPopQuiz;
             await update(gameRef, {
                 status: "pop-quiz",
                 phase: "quiz",
@@ -1467,7 +2854,7 @@
                 quizQuestionIndex: currentQuizQuestionIndex,
                 quizQuestion: {
                     text: currentQuizQuestion.text,
-                    choices: currentQuizQuestion.choices,
+                    ...(Array.isArray(currentQuizQuestion.choices) ? { choices: currentQuizQuestion.choices } : {}),
                     image: currentQuizQuestion.image || "",
                     imageAlt: currentQuizQuestion.imageAlt || "",
                     responseType: currentQuizQuestion.answer ? "text" : "choice"
@@ -1486,10 +2873,47 @@
             }, 200);
         }
 
+        function getTextAnswerScore(submittedAnswer, expectedAnswer) {
+            const submitted = String(submittedAnswer || "").normalize("NFKC").trim().replace(/\s+/g, " ");
+            const expected = String(expectedAnswer || "").normalize("NFKC").trim().replace(/\s+/g, " ");
+            const submittedLower = submitted.toLowerCase();
+            const expectedLower = expected.toLowerCase();
+            const editDistance = getTextEditDistance(submittedLower, expectedLower);
+            const exact = submitted === expected;
+            const similarity = expectedLower.length
+                ? Math.max(0, 1 - editDistance / expectedLower.length)
+                : 0;
+
+            if (similarity < 0.5) return { exact, basePoints: 0, editDistance, similarity };
+            const capitalizationPenalty = exact ? 0 : 10;
+            const basePoints = Math.max(0, Math.round(60 * similarity) - capitalizationPenalty);
+            return { exact, basePoints, editDistance, similarity };
+        }
+
+        function getTextEditDistance(firstText, secondText) {
+            let previousRow = Array.from({ length: secondText.length + 1 }, (_, index) => index);
+            for (let rowIndex = 1; rowIndex <= firstText.length; rowIndex += 1) {
+                const currentRow = [rowIndex];
+                for (let columnIndex = 1; columnIndex <= secondText.length; columnIndex += 1) {
+                    const substitutionCost = firstText[rowIndex - 1] === secondText[columnIndex - 1] ? 0 : 1;
+                    currentRow[columnIndex] = Math.min(
+                        currentRow[columnIndex - 1] + 1,
+                        previousRow[columnIndex] + 1,
+                        previousRow[columnIndex - 1] + substitutionCost
+                    );
+                }
+                previousRow = currentRow;
+            }
+            return previousRow[secondText.length];
+        }
+
         async function finishPopQuiz() {
             if (currentPhase !== "quiz") return;
             currentPhase = "quiz-results";
             clearInterval(quizCountdownInterval);
+            const endQuizButton = document.getElementById("end-quiz-btn");
+            endQuizButton.hidden = true;
+            endQuizButton.disabled = true;
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "quiz") return;
                 const players = { ...(gameData.players || {}) };
@@ -1498,12 +2922,29 @@
                     const player = players[id];
                     if (!player) return;
                     const elapsedSeconds = Math.max(0, Math.floor((Number(answer.answeredAt) - Number(gameData.quizStartedAt)) / 1000));
-                    const correct = typeof currentQuizQuestion.answer === "string"
-                        ? answer.answerText === currentQuizQuestion.answer
+                    const isTextAnswer = typeof currentQuizQuestion.answer === "string";
+                    const textScore = isTextAnswer
+                        ? getTextAnswerScore(answer.answerText, currentQuizQuestion.answer)
+                        : null;
+                    const correct = isTextAnswer
+                        ? textScore.exact
                         : Number(answer.choiceIndex) === currentQuizQuestion.answerIndex;
-                    const points = correct ? Math.max(1, 60 - elapsedSeconds) : 0;
-                    if (correct) players[id] = { ...player, score: (Number(player.score) || 0) + points, quizPoints: points };
-                    quizResults[id] = { correct, points, elapsedSeconds };
+                    const basePoints = isTextAnswer ? textScore.basePoints : correct ? 60 : 0;
+                    const speedBonus = basePoints > 0
+                        ? Math.max(0, Math.round(30 * (1 - Math.min(elapsedSeconds, 30) / 30)))
+                        : 0;
+                    const points = basePoints + speedBonus;
+                    if (points > 0) {
+                        players[id] = { ...player, score: (Number(player.score) || 0) + points, quizPoints: points };
+                    }
+                    quizResults[id] = {
+                        correct,
+                        points,
+                        basePoints,
+                        speedBonus,
+                        ...(textScore ? { spellingDistance: textScore.editDistance } : {}),
+                        elapsedSeconds
+                    };
                 });
                 const quizCorrectAnswer = typeof currentQuizQuestion.answer === "string"
                     ? currentQuizQuestion.answer
@@ -1512,6 +2953,8 @@
             }, { applyLocally: false });
             if (!result.committed) {
                 currentPhase = "quiz";
+                endQuizButton.hidden = false;
+                endQuizButton.disabled = false;
                 return;
             }
             hostPlayers = result.snapshot.val()?.players || hostPlayers;
@@ -1542,29 +2985,292 @@
             if (currentPhase !== "quiz-results" || currentQuizQuestionIndex !== 1) return;
             currentPhase = "final-round-placeholder";
             document.getElementById("bomb-result-screen").classList.remove("active");
-            document.getElementById("final-round-placeholder-screen").classList.add("active");
+            await startBonusRound();
             await update(gameRef, { status: "final-round-placeholder", phase: "final-round-placeholder", round: 3 });
         }
 
+        function getBonusScore(gameData, teamId) {
+            const tapCount = Number(gameData.bonusTapCounts?.[teamId] || 0);
+            return Math.floor(tapCount / BONUS_TAPS_PER_POINT);
+        }
+
+        function updateBonusRoundTimer(gameData) {
+            const endsAt = Number(gameData.bonusRoundEndsAt || 0);
+            const secondsLeft = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+            const timer = document.getElementById("bonus-round-timer");
+            timer.innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
+            if (secondsLeft === 0) {
+                document.getElementById("bonus-round-status").innerText = "Time is up. Final standings are being calculated.";
+            }
+        }
+
+        function playBonusIntroSound(source, onStarted) {
+            const context = getAudioContext();
+            if (!context) return Promise.resolve();
+            let bufferPromise = bonusIntroAudioBuffers.get(source);
+            if (!bufferPromise) {
+                bufferPromise = fetch(`./${source}`)
+                    .then((response) => {
+                        if (!response.ok) throw new Error(`Could not load ${source}.`);
+                        return response.arrayBuffer();
+                    })
+                    .then((audioData) => context.decodeAudioData(audioData));
+                bonusIntroAudioBuffers.set(source, bufferPromise);
+            }
+            return bufferPromise.then((buffer) => new Promise((resolve) => {
+                const audioSource = context.createBufferSource();
+                audioSource.buffer = buffer;
+                audioSource.connect(context.destination);
+                audioSource.onended = resolve;
+                audioSource.start();
+                onStarted?.();
+            })).catch((error) => {
+                console.error(`Could not play ${source}.`, error);
+                bonusIntroAudioBuffers.delete(source);
+                return new Promise((resolve) => setTimeout(resolve, source === "1.mp3" ? BONUS_INTRO_FIRST_SOUND_DURATION_MS : 2088));
+            });
+        }
+
+        function showBonusRoundIntro(startedAt) {
+            const startKey = String(startedAt);
+            if (bonusIntroStartedAtKey === startKey) return;
+            bonusIntroStartedAtKey = startKey;
+            bonusIntroPlayedCues.clear();
+            bonusIntroCueTimeouts.forEach(clearTimeout);
+            bonusIntroCueTimeouts = [];
+            document.querySelectorAll(".bonus-intro-word").forEach((word) => word.classList.remove("visible"));
+            const elapsed = Math.max(0, Date.now() - startedAt);
+            const firstSoundKey = `${startKey}:1`;
+            const secondSoundKey = `${startKey}:2`;
+            const revealSecondPhrase = () => {
+                if (bonusIntroStartedAtKey !== startKey) return;
+                document.getElementById("bonus-intro-the").classList.add("visible");
+                document.getElementById("bonus-intro-button-word").classList.add("visible");
+            };
+            const playSecondSound = () => {
+                if (bonusIntroStartedAtKey !== startKey) return;
+                if (bonusIntroPlayedCues.has(secondSoundKey)) return;
+                bonusIntroPlayedCues.add(secondSoundKey);
+                playBonusIntroSound("2.mp3");
+            };
+            document.getElementById("bonus-intro-push").classList.add("visible");
+            if (elapsed < 500 && !bonusIntroPlayedCues.has(firstSoundKey)) {
+                bonusIntroPlayedCues.add(firstSoundKey);
+                playBonusIntroSound("1.mp3", () => {
+                    if (bonusIntroStartedAtKey !== startKey || bonusIntroPlayedCues.has(secondSoundKey)) return;
+                    bonusIntroCueTimeouts.push(setTimeout(playSecondSound, BONUS_INTRO_WORD_DELAY_MS));
+                });
+            }
+            if (elapsed < BONUS_INTRO_WORD_DELAY_MS) {
+                bonusIntroCueTimeouts.push(setTimeout(revealSecondPhrase, BONUS_INTRO_WORD_DELAY_MS - elapsed));
+            } else {
+                revealSecondPhrase();
+            }
+            if (elapsed >= 500 && elapsed < BONUS_INTRO_WORD_DELAY_MS) {
+                bonusIntroCueTimeouts.push(setTimeout(playSecondSound, BONUS_INTRO_WORD_DELAY_MS - elapsed));
+            } else if (elapsed >= BONUS_INTRO_WORD_DELAY_MS && elapsed - BONUS_INTRO_WORD_DELAY_MS < 500) {
+                playSecondSound();
+            }
+        }
+
+        async function finishBonusRoundIntro(expectedStartAt) {
+            const snapshot = await get(gameRef);
+            const gameData = snapshot.val() || {};
+            if (gameData.phase !== "bonus-intro" || Number(gameData.bonusRoundIntroStartedAt) !== expectedStartAt || gameData.paused) return;
+            await update(gameRef, {
+                status: "bonus-round-started",
+                phase: "bonus-round",
+                bonusRoundStartedAt: expectedStartAt + BONUS_INTRO_DURATION_MS,
+                bonusRoundEndsAt: expectedStartAt + BONUS_INTRO_DURATION_MS + BONUS_ROUND_SECONDS * 1000
+            });
+        }
+
+        window.startBonusRound = async function() {
+            if (bonusRoundStarting) return;
+            bonusRoundStarting = true;
+            try {
+                const snapshot = await get(gameRef);
+                const gameData = snapshot.val() || {};
+                if (currentPhase !== "final-round-placeholder" && gameData.phase !== "final-round-placeholder") {
+                    return;
+                }
+
+                const now = Date.now();
+                const teamIds = Object.entries(hostPlayers || {}).reduce((result, [, player]) => {
+                    if (player?.teamId) result[player.teamId] = true;
+                    return result;
+                }, {});
+                const teamPoints = Object.fromEntries(Object.keys(teamIds).map((teamId) => [teamId, 0]));
+                const startData = {
+                    status: "bonus-round-intro",
+                    phase: "bonus-intro",
+                    round: 3,
+                    bonusRoundIntroStartedAt: now,
+                    bonusRoundIntroEndsAt: now + BONUS_INTRO_DURATION_MS,
+                    bonusRoundStartedAt: now + BONUS_INTRO_DURATION_MS,
+                    bonusRoundEndsAt: now + BONUS_INTRO_DURATION_MS + BONUS_ROUND_SECONDS * 1000,
+                    bonusRoundSeconds: BONUS_ROUND_SECONDS,
+                    bonusTapCounts: teamPoints,
+                    bonusPoints: teamPoints,
+                    bonusRoundStartedBy: "host",
+                    bonusRoundEndedAt: 0,
+                    bonusRoundRevealed: false,
+                    paused: false,
+                    pausedAt: null
+                };
+                currentPhase = "bonus-intro";
+                document.getElementById("bonus-intro-screen").classList.add("active");
+                await update(gameRef, startData);
+            } catch (error) {
+                console.error("Could not start Bonus Round", error);
+            } finally {
+                bonusRoundStarting = false;
+            }
+        };
+
+        window.endBonusRound = async function() {
+            if (currentPhase !== "bonus-round") return;
+            const snapshot = await get(gameRef);
+            const gameData = snapshot.val() || {};
+            if (gameData.phase !== "bonus-round") return;
+            currentPhase = "bonus-standings";
+            clearInterval(bonusRoundTimerInterval);
+            document.getElementById("bonus-round-screen").classList.remove("active");
+            document.getElementById("bonus-standings-screen").classList.add("active");
+            await update(gameRef, {
+                status: "bonus-round-complete",
+                phase: "bonus-standings",
+                bonusRoundEndsAt: Date.now(),
+                bonusRoundEndedAt: Date.now()
+            });
+        };
+
+        function renderBonusStandings(gameData) {
+            const standings = Object.entries(gameData.teams || {})
+                .map(([teamId, team]) => {
+                    const teamPlayers = Object.values(gameData.players || {}).filter((player) => player?.teamId === teamId);
+                    const playerScore = teamPlayers.reduce((total, player) => total + (Number(player.score) || 0), 0);
+                    const bonusScore = getBonusScore(gameData, teamId);
+                    return {
+                        teamId,
+                        name: team.name || team.teamName || `${team.colorName || "Team"} ${team.animalName || "Team"}`,
+                        colorHex: team.colorHex || team.color || "#64748b",
+                        score: playerScore + bonusScore,
+                        bonusScore,
+                        playerCount: teamPlayers.length
+                    };
+                })
+                .sort((first, second) => second.score - first.score || first.name.localeCompare(second.name));
+            const list = document.getElementById("bonus-final-standings");
+            list.innerHTML = "";
+            standings.forEach((entry, index) => {
+                const item = document.createElement("li");
+                item.className = "leaderboard-item";
+                item.style.setProperty("--team-color", entry.colorHex);
+                item.innerText = `${index + 1}. ${entry.name} — ${entry.score} pts${entry.bonusScore ? ` (+${entry.bonusScore} bonus)` : ""}`;
+                list.appendChild(item);
+            });
+            document.getElementById("bonus-standings-screen").classList.add("active");
+        }
+
+        function showBonusStandings(gameData) {
+            renderBonusStandings(gameData);
+            document.getElementById("bonus-podium-screen").classList.remove("active");
+        }
+
+        function showBonusPodium(gameData) {
+            const standings = Object.values(gameData.players || {})
+                .filter((player) => player?.teamId)
+                .map((player) => ({
+                    name: player.name || player.teamName || "Player",
+                    avatar: getPlayerAvatar(player),
+                    colorHex: getTeam(player.teamId)?.hex || player.teamColor || "#64748b",
+                    score: Number(player.score) || 0
+                }))
+                .sort((first, second) => second.score - first.score || first.name.localeCompare(second.name));
+            const podium = document.getElementById("bonus-podium");
+            const list = document.getElementById("bonus-podium-standings");
+            podium.innerHTML = "";
+            list.innerHTML = "";
+            list.style.setProperty("--standing-rows", String(Math.max(1, Math.ceil(standings.length / 2))));
+            standings.slice(0, 3).forEach((entry, index) => {
+                const item = document.createElement("div");
+                item.className = `podium-item rank-${index + 1}`;
+                item.style.setProperty("--team-color", entry.colorHex);
+                item.style.setProperty("--reveal-delay", `${(2 - index) * 650}ms`);
+                const medal = document.createElement("div");
+                medal.className = "podium-rank";
+                medal.innerText = ["🥇", "🥈", "🥉"][index];
+                const avatar = document.createElement("div");
+                avatar.className = "podium-avatar";
+                avatar.innerText = entry.avatar;
+                const name = document.createElement("div");
+                name.className = "podium-name";
+                name.innerText = entry.name;
+                const score = document.createElement("div");
+                score.className = "podium-score";
+                score.innerText = `${entry.score} pts`;
+                item.append(medal, avatar, name, score);
+                podium.appendChild(item);
+            });
+            standings.forEach((entry, index) => {
+                const item = document.createElement("li");
+                item.className = "leaderboard-item";
+                item.style.setProperty("--team-color", entry.colorHex);
+                item.innerText = `${index + 1}. ${entry.avatar} ${entry.name} — ${entry.score} pts`;
+                list.appendChild(item);
+            });
+            document.getElementById("bonus-standings-screen").classList.remove("active");
+            document.getElementById("bonus-podium-screen").classList.add("active");
+        }
+
+        window.revealBonusPodium = async function() {
+            if (currentPhase !== "bonus-standings") return;
+            const result = await get(gameRef);
+            if (result.val()?.phase !== "bonus-standings") return;
+            await update(gameRef, {
+                status: "bonus-podium",
+                phase: "bonus-podium",
+                bonusRoundRevealed: true
+            });
+        };
+
         async function showRoundTwoPlaceholder() {
-            if (currentPhase !== "quiz-results") return;
+            if (!["quiz-results", "round-2-placeholder"].includes(currentPhase)) return;
             currentPhase = "round-2-placeholder";
-            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.body.classList.add("spyfall-host-active");
+            document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             document.getElementById("round-two-placeholder-screen").classList.add("active");
             document.getElementById("spyfall-host-title").innerText = "Spyfall";
-            document.getElementById("spyfall-host-status").innerText = "Start the game to assign roles.";
+            document.getElementById("spyfall-host-status").innerText = "Assign roles, then wait until everyone is ready to reveal them.";
             document.getElementById("spyfall-host-turn").innerText = "";
             document.getElementById("spyfall-host-timer").hidden = true;
             document.getElementById("spyfall-host-vote-count").hidden = true;
             document.getElementById("spyfall-host-votes").hidden = true;
             document.getElementById("spyfall-host-score-heading").hidden = true;
             document.getElementById("spyfall-host-scores").hidden = true;
+            document.getElementById("spyfall-host-current-team").hidden = true;
+            document.getElementById("spyfall-host-reveal-again").hidden = true;
+            document.getElementById("spyfall-start-voting").hidden = true;
+            updateSpyfallLocationControls("round-2-placeholder");
             const action = document.getElementById("spyfall-host-action");
-            action.innerText = "Start Spyfall";
+            action.innerText = "Assign Roles";
             action.hidden = false;
+            action.disabled = false;
             action.onclick = startSpyfall;
+            document.getElementById("spyfall-pause-btn").hidden = true;
+            document.getElementById("spyfall-pause-btn").innerText = "Pause Game";
             await update(gameRef, { status: "round-2-placeholder", phase: "round-2-placeholder", round: 2 });
         }
+
+        window.selectSpyfallBackupLocation = async function(imageName) {
+            if (!["waiting", "round-2-placeholder", "spyfall-setup"].includes(currentPhase)) return;
+            const selectedLocation = ["location.webp", "location2.webp", "location3.webp"].includes(imageName)
+                ? imageName
+                : "location.webp";
+            syncSpyfallLocationControls(selectedLocation);
+            await update(gameRef, { spyfallLocation: selectedLocation });
+        };
 
         window.startSpyfall = async function() {
             if (currentPhase !== "round-2-placeholder") return;
@@ -1591,27 +3297,38 @@
             document.getElementById("spyfall-host-score-heading").hidden = true;
             document.getElementById("spyfall-host-scores").hidden = true;
             document.getElementById("spyfall-host-action").hidden = false;
+            document.getElementById("spyfall-host-reveal-again").hidden = true;
+            document.getElementById("spyfall-start-voting").hidden = true;
+            updateSpyfallLocationControls("spyfall-setup");
+            document.getElementById("spyfall-pause-btn").hidden = true;
+            document.getElementById("spyfall-pause-btn").innerText = "Pause Game";
             await set(ref(db, "spyfallRoles"), {});
             await update(gameRef, {
                 status: "spyfall-setup",
                 phase: "spyfall-setup",
                 round: 2,
+                spyfallLocation: document.getElementById("spyfall-location-select").value,
                 spyfallPlayerOrder,
                 spyfallRevealIndex: -1,
                 spyfallVotes: null,
                 spyfallVoteCounts: null,
                 spyfallRevealEndsAt: 0,
-                paused: false
+                paused: false,
+                pausedAt: null
             });
-            document.getElementById("spyfall-host-status").innerText = "All role cards are about to be revealed at once.";
+            document.getElementById("spyfall-host-status").innerText = "Roles are assigned and hidden. Reveal them when everyone is ready.";
             const action = document.getElementById("spyfall-host-action");
-            action.innerText = "Reveal Team Roles";
+            action.innerText = "Reveal Roles";
+            action.disabled = false;
             action.onclick = revealNextSpyfallRole;
         };
 
         async function revealNextSpyfallRole() {
-            if (currentPhase !== "spyfall-setup" && currentPhase !== "spyfall-reveal") return;
-            const revealEndsAt = Date.now() + 15000;
+            if ((currentPhase !== "spyfall-setup" && currentPhase !== "spyfall-reveal") || isGamePaused) return;
+            const action = document.getElementById("spyfall-host-action");
+            const revealAgain = document.getElementById("spyfall-host-reveal-again");
+            action.disabled = true;
+            revealAgain.disabled = true;
             const roleMap = {};
 
             for (const playerId of spyfallPlayerOrder) {
@@ -1619,6 +3336,7 @@
                 await set(ref(db, `spyfallRoles/${playerId}`), roleMap[playerId]);
             }
 
+            spyfallRevealEndsAt = Date.now() + 15000;
             spyfallRevealIndex = spyfallPlayerOrder.length - 1;
             currentPhase = "spyfall-reveal";
             await update(gameRef, {
@@ -1626,33 +3344,64 @@
                 phase: "spyfall-reveal",
                 spyfallRevealPlayerId: "all",
                 spyfallRevealIndex,
-                spyfallRevealEndsAt: revealEndsAt,
+                spyfallRevealEndsAt,
                 paused: false,
                 spyfallRoles: roleMap
             });
 
-            document.getElementById("spyfall-host-status").innerText = "Everyone sees their role. The role cards vanish in 15 seconds.";
+            document.getElementById("spyfall-host-status").innerText = "Roles are visible for 15 seconds. Start Spyfall now or reveal them again.";
             document.getElementById("spyfall-host-timer").hidden = false;
-            document.getElementById("spyfall-host-timer").innerText = "Role reveal · 0:15";
-            const action = document.getElementById("spyfall-host-action");
-            action.innerText = "Start Round";
+            action.innerText = "Start Spyfall";
+            action.disabled = false;
             action.onclick = startSpyfallGame;
+            revealAgain.hidden = false;
+            revealAgain.disabled = false;
+            updateSpyfallLocationControls("spyfall-reveal");
             clearInterval(spyfallTimerInterval);
-            spyfallTimerInterval = window.setInterval(() => {
-                if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
-                const secondsLeft = Math.max(0, Math.ceil((revealEndsAt - Date.now()) / 1000));
-                document.getElementById("spyfall-host-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
-                if (!secondsLeft) startSpyfallGame();
-            }, 200);
+            updateSpyfallRevealTimer();
+            spyfallTimerInterval = window.setInterval(updateSpyfallRevealTimer, 200);
+        }
+
+        window.revealSpyfallRolesAgain = async function() {
+            if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
+            await revealNextSpyfallRole();
+        };
+
+        function updateSpyfallRevealTimer() {
+            if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
+            const secondsLeft = Math.max(0, Math.ceil((spyfallRevealEndsAt - Date.now()) / 1000));
+            document.getElementById("spyfall-host-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
+            if (!secondsLeft) {
+                clearInterval(spyfallTimerInterval);
+                document.getElementById("spyfall-host-status").innerText = "The role reveal ended. Start Spyfall or reveal roles again.";
+            }
         }
 
         async function startSpyfallGame() {
-            if (currentPhase !== "spyfall-reveal" && currentPhase !== "spyfall-setup") return;
+            if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
             clearInterval(spyfallTimerInterval);
+            document.getElementById("spyfall-host-reveal-again").hidden = true;
+            document.getElementById("spyfall-start-voting").hidden = true;
             currentPhase = "spyfall-active";
             spyfallTurnIndex = 0;
             spyfallTurnEndsAt = Date.now() + 20000;
             const activeTeamId = hostPlayers[spyfallPlayerOrder[0]].teamId;
+            const firstPlayerId = spyfallPlayerOrder[0];
+            const firstTeamId = hostPlayers[firstPlayerId].teamId;
+            const firstTeamName = hostPlayers[firstPlayerId].teamName || hostPlayers[firstPlayerId].name || "Team";
+            const action = document.getElementById("spyfall-host-action");
+            action.hidden = false;
+            action.disabled = true;
+            action.innerText = "Starting Spyfall...";
+            action.onclick = null;
+            document.getElementById("spyfall-host-status").innerText = "Starting Spyfall...";
+            document.getElementById("spyfall-host-turn").innerText = `Team 1 of ${spyfallPlayerOrder.length}: ${firstTeamName}`;
+            document.getElementById("spyfall-host-title").innerText = "Spyfall";
+            document.getElementById("spyfall-host-timer").hidden = false;
+            document.getElementById("spyfall-host-timer").innerText = "0:20";
+            document.getElementById("spyfall-pause-btn").hidden = false;
+            document.getElementById("spyfall-pause-btn").innerText = "Pause Game";
+            renderSpyfallHostCurrentTeam(firstTeamId, firstTeamName);
             await update(gameRef, {
                 status: "spyfall-active",
                 phase: "spyfall-active",
@@ -1660,16 +3409,16 @@
                 spyfallTurnIndex,
                 spyfallActiveTeamId: activeTeamId,
                 spyfallTurnEndsAt,
-                spyfallVotes: null
+                spyfallVotes: null,
+                paused: false,
+                pausedAt: null
             });
             document.getElementById("spyfall-host-status").innerText = "Give one hint for the location.";
-            document.getElementById("spyfall-host-turn").innerText = `Team 1 of ${spyfallPlayerOrder.length}: ${hostPlayers[spyfallPlayerOrder[0]].teamName || hostPlayers[spyfallPlayerOrder[0]].name}`;
-            document.getElementById("spyfall-host-title").innerText = "Spyfall";
-            document.getElementById("spyfall-host-timer").hidden = false;
-            const action = document.getElementById("spyfall-host-action");
             action.hidden = false;
+            action.disabled = false;
             action.innerText = "Next Team";
             action.onclick = advanceSpyfallTeam;
+            document.getElementById("spyfall-start-voting").hidden = true;
             clearInterval(spyfallTimerInterval);
             spyfallTimerInterval = window.setInterval(updateSpyfallTimer, 200);
         }
@@ -1699,7 +3448,10 @@
                 spyfallTurnEndsAt
             });
             document.getElementById("spyfall-host-status").innerText = "Give one hint for the location.";
-            document.getElementById("spyfall-host-turn").innerText = `Team ${nextIndex + 1} of ${spyfallPlayerOrder.length}: ${hostPlayers[nextPlayerId].teamName || hostPlayers[nextPlayerId].name}`;
+            const nextTeamId = hostPlayers[nextPlayerId].teamId;
+            const nextTeamName = hostPlayers[nextPlayerId].teamName || hostPlayers[nextPlayerId].name || "Team";
+            document.getElementById("spyfall-host-turn").innerText = `Team ${nextIndex + 1} of ${spyfallPlayerOrder.length}: ${nextTeamName}`;
+            renderSpyfallHostCurrentTeam(nextTeamId, nextTeamName);
             clearInterval(spyfallTimerInterval);
             updateSpyfallTimer();
             spyfallTimerInterval = window.setInterval(updateSpyfallTimer, 200);
@@ -1709,36 +3461,93 @@
             if (currentPhase !== "spyfall-active") return;
             clearInterval(spyfallTimerInterval);
             currentPhase = "spyfall-vote";
-            spyfallVoteEndsAt = Date.now() + 30000;
+            spyfallVotingStarted = false;
+            spyfallVotingEnded = false;
+            spyfallVoteOpensAt = Date.now() + 30000;
+            spyfallVoteEndsAt = 0;
             await update(gameRef, {
                 status: "spyfall-vote",
                 phase: "spyfall-vote",
-                spyfallVotes: {},
-                spyfallVoteEndsAt,
-                spyfallDiscussionEndsAt: spyfallVoteEndsAt,
+                spyfallVotes: null,
+                spyfallVotingStarted: false,
+                spyfallVotingEnded: false,
+                spyfallVoteEndsAt: 0,
+                spyfallDiscussionEndsAt: spyfallVoteOpensAt,
                 paused: false
             });
             if (currentPhase !== "spyfall-vote") return;
             document.getElementById("spyfall-host-timer").hidden = false;
-            document.getElementById("spyfall-host-timer").innerText = "0:30";
-            document.getElementById("spyfall-host-title").innerText = "Choose the spy";
+            document.getElementById("spyfall-host-title").innerText = "Prepare to Vote";
             document.getElementById("spyfall-host-turn").innerText = "";
-            document.getElementById("spyfall-host-status").innerText = "Discussion in progress. Voting opens after the timer ends.";
-            document.getElementById("spyfall-host-action").hidden = false;
-            document.getElementById("spyfall-host-action").innerText = "Reveal Results";
-            document.getElementById("spyfall-host-action").onclick = finishSpyfallVote;
-            document.getElementById("spyfall-host-vote-count").hidden = false;
-            document.getElementById("spyfall-host-votes").hidden = false;
+            document.getElementById("spyfall-host-current-team").hidden = true;
+            document.getElementById("spyfall-host-status").innerText = "Discussion time. Start voting whenever the teams are ready.";
+            document.getElementById("spyfall-host-action").hidden = true;
+            document.getElementById("spyfall-start-voting").hidden = false;
+            document.getElementById("spyfall-host-vote-count").hidden = true;
+            document.getElementById("spyfall-host-votes").hidden = true;
+            document.getElementById("spyfall-pause-btn").hidden = false;
+            updateSpyfallVoteTimer();
             spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
         }
 
+        window.beginSpyfallVoting = async function() {
+            if (currentPhase !== "spyfall-vote" || spyfallVotingStarted || isGamePaused) return;
+            spyfallVotingStarted = true;
+            spyfallVotingEnded = false;
+            spyfallVoteEndsAt = Date.now() + 30000;
+            await update(gameRef, {
+                spyfallVotingStarted: true,
+                spyfallVotingEnded: false,
+                spyfallVoteEndsAt,
+                spyfallVotes: {},
+                paused: false
+            });
+            if (currentPhase !== "spyfall-vote") return;
+            document.getElementById("spyfall-host-title").innerText = "Choose the spies";
+            document.getElementById("spyfall-host-status").innerText = "Teams have 30 seconds to vote.";
+            document.getElementById("spyfall-start-voting").hidden = true;
+            const action = document.getElementById("spyfall-host-action");
+            action.hidden = false;
+            action.innerText = "End Voting";
+            action.onclick = endSpyfallVoting;
+            document.getElementById("spyfall-host-vote-count").hidden = false;
+            document.getElementById("spyfall-host-votes").hidden = false;
+            updateSpyfallVoteTimer();
+        };
+
         function updateSpyfallVoteTimer() {
             if (currentPhase !== "spyfall-vote" || isGamePaused) return;
-            const secondsLeft = Math.max(0, Math.ceil((spyfallVoteEndsAt - Date.now()) / 1000));
-            document.getElementById("spyfall-host-timer").innerText = `Discussion · 0:${String(secondsLeft).padStart(2, "0")}`;
-            if (!secondsLeft) {
-                document.getElementById("spyfall-host-status").innerText = "Discussion time is up. Players can now submit their spy votes.";
+            if (spyfallVotingEnded) {
+                document.getElementById("spyfall-host-timer").innerText = "Voting ended";
+                return;
             }
+            if (!spyfallVotingStarted) {
+                const secondsLeft = Math.max(0, Math.ceil((spyfallVoteOpensAt - Date.now()) / 1000));
+                document.getElementById("spyfall-host-timer").innerText = `Discussion · 0:${String(secondsLeft).padStart(2, "0")}`;
+                if (!secondsLeft) beginSpyfallVoting();
+                return;
+            }
+            const secondsLeft = Math.max(0, Math.ceil((spyfallVoteEndsAt - Date.now()) / 1000));
+            document.getElementById("spyfall-host-timer").innerText = secondsLeft
+                ? `Voting · 0:${String(secondsLeft).padStart(2, "0")}`
+                : "Voting ended";
+            if (!secondsLeft) {
+                endSpyfallVoting("Voting time is up. Reveal results when ready.");
+            }
+        }
+
+        async function endSpyfallVoting(statusText = "Voting ended by host. Reveal results when ready.") {
+            if (currentPhase !== "spyfall-vote" || !spyfallVotingStarted || spyfallVotingEnded) return;
+            spyfallVotingEnded = true;
+            clearInterval(spyfallTimerInterval);
+            await update(gameRef, { spyfallVotingEnded: true });
+            if (currentPhase !== "spyfall-vote") return;
+            document.getElementById("spyfall-host-timer").innerText = "Voting ended";
+            document.getElementById("spyfall-host-status").innerText = statusText;
+            document.getElementById("spyfall-pause-btn").hidden = true;
+            const action = document.getElementById("spyfall-host-action");
+            action.innerText = "Reveal Results";
+            action.onclick = finishSpyfallVote;
         }
 
         function renderSpyfallVotes(gameData) {
@@ -1755,7 +3564,7 @@
             spyfallPlayerOrder.forEach((playerId) => {
                 const row = document.createElement("li");
                 const name = document.createElement("span");
-                name.innerText = hostPlayers[playerId]?.name || "Player";
+                    name.innerText = hostPlayers[playerId]?.teamName || hostPlayers[playerId]?.name || "Player";
                 const count = document.createElement("strong");
                 count.innerText = String(voteCounts[playerId] || 0);
                 row.append(name, count);
@@ -1764,11 +3573,12 @@
         }
 
         async function finishSpyfallVote() {
-            if (currentPhase !== "spyfall-vote") return;
+            if (currentPhase !== "spyfall-vote" || !spyfallVotingStarted || !spyfallVotingEnded) return;
             clearInterval(spyfallTimerInterval);
             currentPhase = "spyfall-results";
+            showSpyfallResultScreen("spyfall-drumroll-screen");
             const result = await runTransaction(gameRef, (gameData) => {
-                if (gameData?.phase !== "spyfall-vote") return;
+                if (gameData?.phase !== "spyfall-vote" || !gameData.spyfallVotingEnded) return;
                 const players = { ...(gameData.players || {}) };
                 const spyIds = Array.from(spyfallSpyIds);
                 Object.entries(gameData.spyfallVotes || {}).forEach(([voterId, selectedPlayerIds]) => {
@@ -1798,34 +3608,128 @@
             }, { applyLocally: false });
             if (!result.committed) {
                 currentPhase = "spyfall-vote";
+                showSpyfallResultScreen("round-two-placeholder-screen");
                 return;
             }
 
             const gameData = result.snapshot.val();
-            const spyNames = (gameData.spyfallSpyIds || [])
-                .map((id) => gameData.players?.[id]?.name)
-                .filter(Boolean);
+            renderSpyfallVoteChart(gameData);
+            const spyList = document.getElementById("spyfall-spy-results-list");
+            spyList.innerHTML = "";
+            (gameData.spyfallSpyIds || []).forEach((id) => {
+                const player = gameData.players?.[id];
+                if (!player) return;
+                const row = document.createElement("li");
+                row.className = "spyfall-revealed-spy";
+                row.style.setProperty("--team-color", player.teamColor || getTeam(player.teamId)?.hex || "#64748b");
+                const avatar = document.createElement("span");
+                avatar.className = "spyfall-revealed-avatar";
+                avatar.innerText = getPlayerAvatar(player);
+                const name = document.createElement("span");
+                name.className = "spyfall-revealed-name";
+                name.innerText = player.teamName || player.name || "Team";
+                row.append(avatar, name);
+                spyList.appendChild(row);
+            });
             const popularId = Object.entries(gameData.spyfallVoteCounts || {})
                 .sort((first, second) => second[1] - first[1])[0]?.[0];
-            const popularName = gameData.players?.[popularId]?.name || "No votes";
-            document.getElementById("spyfall-host-title").innerText = "Spyfall Results";
-            document.getElementById("spyfall-host-timer").hidden = true;
-            document.getElementById("spyfall-host-turn").innerText = "";
-            document.getElementById("spyfall-host-status").innerText = `The spies were ${spyNames.join(", ") || "unknown"}. Most votes went to ${popularName}.`;
-            document.getElementById("spyfall-host-score-heading").hidden = false;
-            document.getElementById("spyfall-host-scores").hidden = false;
-            renderScoreList("spyfall-host-scores", gameData.players);
-            document.getElementById("spyfall-host-action").innerText = "Start Pop Quiz 2";
-            document.getElementById("spyfall-host-action").onclick = () => startPopQuiz(1);
+            const popularName = gameData.players?.[popularId]?.teamName || gameData.players?.[popularId]?.name || "No votes";
+            document.getElementById("spyfall-spy-results-summary").innerText = `Most votes went to ${popularName}.`;
+            renderSpyfallRoundScores(gameData.players);
+            renderScoreList("spyfall-final-standings-list", gameData.players);
+            document.getElementById("spyfall-next-round-action").onclick = () => startPopQuiz(1);
+            document.getElementById("spyfall-play-again-action").onclick = playAgainSpyfall;
             document.getElementById("spyfall-host-vote-count").hidden = true;
+            document.getElementById("spyfall-pause-btn").hidden = true;
+            await new Promise((resolve) => window.setTimeout(resolve, 2800));
+            if (currentPhase !== "spyfall-results") return;
+            showSpyfallResultScreen("spyfall-spy-results-screen");
         }
 
-        function renderScoreList(listId, playersData) {
-            const list = document.getElementById(listId);
+        async function playAgainSpyfall() {
+            if (currentPhase !== "spyfall-results") return;
+            const [playersSnapshot, gameSnapshot] = await Promise.all([get(playersRef), get(gameRef)]);
+            const players = playersSnapshot.val() || {};
+            const currentGameData = gameSnapshot.val() || {};
+            const resetPlayers = Object.fromEntries(Object.entries(players).map(([id, player]) => [
+                id,
+                player?.teamId ? { ...player, spyfallPoints: 0 } : player
+            ]));
+            currentPhase = "quiz-results";
+            spyfallPlayerOrder = [];
+            spyfallSpyIds = new Set();
+            spyfallRevealIndex = -1;
+            spyfallTurnIndex = -1;
+            spyfallVotingStarted = false;
+            spyfallVotingEnded = false;
+            await update(gameRef, {
+                status: "round-2-placeholder",
+                phase: "round-2-placeholder",
+                round: 2,
+                players: resetPlayers,
+                spyfallLocation: currentGameData.spyfallLocation,
+                spyfallRoles: {},
+                spyfallVotes: {},
+                spyfallVoteCounts: {},
+                spyfallSpyIds: []
+            });
+            showSpyfallResultScreen("round-two-placeholder-screen");
+            await showRoundTwoPlaceholder();
+        }
+
+        function renderSpyfallVoteChart(gameData) {
+            const chart = document.getElementById("spyfall-vote-chart");
+            chart.innerHTML = "";
+            const players = Object.entries(gameData.players || {})
+                .filter(([, player]) => player?.teamId)
+                .sort((first, second) => (Number(gameData.spyfallVoteCounts?.[second[0]]) || 0) - (Number(gameData.spyfallVoteCounts?.[first[0]]) || 0));
+            chart.style.setProperty("--vote-team-count", String(Math.max(1, players.length)));
+            const maxVotes = Math.max(0, ...players.map(([id]) => Number(gameData.spyfallVoteCounts?.[id]) || 0));
+
+            players.forEach(([id, player]) => {
+                const votes = Number(gameData.spyfallVoteCounts?.[id]) || 0;
+                const color = player.teamColor || getTeam(player.teamId)?.hex || "#64748b";
+                const column = document.createElement("div");
+                column.className = "spyfall-vote-chart-row";
+                column.style.setProperty("--team-color", color);
+                column.setAttribute("aria-label", `${player.teamName || player.name || "Team"}: ${votes} votes`);
+                const avatar = document.createElement("span");
+                avatar.className = "spyfall-vote-chart-avatar";
+                avatar.innerText = getPlayerAvatar(player);
+                const track = document.createElement("span");
+                track.className = "spyfall-vote-chart-track";
+                const bar = document.createElement("span");
+                bar.className = "spyfall-vote-chart-bar";
+                bar.style.setProperty("--vote-height", `${maxVotes ? votes / maxVotes * 100 : 0}%`);
+                track.appendChild(bar);
+                const count = document.createElement("strong");
+                count.className = "spyfall-vote-chart-count";
+                count.innerText = String(votes);
+                column.append(count, track, avatar);
+                chart.appendChild(column);
+            });
+        }
+
+        function showSpyfallResultScreen(screenId) {
+            document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+            ["round-two-placeholder-screen", "spyfall-drumroll-screen", "spyfall-spy-results-screen", "spyfall-score-results-screen", "spyfall-standings-screen"]
+                .forEach((id) => document.getElementById(id).classList.toggle("active", id === screenId));
+        }
+
+        window.showSpyfallScoreScreen = function() {
+            showSpyfallResultScreen("spyfall-score-results-screen");
+        };
+
+        window.showSpyfallStandingsScreen = function() {
+            showSpyfallResultScreen("spyfall-standings-screen");
+        };
+
+        function renderSpyfallRoundScores(playersData) {
+            const list = document.getElementById("spyfall-round-score-list");
             list.innerHTML = "";
             Object.values(playersData || {})
                 .filter((player) => player?.teamId)
-                .sort((first, second) => (Number(second.score) || 0) - (Number(first.score) || 0))
+                .sort((first, second) => (Number(second.spyfallPoints) || 0) - (Number(first.spyfallPoints) || 0))
                 .forEach((player) => {
                     const row = document.createElement("li");
                     row.className = "player-line";
@@ -1834,9 +3738,31 @@
                     avatar.innerText = getPlayerAvatar(player);
                     const name = document.createElement("span");
                     name.className = "player-name";
-                    name.innerText = player.name || player.teamName || "Player";
+                    name.innerText = player.teamName || player.name || "Team";
                     const score = document.createElement("strong");
-                    score.innerText = `${Number(player.score) || 0} pts`;
+                    score.innerText = `${Number(player.spyfallPoints) || 0} pts`;
+                    row.append(avatar, name, score);
+                    list.appendChild(row);
+                });
+        }
+
+        function renderScoreList(listId, playersData, scoreField = "score") {
+            const list = document.getElementById(listId);
+            list.innerHTML = "";
+            Object.values(playersData || {})
+                .filter((player) => player?.teamId)
+                .sort((first, second) => (Number(second[scoreField]) || 0) - (Number(first[scoreField]) || 0))
+                .forEach((player) => {
+                    const row = document.createElement("li");
+                    row.className = "player-line";
+                    const avatar = document.createElement("span");
+                    avatar.className = "avatar-chip";
+                    avatar.innerText = getPlayerAvatar(player);
+                    const name = document.createElement("span");
+                    name.className = "player-name";
+                    name.innerText = player.teamName || player.name || "Player";
+                    const score = document.createElement("strong");
+                    score.innerText = `${Number(player[scoreField]) || 0} pts`;
                     row.append(avatar, name, score);
                     list.appendChild(row);
                 });
@@ -1853,17 +3779,17 @@
             currentTask = "";
             currentPhase = "waiting";
             bombLocked = true;
-            await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {}, teams: {} });
+            await set(gameRef, { status: "waiting", phase: "waiting", round: 0, players: {}, teams: {}, resetAt: Date.now() });
             await set(ref(db, "spyfallRoles"), {});
             document.getElementById("task-screen").classList.remove("active");
             document.getElementById("quiz-screen").classList.remove("active");
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("round-two-placeholder-screen").classList.remove("active");
-            document.getElementById("final-round-placeholder-screen").classList.remove("active");
-            document.body.classList.remove("bomb-round-active");
+            document.body.classList.remove("bomb-round-active", "spyfall-host-active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("lobby-screen").classList.add("active");
             renderHostPlayerLists({});
+            window.location.reload();
         };
 
         function showRoundResults() {
