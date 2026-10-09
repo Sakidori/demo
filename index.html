@@ -603,17 +603,43 @@
             display: grid;
             align-content: start;
             grid-template-columns: minmax(0, 1fr);
-            gap: 6px;
+            grid-auto-rows: var(--task-player-row-height, auto);
+            gap: 2px;
             margin: 0;
             padding: 0 6px 0 0;
+        }
+
+        #task-player-list.is-full {
+            align-content: stretch;
+            grid-auto-rows: minmax(32px, 1fr);
         }
 
         #task-player-list li {
             width: 100%;
             min-width: 0;
             margin: 0;
-            padding: 8px 10px;
-            font-size: 0.9rem;
+            gap: 7px;
+            padding: 2px 8px;
+            font-size: var(--task-player-font-size, 0.78rem);
+            line-height: 1.1;
+        }
+
+        #task-player-list .avatar-chip {
+            flex-basis: var(--task-player-avatar-size, 22px);
+            width: var(--task-player-avatar-size, 22px);
+            height: var(--task-player-avatar-size, 22px);
+            border-radius: 7px;
+            font-size: 0.95rem;
+        }
+
+        #task-player-list .result-team-player {
+            border-color: color-mix(in srgb, var(--team-color, #ff4d5e) 82%, white);
+            background: linear-gradient(110deg,
+                color-mix(in srgb, var(--team-color, #ff4d5e) 54%, #101522),
+                color-mix(in srgb, var(--team-color, #ff4d5e) 24%, #101522));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 5px 18px color-mix(in srgb, var(--team-color, #ff4d5e) 30%, transparent);
+            color: #fff;
+            font-weight: 800;
         }
 
         #bomb-lock-status {
@@ -630,7 +656,8 @@
             grid-column: 1;
             grid-row: 5;
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+            grid-template-rows: repeat(3, minmax(36px, auto));
             align-items: stretch;
             gap: 7px;
             width: 100%;
@@ -650,14 +677,20 @@
         }
 
         #unlock-bomb-btn {
-            grid-column: 1 / -1;
-            min-height: 46px;
+            grid-column: 1;
+            grid-row: 1 / 4;
+            min-height: 118px;
             padding: 10px 16px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 900;
             letter-spacing: 0.04em;
             text-transform: uppercase;
         }
+
+        #force-pass-btn { grid-column: 2; grid-row: 1 / 3; }
+        #skip-round-btn { grid-column: 2; grid-row: 3; }
+
+        #pause-game-btn[hidden] { display: none; }
 
         .task-actions button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -1149,7 +1182,7 @@
             width: 100%;
             height: 100%;
             color: #fff;
-            font-size: clamp(3rem, 20vw, 20rem);
+            font-size: clamp(3rem, 25vw, 20rem);
             font-weight: 1000;
             line-height: 0.78;
             text-align: left;
@@ -1167,20 +1200,25 @@
             animation: bonusIntroWordIn 420ms cubic-bezier(0.2, 1.25, 0.4, 1) both;
         }
 
-        #bonus-intro-push { left: 1.7vw; top: 1.5vh; }
-        #bonus-intro-the { left: 50%; top: 36.5vh; --intro-x: -50%; font-size: 0.48em; line-height: 0.95; }
-        #bonus-intro-button-word { left: 1.7vw; bottom: 3vh; --intro-scale-x: 0.82; font-size: 25vw; transform-origin: left bottom; }
+        #bonus-intro-push { left: 0; top: 4vh; --intro-scale-x: 0.83; transform-origin: left top; }
+        #bonus-intro-the { left: 50%; top: 38.5vh; --intro-x: -50%; --intro-scale-x: 0.78; font-size: 0.57em; line-height: 0.95; }
+        #bonus-intro-button-word { left: 0; bottom: 0; --intro-scale-x: 0.82; font-size: 26vw; transform-origin: left bottom; }
 
         .bonus-intro-button-art {
             display: block;
             position: absolute;
-            top: 6vh;
-            right: 8vw;
-            width: min(23vw, 17rem);
+            top: 1vh;
+            right: 2.5vw;
+            width: min(64vh, 46vw, 34rem);
             height: auto;
             object-fit: contain;
             filter: drop-shadow(0 12px 10px rgba(255, 53, 78, 0.2));
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 420ms ease, transform 420ms cubic-bezier(0.2, 1.25, 0.4, 1);
         }
+
+        .bonus-intro-button-art.visible { opacity: 1; transform: scale(1); }
 
         @keyframes bonusIntroWordIn {
             to { opacity: 1; transform: translate(var(--intro-x, 0), 0) scale(var(--intro-scale-x, 1), 1); }
@@ -1192,7 +1230,16 @@
             #bonus-intro-push { top: 3vh; left: 0; }
             #bonus-intro-the { top: 40vh; font-size: 0.58em; }
             #bonus-intro-button-word { left: 0; bottom: 4vh; --intro-scale-x: 1; font-size: 20vw; }
-            .bonus-intro-button-art { top: 6vh; right: 3vw; width: min(30vw, 9rem); }
+            .bonus-intro-button-art { top: 15vh; right: 3vw; width: min(46vw, 12rem); }
+        }
+
+        @media (orientation: landscape) and (max-height: 700px) {
+            .bonus-intro-screen { padding: 2vh 0; }
+            .bonus-intro-art { font-size: 40vh; }
+            #bonus-intro-push { top: 4vh; left: 0; --intro-scale-x: 0.83; }
+            #bonus-intro-the { top: 38.5vh; font-size: 0.57em; }
+            #bonus-intro-button-word { left: 0; bottom: 0; --intro-scale-x: 0.82; font-size: 45vh; }
+            .bonus-intro-button-art { top: 1vh; right: 2.5vw; width: min(64vh, 46vw, 34rem); }
         }
 
         #bonus-final-standings,
@@ -1473,12 +1520,21 @@
             border-radius: 8px;
         }
 
-        .music-control {
+        .host-top-controls {
             position: fixed;
             top: 14px;
             right: 16px;
-            z-index: 10;
+            z-index: 21;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: calc(100vw - 32px);
+        }
+
+        .music-control {
+            position: relative;
             display: inline-flex;
+            flex: 0 1 auto;
             align-items: center;
             gap: 8px;
             width: auto;
@@ -1501,7 +1557,7 @@
             position: fixed;
             top: 62px;
             right: 16px;
-            z-index: 12;
+            z-index: 21;
             display: flex;
             gap: 8px;
         }
@@ -1585,19 +1641,21 @@
             #task-player-list {
                 grid-column: 1;
                 grid-row: 4;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: minmax(0, 1fr);
             }
-            #task-player-list li { padding: 5px 7px; font-size: 0.7rem; }
+            #task-player-list li { padding: 2px 6px; font-size: 0.72rem; }
             #bomb-lock-status { grid-column: 1; grid-row: 5; }
             .task-actions {
                 grid-column: 1;
                 grid-row: 6;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+                grid-template-rows: repeat(3, minmax(34px, auto));
                 width: 100%;
             }
-            #unlock-bomb-btn { grid-column: 1 / -1; min-height: 42px; }
+            #unlock-bomb-btn { grid-column: 1; grid-row: 1 / 4; min-height: 106px; }
             .task-actions button { min-width: 0; padding: 8px 6px; font-size: 0.65rem; }
-            .music-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
+            .host-top-controls { top: 8px; right: 8px; gap: 6px; }
+            .host-top-controls .music-control { padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
             #lobby-screen { padding: 22px 16px; }
             .lobby-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -1622,12 +1680,16 @@
 </head>
 <body>
 
-    <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on">
-        <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
-    </button>
-    <div class="host-player-controls" role="group" aria-label="Player controls">
-        <button id="host-attention-btn" type="button" title="Alert all players" aria-label="Alert all players">📣</button>
-        <button id="freeze-players-btn" type="button" title="Freeze player screens" aria-label="Freeze player screens" aria-pressed="false">⏸</button>
+    <div class="host-top-controls" role="group" aria-label="Music controls">
+        <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on">
+            <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
+        </button>
+    </div>
+    <div class="host-player-controls" role="group" aria-label="Game controls">
+        <button id="host-attention-btn" type="button" title="Play alert sound and toggle pause" aria-label="Play alert sound and toggle pause">📣</button>
+        <button id="pause-game-btn" type="button" onclick="togglePauseGame()" aria-label="Pause game" title="Pause game" aria-pressed="false" hidden>
+            <span id="pause-game-icon" aria-hidden="true">&#9208;</span>
+        </button>
     </div>
 
     <!-- LOBBY SCREEN -->
@@ -1677,7 +1739,7 @@
             <div class="active-player-copy">
                 <strong id="active-player-name">Choosing player...</strong>
                 <span id="active-player-team">Team · Animal</span>
-                <span id="bomb-hold-time">0 seconds held · 0 penalty</span>
+                <span id="bomb-hold-time">0 penalty</span>
             </div>
         </div>
         <h1 id="task-prompt">Get ready...</h1>
@@ -1685,9 +1747,8 @@
         <p id="bomb-lock-status" class="status-chip">Bomb Locked</p>
         <div class="task-actions">
             <button id="unlock-bomb-btn" type="button" onclick="unlockBomb()">Unlock</button>
-            <button id="force-pass-btn" type="button" onclick="forcePassBomb()" disabled>Force Pass · Anytime</button>
+            <button id="force-pass-btn" type="button" onclick="forcePassBomb()" disabled>Force Pass</button>
             <button id="skip-round-btn" type="button" onclick="skipCurrentRound()" disabled>Skip Round</button>
-            <button id="pause-game-btn" type="button" onclick="togglePauseGame()">Pause Game</button>
         </div>
     </div>
 
@@ -1744,7 +1805,6 @@
         <ul id="spyfall-host-scores" hidden></ul>
         <div class="spyfall-host-actions">
             <button id="spyfall-host-action" onclick="startSpyfall()">Assign Roles</button>
-            <button id="spyfall-pause-btn" type="button" onclick="togglePauseGame()" hidden>Pause Game</button>
         </div>
         <button id="spyfall-start-voting" type="button" onclick="beginSpyfallVoting()" hidden>Start Voting</button>
         <button id="spyfall-host-reveal-again" type="button" onclick="revealSpyfallRolesAgain()" hidden>Reveal Roles Again</button>
@@ -1795,7 +1855,7 @@
     <div id="bonus-round-screen" class="screen">
         <div class="results-badge">Final Round · Live</div>
         <h1>Bonus Round</h1>
-        <p>Tap your team button as many times as you can.</p>
+        <p>Push your team button as many times as you can.</p>
         <p id="bonus-round-timer">0:30</p>
         <p id="bonus-round-status">The round is live.</p>
         <button id="bonus-round-end-button" type="button" onclick="endBonusRound()">End Bonus Round</button>
@@ -1860,6 +1920,10 @@
             const animal = TEAM_ANIMALS.find((item) => item.avatar === player?.avatar);
             return animal?.name.toLowerCase() || "player";
         };
+        const getPlayerAnimalPlural = (player) => {
+            const animal = TEAM_ANIMALS.find((item) => item.avatar === player?.avatar);
+            return animal?.plural.toLowerCase() || "players";
+        };
 
         let currentRoundIndex = 0;
         let currentQuizQuestionIndex = 0;
@@ -1874,6 +1938,8 @@
         let previousActivePlayerId = "";
         let currentTask = "";
         let fuseStartedAt = 0;
+        let bombRoundStartedAt = 0;
+        let bombUnlockedAt = 0;
         let currentPhase = "waiting";
         let bombLocked = true;
         let hostPlayers = {};
@@ -1890,19 +1956,35 @@
         let spyfallVotingEnded = false;
         let bonusRoundTimerInterval = null;
         let bonusRoundStarting = false;
+        let bonusRoundEnding = false;
         let bonusIntroTransitionTimeout = null;
         let bonusIntroCueTimeouts = [];
         let bonusIntroStartedAtKey = null;
         const bonusIntroPlayedCues = new Set();
         const bonusIntroAudioBuffers = new Map();
         let isGamePaused = false;
+        const pausableGamePhases = new Set([
+            "bomb", "quiz-intro", "quiz", "round-2-placeholder", "spyfall-setup",
+            "spyfall-reveal", "spyfall-active", "spyfall-vote", "final-round-placeholder",
+            "bonus-intro", "bonus-round"
+        ]);
+        function setPauseButtonState(isPaused) {
+            const pauseButton = document.getElementById("pause-game-btn");
+            const pauseIcon = document.getElementById("pause-game-icon");
+            const label = isPaused ? "Resume game" : "Pause game";
+            pauseIcon.textContent = isPaused ? "▶" : "⏸";
+            pauseButton.setAttribute("aria-label", label);
+            pauseButton.title = label;
+            pauseButton.setAttribute("aria-pressed", String(isPaused));
+        }
         const BONUS_ROUND_SECONDS = 30;
-        const BONUS_INTRO_DURATION_MS = 7000;
+        const BONUS_INTRO_DURATION_MS = 5000;
         const BONUS_INTRO_WORD_DELAY_MS = 1500;
         const BONUS_INTRO_FIRST_SOUND_DURATION_MS = 3048;
         const BONUS_TAPS_PER_POINT = 4;
         const BOMB_PASS_BASE_POINTS = 20;
-        const BOMB_HOLD_PENALTY_INTERVAL = 10;
+        const BOMB_LOCKED_PENALTY_INTERVAL = 10;
+        const BOMB_UNLOCKED_PENALTY_INTERVAL = 5;
         const BOMB_HOLD_PENALTY_PER_INTERVAL = 1;
         const BOMB_FORCE_PASS_PENALTY = 5;
         const BOMB_EXPLOSION_PENALTY = 5;
@@ -1971,34 +2053,10 @@
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
         const hostAttentionButton = document.getElementById("host-attention-btn");
-        const freezePlayersButton = document.getElementById("freeze-players-btn");
 
-        function syncFreezePlayersButton(isFrozen) {
-            freezePlayersButton.innerText = isFrozen ? "▶" : "⏸";
-            freezePlayersButton.title = isFrozen ? "Unfreeze player screens" : "Freeze player screens";
-            freezePlayersButton.setAttribute("aria-label", freezePlayersButton.title);
-            freezePlayersButton.setAttribute("aria-pressed", String(isFrozen));
-        }
-
-        hostAttentionButton.addEventListener("click", async () => {
+        hostAttentionButton.addEventListener("click", () => {
             playAttentionSound();
-            try {
-                await update(gameRef, { playersFrozen: true });
-            } catch (error) {
-                console.error("Could not freeze player screens.", error);
-            }
-        });
-
-        freezePlayersButton.addEventListener("click", async () => {
-            freezePlayersButton.disabled = true;
-            try {
-                const snapshot = await get(gameRef);
-                await update(gameRef, { playersFrozen: !Boolean(snapshot.val()?.playersFrozen) });
-            } catch (error) {
-                console.error("Could not change player screen freeze state.", error);
-            } finally {
-                freezePlayersButton.disabled = false;
-            }
+            window.togglePauseGame();
         });
 
         musicToggle.addEventListener("click", async () => {
@@ -2089,7 +2147,7 @@
 
             function scheduleNextBeep() {
                 if (currentPhase !== "bomb") return;
-                const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - (Date.now() - fuseStartedAt) / 1000);
+                const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - (Date.now() - bombRoundStartedAt) / 1000);
                 if (timeLeft <= 0) return;
 
                 const progress = 1 - (timeLeft / BOMB_ROUND_SECONDS);
@@ -2104,20 +2162,33 @@
 
         let explosionBufferPromise;
 
+        function loadExplosionBuffer(context) {
+            if (!explosionBufferPromise) {
+                explosionBufferPromise = fetch("./explosion.mp3")
+                    .then((response) => {
+                        if (!response.ok) throw new Error("Could not load the explosion sound.");
+                        return response.arrayBuffer();
+                    })
+                    .then((audioData) => context.decodeAudioData(audioData));
+            }
+            return explosionBufferPromise;
+        }
+
+        function preloadExplosionSound() {
+            const context = getAudioContext();
+            if (!context) return;
+            loadExplosionBuffer(context).catch((error) => {
+                explosionBufferPromise = null;
+                console.error("Could not preload the explosion sound.", error);
+            });
+        }
+
         async function playExplosionSound() {
             const context = getAudioContext();
             if (!context) return;
 
             try {
-                if (!explosionBufferPromise) {
-                    explosionBufferPromise = fetch("./explosion.mp3")
-                        .then((response) => {
-                            if (!response.ok) throw new Error("Could not load the explosion sound.");
-                            return response.arrayBuffer();
-                        })
-                        .then((audioData) => context.decodeAudioData(audioData));
-                }
-                const buffer = await explosionBufferPromise;
+                const buffer = await loadExplosionBuffer(context);
                 const source = context.createBufferSource();
                 source.buffer = buffer;
                 source.connect(context.destination);
@@ -2196,16 +2267,30 @@
                 const statusAvatar = document.createElement("span");
                 statusAvatar.className = "avatar-chip";
                 statusAvatar.innerText = getPlayerAvatar(player);
-                const statusName = document.createElement("span");
-                statusName.className = "player-name";
-                statusName.innerText = player.name;
-                const status = document.createElement("span");
-                status.className = "player-status";
-                status.innerText = currentPhase === "bomb" && id === activePlayerId ? "💣 Has bomb" : player.teamName || team?.name || "No team";
-                statusRow.append(statusAvatar, statusName, status);
+                statusAvatar.style.setProperty("--team-color", team?.hex || player.teamColor || "#64748b");
+                const teamName = document.createElement("span");
+                teamName.className = "player-name";
+                teamName.innerText = team?.name
+                    ? `${team.name} ${getPlayerAnimalPlural(player)}`
+                    : player.teamName || `Team ${getPlayerAnimalPlural(player)}`;
+                statusRow.append(statusAvatar, teamName);
                 if (currentPhase === "bomb" && id === activePlayerId) statusRow.classList.add("result-team-player");
                 taskListEl.appendChild(statusRow);
             });
+
+            const rowCount = Math.min(players.length, MAX_PLAYERS);
+            const rosterHeight = taskListEl.clientHeight;
+            if (rowCount && rosterHeight) {
+                const rowGap = Number.parseFloat(getComputedStyle(taskListEl).rowGap) || 0;
+                const rowHeight = Math.min(52, Math.max(32, (rosterHeight - rowGap * (rowCount - 1)) / rowCount));
+                taskListEl.style.setProperty("--task-player-row-height", `${rowHeight}px`);
+                taskListEl.style.setProperty("--task-player-font-size", `${Math.min(16, Math.max(13, rowHeight * 0.42))}px`);
+                taskListEl.style.setProperty("--task-player-avatar-size", `${Math.min(30, Math.max(22, rowHeight - 6))}px`);
+            } else {
+                taskListEl.style.removeProperty("--task-player-row-height");
+                taskListEl.style.removeProperty("--task-player-font-size");
+                taskListEl.style.removeProperty("--task-player-avatar-size");
+            }
         }
 
         // Listen for players joining/updating
@@ -2222,7 +2307,17 @@
         onValue(gameRef, (snapshot) => {
             const gameData = snapshot.val();
             if (!gameData) return;
-            syncFreezePlayersButton(Boolean(gameData.playersFrozen));
+            if (gameData.phase === "bomb") {
+                const savedRoundStart = Number(gameData.bombRoundStartedAt || 0);
+                const savedHolderStart = Number(gameData.bombHolderStartedAt || gameData.handoffTime || 0);
+                if (savedRoundStart) bombRoundStartedAt = savedRoundStart;
+                if (savedHolderStart) fuseStartedAt = savedHolderStart;
+                bombUnlockedAt = Number(gameData.bombUnlockedAt || 0);
+                if (gameData.bombLocked === false && !bombUnlockedAt) {
+                    bombUnlockedAt = Number(gameData.handoffTime || Date.now());
+                }
+                bombLocked = gameData.bombLocked !== false;
+            }
             const selectedLocation = ["location.webp", "location2.webp", "location3.webp"].includes(gameData.spyfallLocation)
                 ? gameData.spyfallLocation
                 : "location.webp";
@@ -2234,10 +2329,12 @@
                 "bonus-round", "bonus-standings", "bonus-podium"
             ].includes(gameData.phase);
             const pauseButton = document.getElementById("pause-game-btn");
+            const canPauseGame = pausableGamePhases.has(gameData.phase);
             if (pauseButton) {
-                pauseButton.innerText = gameData.paused ? "Resume Game" : "Pause Game";
+                setPauseButtonState(Boolean(gameData.paused));
+                pauseButton.hidden = !canPauseGame;
             }
-            if (gameData.paused) {
+            if (gameData.paused && canPauseGame) {
                 isGamePaused = true;
                 clearInterval(countdownInterval);
                 clearInterval(quizCountdownInterval);
@@ -2246,6 +2343,10 @@
                 clearTimeout(quizIntroTimeout);
                 quizIntroTimeout = null;
                 clearTimeout(fuseBeepTimeout);
+                clearTimeout(bonusIntroTransitionTimeout);
+                bonusIntroCueTimeouts.forEach(clearTimeout);
+                bonusIntroCueTimeouts = [];
+                bonusIntroStartedAtKey = null;
                 return;
             }
             isGamePaused = false;
@@ -2273,6 +2374,11 @@
                 return;
             }
             if (gameData.phase === "bonus-round") {
+                if (gameData.bonusRoundFinalizing) {
+                    clearInterval(bonusRoundTimerInterval);
+                    document.getElementById("bonus-round-status").innerText = "Collecting team pushes...";
+                    return;
+                }
                 if (currentPhase !== "bonus-round") {
                     currentPhase = "bonus-round";
                     document.getElementById("bonus-round-screen").classList.add("active");
@@ -2339,12 +2445,11 @@
         window.togglePauseGame = async function() {
             const snapshot = await get(gameRef);
             const currentGameData = snapshot.val() || {};
+            if (!pausableGamePhases.has(currentGameData.phase)) return;
             const paused = !Boolean(currentGameData.paused);
-            const isSpyfallPhase = ["round-2-placeholder", "spyfall-setup", "spyfall-reveal", "spyfall-active", "spyfall-vote", "spyfall-results"].includes(currentPhase);
-            const pauseButton = document.getElementById(isSpyfallPhase ? "spyfall-pause-btn" : "pause-game-btn");
             if (paused) {
                 await update(gameRef, { paused: true, pausedAt: Date.now() });
-                if (pauseButton) pauseButton.innerText = "Resume Game";
+                setPauseButtonState(true);
                 clearInterval(countdownInterval);
                 clearInterval(quizCountdownInterval);
                 clearInterval(spyfallTimerInterval);
@@ -2357,12 +2462,19 @@
 
             const pauseDuration = Math.max(0, Date.now() - Number(currentGameData.pausedAt || Date.now()));
             const resumeUpdates = { paused: false, pausedAt: null };
-            ["quizEndsAt", "spyfallRevealEndsAt", "spyfallTurnEndsAt", "spyfallVoteEndsAt", "spyfallDiscussionEndsAt"]
+            ["quizEndsAt", "spyfallRevealEndsAt", "spyfallTurnEndsAt", "spyfallVoteEndsAt", "spyfallDiscussionEndsAt", "bonusRoundIntroStartedAt", "bonusRoundIntroEndsAt", "bonusRoundStartedAt", "bonusRoundEndsAt"]
                 .forEach((key) => {
                     const deadline = Number(currentGameData[key] || 0);
                     if (deadline) resumeUpdates[key] = deadline + pauseDuration;
                 });
-            if (currentPhase === "bomb") fuseStartedAt += pauseDuration;
+            if (currentPhase === "bomb") {
+                fuseStartedAt += pauseDuration;
+                bombRoundStartedAt += pauseDuration;
+                if (bombUnlockedAt) bombUnlockedAt += pauseDuration;
+                resumeUpdates.bombRoundStartedAt = bombRoundStartedAt;
+                resumeUpdates.bombHolderStartedAt = fuseStartedAt;
+                resumeUpdates.bombUnlockedAt = bombUnlockedAt || null;
+            }
             if (currentPhase === "quiz-intro") quizIntroEndsAt += pauseDuration;
             if (currentPhase === "spyfall-reveal") spyfallRevealEndsAt = Number(resumeUpdates.spyfallRevealEndsAt || spyfallRevealEndsAt);
             if (currentPhase === "spyfall-active") spyfallTurnEndsAt = Number(resumeUpdates.spyfallTurnEndsAt || spyfallTurnEndsAt);
@@ -2373,7 +2485,7 @@
                 spyfallVotingEnded = Boolean(currentGameData.spyfallVotingEnded);
             }
             await update(gameRef, resumeUpdates);
-            if (pauseButton) pauseButton.innerText = "Pause Game";
+            setPauseButtonState(false);
             isGamePaused = false;
             if (currentPhase === "quiz-intro") {
                 ensureQuizIntroTimer(quizIntroEndsAt);
@@ -2555,7 +2667,7 @@
             hostPlayers = snapshot.val() || {};
             hostPlayers = Object.fromEntries(Object.entries(hostPlayers).map(([id, player]) => [
                 id,
-                player?.teamId ? { ...player, bombRoundPoints: 0 } : player
+                player?.teamId ? { ...player, bombRoundPoints: 0, bombRoundPenalty: 0 } : player
             ]));
             activePlayerId = players[Math.floor(Math.random() * players.length)][0];
             const taskQueue = shuffle(TONGUE_TWISTERS);
@@ -2564,6 +2676,8 @@
             currentPhase = "bomb";
             bombLocked = true;
             fuseStartedAt = Date.now();
+            bombRoundStartedAt = fuseStartedAt;
+            bombUnlockedAt = 0;
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("quiz-screen").classList.remove("active");
@@ -2573,6 +2687,7 @@
             renderHostPlayerLists(hostPlayers);
             renderBombLockState();
             playUiTone(440, 0.12, "triangle", 0.03);
+            preloadExplosionSound();
 
             await update(gameRef, {
                 status: "bomb-round",
@@ -2583,6 +2698,9 @@
                 activePlayerId,
                 bombCyclePlayerIds: [activePlayerId],
                 bombLocked,
+                bombRoundStartedAt,
+                bombHolderStartedAt: fuseStartedAt,
+                bombUnlockedAt: null,
                 handoffTime: Date.now(),
                 players: hostPlayers,
                 quizQuestion: null,
@@ -2598,8 +2716,15 @@
         window.unlockBomb = async function() {
             if (currentPhase !== "bomb" || !bombLocked) return;
             bombLocked = false;
+            bombUnlockedAt = Date.now();
             renderBombLockState();
-            await update(gameRef, { bombLocked: false, handoffTime: Date.now() });
+            updateHostFuse();
+            await update(gameRef, {
+                bombLocked: false,
+                bombUnlockedAt,
+                bombHolderStartedAt: fuseStartedAt,
+                handoffTime: bombUnlockedAt
+            });
         };
 
         function renderBombLockState() {
@@ -2631,13 +2756,14 @@
         async function passBombToPlayer(gameData, nextPlayerId, reason = "passed") {
             if (currentPhase !== "bomb" || !nextPlayerId || !hostPlayers[nextPlayerId]) return false;
             const currentPlayer = hostPlayers[activePlayerId];
-            const elapsedSeconds = getBombHoldElapsedSeconds();
-            const holdPenalty = getBombHoldPenalty(elapsedSeconds);
+            const holdPenalty = getBombHoldPenalty();
+            const cumulativePenalty = (Number(currentPlayer.bombRoundPenalty) || 0) + holdPenalty;
             const pointsEarned = Math.max(0, BOMB_PASS_BASE_POINTS - holdPenalty);
             const currentPlayerUpdated = {
                 ...currentPlayer,
                 score: (Number(currentPlayer.score) || 0) + pointsEarned,
                 bombRoundPoints: (Number(currentPlayer.bombRoundPoints) || 0) + pointsEarned,
+                bombRoundPenalty: cumulativePenalty,
                 lastPassPoints: pointsEarned,
                 lastHoldPenalty: holdPenalty
             };
@@ -2652,6 +2778,7 @@
             activePlayerId = nextPlayerId;
             bombLocked = true;
             fuseStartedAt = Date.now();
+            bombUnlockedAt = 0;
             hostPlayers = currentPlayers;
             renderActivePlayer();
             renderHostPlayerLists(hostPlayers);
@@ -2664,6 +2791,8 @@
                 previousActivePlayerId,
                 bombCyclePlayerIds: newCycle,
                 bombLocked,
+                bombHolderStartedAt: fuseStartedAt,
+                bombUnlockedAt: null,
                 handoffTime: Date.now(),
                 players: hostPlayers,
                 lastBombPass: { from: previousActivePlayerId, to: nextPlayerId, reason, points: pointsEarned, penalty: holdPenalty }
@@ -2713,19 +2842,31 @@
             return Math.max(0, Math.floor((Date.now() - Number(fuseStartedAt || Date.now())) / 1000));
         }
 
-        function getBombHoldPenalty(elapsedSeconds) {
-            const intervalPenalty = Math.floor(elapsedSeconds / BOMB_HOLD_PENALTY_INTERVAL) * BOMB_HOLD_PENALTY_PER_INTERVAL;
-            return Math.min(10, intervalPenalty);
+        function getBombRoundElapsedSeconds() {
+            return Math.max(0, Math.floor((Date.now() - Number(bombRoundStartedAt || Date.now())) / 1000));
+        }
+
+        function getBombHoldPenalty(now = Date.now()) {
+            const holderStartedAt = Number(fuseStartedAt || now);
+            const unlockedAt = Number(bombUnlockedAt || 0);
+            const lockedSeconds = Math.max(0, Math.floor(((unlockedAt || now) - holderStartedAt) / 1000));
+            const unlockedSeconds = unlockedAt
+                ? Math.max(0, Math.floor((now - Math.max(holderStartedAt, unlockedAt)) / 1000))
+                : 0;
+            const lockedPenalty = Math.floor(lockedSeconds / BOMB_LOCKED_PENALTY_INTERVAL);
+            const unlockedPenalty = Math.floor(unlockedSeconds / BOMB_UNLOCKED_PENALTY_INTERVAL);
+            return Math.min(10, (lockedPenalty + unlockedPenalty) * BOMB_HOLD_PENALTY_PER_INTERVAL);
         }
 
         function updateHostFuse() {
             if (currentPhase !== "bomb") return;
-            const elapsedSeconds = getBombHoldElapsedSeconds();
-            const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - elapsedSeconds);
-            const holdPenalty = getBombHoldPenalty(elapsedSeconds);
+            const roundElapsedSeconds = getBombRoundElapsedSeconds();
+            const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
+            const holdPenalty = getBombHoldPenalty();
+            const cumulativePenalty = (Number(hostPlayers[activePlayerId]?.bombRoundPenalty) || 0) + holdPenalty;
             const holdTimeEl = document.getElementById("bomb-hold-time");
             const forcePassButton = document.getElementById("force-pass-btn");
-            holdTimeEl.innerText = `${elapsedSeconds} seconds held · ${holdPenalty} penalty`;
+            holdTimeEl.innerText = `${cumulativePenalty} penalty`;
             forcePassButton.disabled = currentPhase !== "bomb";
             if (timeLeft <= 0) explodeBomb();
         }
@@ -2736,8 +2877,6 @@
             clearInterval(countdownInterval);
             clearTimeout(fuseBeepTimeout);
             playExplosionSound();
-            const snapshot = await get(playersRef);
-            hostPlayers = snapshot.val() || hostPlayers;
             const previousLosingPlayer = hostPlayers[activePlayerId];
             const losingPlayer = previousLosingPlayer ? {
                 ...previousLosingPlayer,
@@ -3035,17 +3174,19 @@
             const startKey = String(startedAt);
             if (bonusIntroStartedAtKey === startKey) return;
             bonusIntroStartedAtKey = startKey;
-            bonusIntroPlayedCues.clear();
             bonusIntroCueTimeouts.forEach(clearTimeout);
             bonusIntroCueTimeouts = [];
             document.querySelectorAll(".bonus-intro-word").forEach((word) => word.classList.remove("visible"));
+            const buttonArt = document.querySelector(".bonus-intro-button-art");
+            buttonArt.classList.remove("visible");
             const elapsed = Math.max(0, Date.now() - startedAt);
-            const firstSoundKey = `${startKey}:1`;
-            const secondSoundKey = `${startKey}:2`;
+            const firstSoundKey = "1";
+            const secondSoundKey = "2";
             const revealSecondPhrase = () => {
                 if (bonusIntroStartedAtKey !== startKey) return;
                 document.getElementById("bonus-intro-the").classList.add("visible");
                 document.getElementById("bonus-intro-button-word").classList.add("visible");
+                buttonArt.classList.add("visible");
             };
             const playSecondSound = () => {
                 if (bonusIntroStartedAtKey !== startKey) return;
@@ -3060,6 +3201,8 @@
                     if (bonusIntroStartedAtKey !== startKey || bonusIntroPlayedCues.has(secondSoundKey)) return;
                     bonusIntroCueTimeouts.push(setTimeout(playSecondSound, BONUS_INTRO_WORD_DELAY_MS));
                 });
+            } else if (elapsed < 500 && !bonusIntroPlayedCues.has(secondSoundKey)) {
+                bonusIntroCueTimeouts.push(setTimeout(playSecondSound, BONUS_INTRO_WORD_DELAY_MS - elapsed));
             }
             if (elapsed < BONUS_INTRO_WORD_DELAY_MS) {
                 bonusIntroCueTimeouts.push(setTimeout(revealSecondPhrase, BONUS_INTRO_WORD_DELAY_MS - elapsed));
@@ -3095,6 +3238,7 @@
                     return;
                 }
 
+                bonusIntroPlayedCues.clear();
                 const now = Date.now();
                 const teamIds = Object.entries(hostPlayers || {}).reduce((result, [, player]) => {
                     if (player?.teamId) result[player.teamId] = true;
@@ -3111,10 +3255,13 @@
                     bonusRoundEndsAt: now + BONUS_INTRO_DURATION_MS + BONUS_ROUND_SECONDS * 1000,
                     bonusRoundSeconds: BONUS_ROUND_SECONDS,
                     bonusTapCounts: teamPoints,
+                    bonusTapFlushes: {},
                     bonusPoints: teamPoints,
+                    bonusRoundId: String(now),
                     bonusRoundStartedBy: "host",
                     bonusRoundEndedAt: 0,
                     bonusRoundRevealed: false,
+                    bonusRoundFinalizing: false,
                     paused: false,
                     pausedAt: null
                 };
@@ -3129,20 +3276,51 @@
         };
 
         window.endBonusRound = async function() {
-            if (currentPhase !== "bonus-round") return;
-            const snapshot = await get(gameRef);
-            const gameData = snapshot.val() || {};
-            if (gameData.phase !== "bonus-round") return;
-            currentPhase = "bonus-standings";
-            clearInterval(bonusRoundTimerInterval);
-            document.getElementById("bonus-round-screen").classList.remove("active");
-            document.getElementById("bonus-standings-screen").classList.add("active");
-            await update(gameRef, {
-                status: "bonus-round-complete",
-                phase: "bonus-standings",
-                bonusRoundEndsAt: Date.now(),
-                bonusRoundEndedAt: Date.now()
-            });
+            if (currentPhase !== "bonus-round" || bonusRoundEnding) return;
+            bonusRoundEnding = true;
+            const endButton = document.getElementById("bonus-round-end-button");
+            endButton.disabled = true;
+            try {
+                let gameData = (await get(gameRef)).val() || {};
+                if (gameData.phase !== "bonus-round") return;
+                const requiredTeamIds = [...new Set(Object.values(gameData.players || {})
+                    .map((player) => player?.teamId)
+                    .filter(Boolean))];
+                await update(gameRef, { bonusRoundFinalizing: true });
+
+                const flushDeadline = Date.now() + 4000;
+                while (Date.now() < flushDeadline) {
+                    gameData = (await get(gameRef)).val() || gameData;
+                    if (gameData.phase !== "bonus-round") return;
+                    if (requiredTeamIds.every((teamId) => gameData.bonusTapFlushes?.[teamId])) break;
+                    await new Promise((resolve) => window.setTimeout(resolve, 100));
+                }
+
+                currentPhase = "bonus-standings";
+                clearInterval(bonusRoundTimerInterval);
+                document.getElementById("bonus-round-screen").classList.remove("active");
+                document.getElementById("bonus-standings-screen").classList.add("active");
+                await update(gameRef, {
+                    status: "bonus-round-complete",
+                    phase: "bonus-standings",
+                    bonusRoundFinalizing: false,
+                    bonusRoundEndsAt: Date.now(),
+                    bonusRoundEndedAt: Date.now()
+                });
+            } catch (error) {
+                console.error("Could not finalize Bonus Round taps.", error);
+                if (currentPhase === "bonus-round") {
+                    endButton.disabled = false;
+                    document.getElementById("bonus-round-status").innerText = "Could not save team pushes. Try ending again.";
+                    try {
+                        await update(gameRef, { bonusRoundFinalizing: false });
+                    } catch {
+                        return;
+                    }
+                }
+            } finally {
+                bonusRoundEnding = false;
+            }
         };
 
         function renderBonusStandings(gameData) {
@@ -3258,8 +3436,6 @@
             action.hidden = false;
             action.disabled = false;
             action.onclick = startSpyfall;
-            document.getElementById("spyfall-pause-btn").hidden = true;
-            document.getElementById("spyfall-pause-btn").innerText = "Pause Game";
             await update(gameRef, { status: "round-2-placeholder", phase: "round-2-placeholder", round: 2 });
         }
 
@@ -3300,8 +3476,6 @@
             document.getElementById("spyfall-host-reveal-again").hidden = true;
             document.getElementById("spyfall-start-voting").hidden = true;
             updateSpyfallLocationControls("spyfall-setup");
-            document.getElementById("spyfall-pause-btn").hidden = true;
-            document.getElementById("spyfall-pause-btn").innerText = "Pause Game";
             await set(ref(db, "spyfallRoles"), {});
             await update(gameRef, {
                 status: "spyfall-setup",
@@ -3399,8 +3573,6 @@
             document.getElementById("spyfall-host-title").innerText = "Spyfall";
             document.getElementById("spyfall-host-timer").hidden = false;
             document.getElementById("spyfall-host-timer").innerText = "0:20";
-            document.getElementById("spyfall-pause-btn").hidden = false;
-            document.getElementById("spyfall-pause-btn").innerText = "Pause Game";
             renderSpyfallHostCurrentTeam(firstTeamId, firstTeamName);
             await update(gameRef, {
                 status: "spyfall-active",
@@ -3485,7 +3657,6 @@
             document.getElementById("spyfall-start-voting").hidden = false;
             document.getElementById("spyfall-host-vote-count").hidden = true;
             document.getElementById("spyfall-host-votes").hidden = true;
-            document.getElementById("spyfall-pause-btn").hidden = false;
             updateSpyfallVoteTimer();
             spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
         }
@@ -3544,7 +3715,6 @@
             if (currentPhase !== "spyfall-vote") return;
             document.getElementById("spyfall-host-timer").innerText = "Voting ended";
             document.getElementById("spyfall-host-status").innerText = statusText;
-            document.getElementById("spyfall-pause-btn").hidden = true;
             const action = document.getElementById("spyfall-host-action");
             action.innerText = "Reveal Results";
             action.onclick = finishSpyfallVote;
@@ -3640,7 +3810,6 @@
             document.getElementById("spyfall-next-round-action").onclick = () => startPopQuiz(1);
             document.getElementById("spyfall-play-again-action").onclick = playAgainSpyfall;
             document.getElementById("spyfall-host-vote-count").hidden = true;
-            document.getElementById("spyfall-pause-btn").hidden = true;
             await new Promise((resolve) => window.setTimeout(resolve, 2800));
             if (currentPhase !== "spyfall-results") return;
             showSpyfallResultScreen("spyfall-spy-results-screen");

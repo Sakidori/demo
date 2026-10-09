@@ -434,40 +434,120 @@
 
         .bonus-round-button {
             position: relative;
+            display: grid;
+            place-items: center;
             width: min(76vw, 440px);
             aspect-ratio: 1;
             margin: 28px auto 18px;
-            border: 8px solid #ffecb2;
+            border: 0;
             border-radius: 50%;
-            background: radial-gradient(circle at 34% 27%, #ff8c99 0 6%, transparent 7%), radial-gradient(circle at 35% 30%, #ff6372 0 10%, transparent 11%), radial-gradient(circle at 50% 50%, #ff354e 0 45%, #d8173a 67%, #7a071f 100%);
+            background: transparent;
             color: #fff;
-            box-shadow: 0 0 0 8px rgba(255, 34, 69, 0.18), 0 0 0 18px rgba(255, 34, 69, 0.09), 0 24px 60px rgba(255, 24, 69, 0.5), inset 0 0 34px rgba(255, 255, 255, 0.3), inset 0 -18px 28px rgba(83, 0, 18, 0.42);
+            box-shadow: none;
             font-size: clamp(2rem, 10vw, 3.4rem);
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            transform: translateY(-5px);
             touch-action: manipulation;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .bonus-round-button:active:not(:disabled) {
-            transform: translateY(8px) scale(0.95);
-            box-shadow: 0 0 0 5px rgba(255, 34, 69, 0.16), 0 9px 24px rgba(255, 24, 69, 0.42), inset 0 0 32px rgba(255, 255, 255, 0.2), inset 0 12px 22px rgba(83, 0, 18, 0.3);
+        .bonus-round-button::before {
+            content: "";
+            position: absolute;
+            z-index: 0;
+            inset: 6%;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at 36% 22%, #f2eff2 0, #cbc8d0 56%, #99969f 78%, #706e77 100%);
+            box-shadow: inset 0 3px 8px rgba(255,255,255,0.45), 0 13px 0 #57545d, 0 22px 26px rgba(0,0,0,0.42);
+            pointer-events: none;
         }
 
-        .bonus-round-button:disabled {
-            cursor: not-allowed;
-            filter: grayscale(0.55) brightness(0.65);
+        .bonus-round-button::after {
+            content: "";
+            position: absolute;
+            z-index: 1;
+            top: 8%;
+            left: 18%;
+            width: 64%;
+            height: 68%;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at 35% 20%, #ff9aa5 0 7%, #ff6475 24%, #fa3b54 70%, #c71635 100%);
+            box-shadow: inset 0 5px 12px rgba(255,255,255,0.25), 0 16px 0 #b51d39, 0 22px 18px rgba(72,0,11,0.28);
+            transform: none;
+            pointer-events: none;
+        }
+
+        .bonus-round-button > span {
+            position: absolute;
+            z-index: 2;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 2px 6px rgba(75,0,12,0.7);
+        }
+
+        .bonus-round-button:hover {
+            transform: none;
             box-shadow: none;
         }
+
+        .bonus-round-button:hover::after { transform: none; }
+
+        .bonus-round-button.is-pressed::after {
+            animation: bonusButtonCapPress 110ms steps(2, end) both;
+        }
+
+        .bonus-round-button.is-pressed > span {
+            animation: bonusButtonLabelPress 110ms steps(2, end) both;
+        }
+
+        @keyframes bonusButtonCapPress {
+            0%, 100% {
+                top: 8%;
+                left: 18%;
+                width: 64%;
+                height: 68%;
+                box-shadow: inset 0 5px 12px rgba(255,255,255,0.25), 0 16px 0 #b51d39, 0 22px 18px rgba(72,0,11,0.28);
+            }
+            30%, 65% {
+                top: 19%;
+                left: 22%;
+                width: 56%;
+                height: 58%;
+                box-shadow: inset 0 9px 18px rgba(95,0,16,0.22), 0 6px 0 #a91c36;
+            }
+        }
+
+        @keyframes bonusButtonLabelPress {
+            0%, 100% { top: 42%; }
+            30%, 65% { top: 48%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bonus-round-button.is-pressed::after,
+            .bonus-round-button.is-pressed > span { animation-duration: 1ms; }
+        }
+
+        .bonus-round-button.is-expired::before,
+        .bonus-round-button.is-expired::after { filter: grayscale(0.55) brightness(0.65); }
+
+        .bonus-round-button:disabled { cursor: not-allowed; }
 
         #bonus-round-player-score {
             margin: 0 auto;
             color: var(--success-2);
             font-size: 1.2rem;
             font-weight: 800;
+        }
+
+        #bonus-round-player-timer {
+            margin: 8px auto;
+            color: var(--success-2);
+            font-size: 2rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 900;
         }
 
         #bonus-podium-screen {
@@ -695,31 +775,40 @@
         }
 
         .quiz-splash[hidden] { display: none; }
-        .host-freeze-overlay {
+        .player-pause-overlay {
             position: fixed;
             inset: 0;
-            z-index: 100;
+            z-index: 90;
             display: grid;
             place-items: center;
             padding: 24px;
-            background: rgba(7,10,18,0.96);
+            background: rgba(5,9,16,0.14);
             color: var(--text);
             text-align: center;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(2px);
         }
 
-        .host-freeze-overlay[hidden] { display: none; }
+        .player-pause-overlay[hidden] { display: none; }
 
-        .host-freeze-overlay span {
+        .player-pause-panel {
+            width: min(340px, 100%);
+            padding: 26px 22px;
+            border: 1px solid rgba(255,255,255,0.38);
+            border-radius: 18px;
+            background: rgba(20,29,45,0.66);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.18);
+            backdrop-filter: blur(18px) saturate(135%);
+            -webkit-backdrop-filter: blur(18px) saturate(135%);
+        }
+
+        .player-pause-panel span {
             display: block;
-            margin-bottom: 12px;
-            color: #ff9baa;
-            font-size: 3rem;
+            margin-bottom: 8px;
+            font-size: 2rem;
         }
 
-        .host-freeze-overlay h1 { margin-bottom: 8px; }
-
-        .host-freeze-overlay p { color: var(--muted); }
+        .player-pause-panel h1 { margin: 0; font-size: 1.5rem; }
+        .player-pause-panel p { margin: 8px 0 0; color: var(--muted); }
 
         .quiz-splash-light {
             position: absolute;
@@ -937,10 +1026,10 @@
         <span class="player-team-reminder-label">Your team:</span>
         <span id="player-team-reminder-avatar" class="player-team-reminder-avatar" aria-hidden="true"></span>
     </div>
-    <div id="host-freeze-overlay" class="host-freeze-overlay" role="alertdialog" aria-modal="true" aria-labelledby="host-freeze-title" hidden>
-        <div>
-            <span aria-hidden="true">⏸</span>
-            <h1 id="host-freeze-title">Screen frozen</h1>
+    <div id="player-pause-overlay" class="player-pause-overlay" role="status" aria-live="polite" hidden>
+        <div class="player-pause-panel">
+            <span aria-hidden="true">&#9208;</span>
+            <h1>Game Paused</h1>
             <p>Please wait for the host.</p>
         </div>
     </div>
@@ -1060,11 +1149,10 @@
 
     <div id="bonus-round-screen" class="screen">
         <div class="status-chip">Bonus Round · Live</div>
-        <h1>Tap for Team Points</h1>
+        <h1>Push the button as many times as you can!</h1>
         <p id="bonus-round-player-timer">0:30</p>
-        <p id="bonus-round-player-score" hidden>0 team points · 0 taps</p>
-        <button id="bonus-round-button" class="bonus-round-button" type="button" onclick="addBonusPoint()">Tap!</button>
-        <p id="bonus-round-player-message" aria-live="polite">Every four taps adds 1 point to your team.</p>
+        <p id="bonus-round-player-score" hidden>0 team points · 0 pushes</p>
+        <button id="bonus-round-button" class="bonus-round-button" type="button" onclick="addBonusPoint()"><span>Push!</span></button>
     </div>
 
     <div id="bonus-standings-screen" class="screen">
@@ -1091,7 +1179,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { TEAM_COLORS, TEAM_ANIMALS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
@@ -1129,11 +1217,16 @@
         let spyfallVotingOpened = false;
         let currentPlayerQuizQuestionIndex = null;
         let currentGameData = {};
+        let bonusRoundTapBufferKey = "";
+        let bonusRoundTapCount = 0;
+        let bonusRoundTapFlushPromise = null;
+        let bonusRoundTapFlushed = false;
         let observedResetAt;
         const playerSoundStorageKey = "playerGameSoundEnabled";
         const BONUS_TAPS_PER_POINT = 4;
         const BOMB_PASS_BASE_POINTS = 20;
-        const BOMB_HOLD_PENALTY_INTERVAL = 10;
+        const BOMB_LOCKED_HOLD_PENALTY_INTERVAL = 10;
+        const BOMB_UNLOCKED_HOLD_PENALTY_INTERVAL = 5;
         const BOMB_HOLD_PENALTY_PER_INTERVAL = 1;
         const BOMB_FORCE_PASS_SECONDS = 30;
         const BOMB_FORCE_PASS_PENALTY = 5;
@@ -1197,6 +1290,41 @@
             oscillator.stop(context.currentTime + duration);
         }
 
+        function playMechanicalButtonSound() {
+            if (!playerSoundEnabled) return;
+            const context = unlockPlayerAudio();
+            if (!context) return;
+            const now = context.currentTime;
+            const thump = context.createOscillator();
+            const thumpEnvelope = context.createGain();
+            thump.type = "triangle";
+            thump.frequency.setValueAtTime(220, now);
+            thump.frequency.exponentialRampToValueAtTime(72, now + 0.055);
+            thumpEnvelope.gain.setValueAtTime(0.12, now);
+            thumpEnvelope.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+            thump.connect(thumpEnvelope);
+            thumpEnvelope.connect(context.destination);
+            thump.start(now);
+            thump.stop(now + 0.075);
+
+            const noiseLength = Math.floor(context.sampleRate * 0.018);
+            const noiseBuffer = context.createBuffer(1, noiseLength, context.sampleRate);
+            const noiseSamples = noiseBuffer.getChannelData(0);
+            for (let index = 0; index < noiseLength; index++) noiseSamples[index] = Math.random() * 2 - 1;
+            const click = context.createBufferSource();
+            const clickFilter = context.createBiquadFilter();
+            const clickEnvelope = context.createGain();
+            click.buffer = noiseBuffer;
+            clickFilter.type = "highpass";
+            clickFilter.frequency.value = 1400;
+            clickEnvelope.gain.setValueAtTime(0.045, now);
+            clickEnvelope.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+            click.connect(clickFilter);
+            clickFilter.connect(clickEnvelope);
+            clickEnvelope.connect(context.destination);
+            click.start(now);
+            click.stop(now + 0.02);
+        }
         function getGameTeams(gameData = {}) {
             const teams = { ...(gameData.teams || {}) };
             Object.values(gameData.players || {}).forEach((player) => {
@@ -1493,16 +1621,22 @@
                 const gameData = snapshot.val();
                 if (!gameData) return;
                 currentGameData = gameData;
-                const playersFrozen = Boolean(gameData.playersFrozen);
-                document.getElementById("host-freeze-overlay").hidden = !playersFrozen;
-                document.querySelectorAll(".screen").forEach((screen) => {
-                    screen.inert = playersFrozen;
-                });
-                if (gameData.paused) {
+                const gameIsPaused = Boolean(gameData.paused) && [
+                    "bomb", "quiz-intro", "quiz", "round-2-placeholder", "spyfall-setup",
+                    "spyfall-reveal", "spyfall-active", "spyfall-vote", "final-round-placeholder",
+                    "bonus-intro", "bonus-round"
+                ].includes(gameData.phase);
+                document.getElementById("player-pause-overlay").hidden = !gameIsPaused;
+                if (gameIsPaused) {
                     clearInterval(playerQuizCountdownInterval);
                     clearInterval(playerSpyfallTimerInterval);
                     clearInterval(playerBonusRoundInterval);
                     return;
+                }
+
+                if (gameData.phase === "bonus-round") {
+                    initializeBonusRoundTapBuffer(gameData);
+                    if (gameData.bonusRoundFinalizing) flushBonusRoundTapBuffer();
                 }
 
                 if (gameData.phase === "bomb") {
@@ -2247,6 +2381,50 @@
                 });
         }
 
+        function initializeBonusRoundTapBuffer(gameData) {
+            if (!playerId || !playerTeamId) return;
+            const roundId = gameData.bonusRoundId || gameData.resetAt || "bonus-round";
+            const bufferKey = `bonusRoundTaps:${roundId}:${playerId}:${playerTeamId}`;
+            if (bufferKey === bonusRoundTapBufferKey) return;
+
+            bonusRoundTapBufferKey = bufferKey;
+            bonusRoundTapFlushPromise = null;
+            bonusRoundTapFlushed = Boolean(gameData.bonusTapFlushes?.[playerTeamId]);
+            let savedCount = 0;
+            try {
+                savedCount = Number(localStorage.getItem(bufferKey)) || 0;
+            } catch {
+                savedCount = 0;
+            }
+            const serverCount = Number(gameData.bonusTapCounts?.[playerTeamId]) || 0;
+            bonusRoundTapCount = Math.max(savedCount, serverCount);
+            if (bonusRoundTapFlushed) bonusRoundTapCount = serverCount;
+        }
+
+        function flushBonusRoundTapBuffer() {
+            if (!playerId || !playerTeamId || bonusRoundTapFlushed || bonusRoundTapFlushPromise) return;
+            const teamId = playerTeamId;
+            const bufferKey = bonusRoundTapBufferKey;
+            const tapCount = bonusRoundTapCount;
+            bonusRoundTapFlushPromise = update(gameRef, {
+                [`bonusTapCounts/${teamId}`]: tapCount,
+                [`bonusTapFlushes/${teamId}`]: true
+            }).then(() => {
+                bonusRoundTapFlushed = true;
+                try {
+                    localStorage.removeItem(bufferKey);
+                } catch {
+                    return;
+                }
+            }).catch((error) => {
+                bonusRoundTapFlushPromise = null;
+                console.error("Could not save Bonus Round taps.", error);
+                if (currentGameData.phase === "bonus-round" && currentGameData.bonusRoundFinalizing) {
+                    window.setTimeout(flushBonusRoundTapBuffer, 300);
+                }
+            });
+        }
+
         function renderBonusRound(gameData) {
             const secondsLeft = Math.max(0, Math.ceil((Number(gameData.bonusRoundEndsAt || 0) - Date.now()) / 1000));
             const tapCount = Number(gameData.bonusTapCounts?.[playerTeamId]) || 0;
@@ -2254,18 +2432,13 @@
             const button = document.getElementById("bonus-round-button");
             const timer = document.getElementById("bonus-round-player-timer");
             const score = document.getElementById("bonus-round-player-score");
-            const message = document.getElementById("bonus-round-player-message");
             timer.innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
             const revealed = Boolean(gameData.bonusRoundRevealed);
             score.hidden = !revealed;
             score.setAttribute("aria-hidden", String(!revealed));
-            if (revealed) score.innerText = `${bonusPoints} team points · ${tapCount} taps`;
+            if (revealed) score.innerText = `${bonusPoints} team points · ${tapCount} pushes`;
             button.disabled = secondsLeft === 0;
-            message.innerText = !revealed
-                ? "Your score is hidden until the host reveals the final results."
-                : secondsLeft === 0
-                    ? "Time is up. Final standings are coming."
-                    : `Every four taps adds 1 point to ${playerTeamName || "your team"}.`;
+            button.classList.toggle("is-expired", secondsLeft === 0);
         }
 
         function renderBonusStandings(gameData) {
@@ -2341,28 +2514,25 @@
         }
 
         window.addBonusPoint = async function() {
-            if (!playerId || activePhase !== "bonus-round" || !playerTeamId) return;
+            if (!playerId || activePhase !== "bonus-round" || currentGameData.bonusRoundFinalizing || !playerTeamId) return;
             const button = document.getElementById("bonus-round-button");
             if (button.disabled) return;
-            button.disabled = true;
-            const result = await runTransaction(gameRef, (gameData) => {
-                if (gameData?.phase !== "bonus-round" || !gameData.bonusTapCounts || !gameData.players?.[playerId]) return;
-                const currentTapCount = Number(gameData.bonusTapCounts[playerTeamId]) || 0;
-                if (Number(gameData.bonusRoundEndsAt || 0) <= Date.now()) return;
-                return {
-                    ...gameData,
-                    bonusTapCounts: {
-                        ...gameData.bonusTapCounts,
-                        [playerTeamId]: currentTapCount + 1
-                    }
-                };
-            }, { applyLocally: false });
-            if (result.committed) {
-                currentGameData = result.snapshot.val() || currentGameData;
-                renderBonusRound(currentGameData);
-                playUiTone(620, 0.08, "sine", 0.025);
+            initializeBonusRoundTapBuffer(currentGameData);
+            button.classList.remove("is-pressed");
+            void button.offsetWidth;
+            button.classList.add("is-pressed");
+            bonusRoundTapCount += 1;
+            try {
+                localStorage.setItem(bonusRoundTapBufferKey, String(bonusRoundTapCount));
+            } catch {
+                // Keep the in-memory count for this page session.
             }
-            button.disabled = false;
+            currentGameData = {
+                ...currentGameData,
+                bonusTapCounts: { ...(currentGameData.bonusTapCounts || {}), [playerTeamId]: bonusRoundTapCount }
+            };
+            renderBonusRound(currentGameData);
+            playMechanicalButtonSound();
         };
 
         window.passBomb = async function() {
@@ -2388,17 +2558,25 @@
                 const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
                 if (!taskQueue.length) taskQueue.push(...shuffle(TONGUE_TWISTERS));
                 const nextTask = taskQueue.pop();
-                const elapsedSeconds = Math.floor(Math.max(0, Date.now() - (Number(gameData.handoffTime) || Date.now())) / 1000);
+                const now = Date.now();
+                const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || now);
+                const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || holderStartedAt);
+                const lockedSeconds = Math.max(0, Math.floor((unlockedAt - holderStartedAt) / 1000));
+                const unlockedSeconds = Math.max(0, Math.floor((now - Math.max(holderStartedAt, unlockedAt)) / 1000));
+                const elapsedSeconds = Math.max(0, Math.floor((now - holderStartedAt) / 1000));
                 const holdPenalty = Math.min(
                     10,
-                    Math.floor(elapsedSeconds / BOMB_HOLD_PENALTY_INTERVAL) * BOMB_HOLD_PENALTY_PER_INTERVAL
+                    (Math.floor(lockedSeconds / BOMB_LOCKED_HOLD_PENALTY_INTERVAL)
+                        + Math.floor(unlockedSeconds / BOMB_UNLOCKED_HOLD_PENALTY_INTERVAL)) * BOMB_HOLD_PENALTY_PER_INTERVAL
                 ) + (elapsedSeconds >= BOMB_FORCE_PASS_SECONDS ? BOMB_FORCE_PASS_PENALTY : 0);
                 const pointsEarned = Math.max(0, BOMB_PASS_BASE_POINTS - holdPenalty);
+                const nextHolderStartedAt = Date.now();
                 const gamePlayers = { ...gameData.players };
                 gamePlayers[playerId] = {
                     ...gamePlayers[playerId],
                     score: (Number(gamePlayers[playerId].score) || 0) + pointsEarned,
                     bombRoundPoints: (Number(gamePlayers[playerId].bombRoundPoints) || 0) + pointsEarned,
+                    bombRoundPenalty: (Number(gamePlayers[playerId].bombRoundPenalty) || 0) + holdPenalty,
                     lastPassPoints: pointsEarned,
                     lastHoldPenalty: holdPenalty
                 };
@@ -2411,7 +2589,9 @@
                     task: nextTask,
                     taskQueue,
                     bombLocked: true,
-                    handoffTime: Date.now()
+                    bombHolderStartedAt: nextHolderStartedAt,
+                    bombUnlockedAt: null,
+                    handoffTime: nextHolderStartedAt
                 };
             }, { applyLocally: false });
 

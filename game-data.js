@@ -57,7 +57,7 @@ export const TONGUE_TWISTERS = [
     "Peter Piper picked a pack of pickled peppers.",
     "How can a clam cram in a clean cream can?",
     "Susie works in a shoeshine shop. Where she shines she sits, and where she sits she shines.",
-    "I'm not the pheasant plucker, I'm the pheasant plucker's son, And I'm only plucking pheasants 'til the pheasant plucker comes",
+    "I'm not the pheasant plucker, I'm the pheasant plucker's son.",
     "If a dog chews shoes, whose shoes does he choose?",
     "A skunk sat on a stump and thunk the stump stunk, but the stump thunk the skunk stunk.",
     "I thought a thought. But the thought I thought wasn't the thought I thought I thought.",
