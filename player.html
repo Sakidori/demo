@@ -535,6 +535,53 @@
 
         .bonus-round-button:disabled { cursor: not-allowed; }
 
+        .bonus-round-button.is-expired .bonus-round-hammer { display: none; }
+
+        .bonus-round-button.is-image-sequence::before,
+        .bonus-round-button.is-image-sequence::after { display: none; }
+
+        .bonus-round-button.is-image-sequence > span { display: none; }
+
+        .bonus-round-button-image {
+            position: absolute;
+            z-index: 2;
+            inset: 0;
+            display: none;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .bonus-round-button.is-image-sequence .bonus-round-button-image { display: block; }
+
+        .bonus-round-hammer {
+            position: absolute;
+            z-index: 3;
+            top: 13%;
+            left: 42%;
+            width: 48%;
+            height: auto;
+            object-fit: contain;
+            opacity: 0;
+            pointer-events: none;
+            transform-origin: 38% 34%;
+        }
+
+        .bonus-round-button.is-hammering .bonus-round-hammer {
+            animation: bonusHammerStrike 220ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
+        }
+
+        @keyframes bonusHammerStrike {
+            0% { opacity: 0; transform: translate(45%, -58%) rotate(-35deg) scaleX(-1); }
+            48% { opacity: 1; transform: translate(0, 0) rotate(0) scaleX(-1); }
+            68% { opacity: 1; transform: translate(-2%, 4%) rotate(6deg) scaleX(-1); }
+            100% { opacity: 0; transform: translate(35%, -42%) rotate(-14deg) scaleX(-1); }
+        }
+
         #bonus-round-player-score {
             margin: 0 auto;
             color: var(--success-2);
@@ -940,12 +987,34 @@
         }
 
         .spyfall-vote-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             width: 100%;
             margin: 0;
+            padding: 10px 14px;
             border-radius: 12px;
             border: 2px solid var(--team-color, #64748b);
             background: var(--team-color, #64748b);
             color: #101522;
+            text-align: left;
+        }
+
+        .spyfall-vote-avatar {
+            display: grid;
+            place-items: center;
+            flex: 0 0 34px;
+            width: 34px;
+            height: 34px;
+            border: 1px solid rgba(16,21,34,0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.42);
+            font-size: 1.35rem;
+        }
+
+        .spyfall-vote-name {
+            min-width: 0;
+            overflow-wrap: anywhere;
         }
 
         .spyfall-vote-option[aria-pressed="true"] {
@@ -1152,7 +1221,7 @@
         <h1>Push the button as many times as you can!</h1>
         <p id="bonus-round-player-timer">0:30</p>
         <p id="bonus-round-player-score" hidden>0 team points · 0 pushes</p>
-        <button id="bonus-round-button" class="bonus-round-button" type="button" onclick="addBonusPoint()"><span>Push!</span></button>
+        <button id="bonus-round-button" class="bonus-round-button" type="button" aria-label="Push for bonus points" onclick="addBonusPoint()"><span>Push!</span><img id="bonus-round-button-image" class="bonus-round-button-image" src="1.webp" alt=""><img id="bonus-round-hammer" class="bonus-round-hammer" src="hammer.webp" alt=""></button>
     </div>
 
     <div id="bonus-standings-screen" class="screen">
@@ -1221,6 +1290,9 @@
         let bonusRoundTapCount = 0;
         let bonusRoundTapFlushPromise = null;
         let bonusRoundTapFlushed = false;
+        let bonusButtonImageRoundId = "";
+        let bonusButtonImageSequenceStarted = false;
+        let bonusButtonTapFrameIndex = 0;
         let observedResetAt;
         const playerSoundStorageKey = "playerGameSoundEnabled";
         const BONUS_TAPS_PER_POINT = 4;
@@ -2120,7 +2192,14 @@
                     const button = document.createElement("button");
                     button.type = "button";
                     button.className = "spyfall-vote-option";
-                    button.innerText = player.teamName || player.name || "Player";
+                    const avatar = document.createElement("span");
+                    avatar.className = "spyfall-vote-avatar";
+                    avatar.setAttribute("aria-hidden", "true");
+                    avatar.innerText = teams[player.teamId]?.avatar || player.avatar || "🎮";
+                    const name = document.createElement("span");
+                    name.className = "spyfall-vote-name";
+                    name.innerText = player.teamName || player.name || "Player";
+                    button.append(avatar, name);
                     button.style.setProperty("--team-color", player.teamColor || teams[player.teamId]?.colorHex || "#64748b");
                     button.setAttribute("aria-pressed", String(spyfallSelectedVotes.has(id)));
                     button.disabled = spyfallVoteSubmitting || !votingOpen || (!hasVoted && !spyfallSelectedVotes.has(id) && spyfallSelectedVotes.size >= requiredSelections);
@@ -2226,6 +2305,7 @@
             locationImage.src = gameData.spyfallLocation || "location.webp";
             locationImage.hidden = false;
             const tally = document.getElementById("spyfall-player-tally");
+            const teams = getGameTeams(gameData);
             tally.innerHTML = "";
             Object.entries(gameData.players || {})
                 .filter(([, player]) => player?.teamId)
@@ -2235,11 +2315,16 @@
                     row.className = "player-line";
                     row.style.setProperty("--team-color", TEAM_COLORS.find((team) => team.id === player.teamId)?.hex || player.teamColor || "#64748b");
                     if (player.teamId === playerTeamId) row.classList.add("is-current-team");
+                    const avatar = document.createElement("span");
+                    avatar.className = "avatar-chip";
+                    avatar.setAttribute("aria-hidden", "true");
+                    avatar.innerText = teams[player.teamId]?.avatar || player.avatar || "🎮";
                     const name = document.createElement("span");
+                    name.className = "player-name";
                     name.innerText = player.teamName || player.name || "Player";
                     const votes = document.createElement("strong");
                     votes.innerText = `${gameData.spyfallVoteCounts?.[id] || 0} votes`;
-                    row.append(name, votes);
+                    row.append(avatar, name, votes);
                     tally.appendChild(row);
                 });
         }
@@ -2430,6 +2515,17 @@
             const tapCount = Number(gameData.bonusTapCounts?.[playerTeamId]) || 0;
             const bonusPoints = Math.floor(tapCount / BONUS_TAPS_PER_POINT);
             const button = document.getElementById("bonus-round-button");
+            const buttonImage = document.getElementById("bonus-round-button-image");
+            const imageButton = gameData.bonusButtonStyle === "image-sequence";
+            const roundId = gameData.bonusRoundId || gameData.resetAt || "bonus-round";
+            if (imageButton && roundId !== bonusButtonImageRoundId) {
+                bonusButtonImageRoundId = roundId;
+                bonusButtonImageSequenceStarted = false;
+                bonusButtonTapFrameIndex = 0;
+                buttonImage.src = "1.webp";
+            }
+            button.classList.toggle("is-image-sequence", imageButton);
+            button.setAttribute("aria-label", imageButton ? "Tap the image for bonus points" : "Push for bonus points");
             const timer = document.getElementById("bonus-round-player-timer");
             const score = document.getElementById("bonus-round-player-score");
             timer.innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
@@ -2441,6 +2537,31 @@
             button.classList.toggle("is-expired", secondsLeft === 0);
         }
 
+        function startBonusImageButtonHit() {
+            const button = document.getElementById("bonus-round-button");
+            if (!button.classList.contains("is-image-sequence") || button.disabled || currentGameData.bonusRoundFinalizing) return;
+            if (bonusButtonImageSequenceStarted) return;
+            bonusButtonImageSequenceStarted = true;
+            document.getElementById("bonus-round-button-image").src = "2.webp";
+        }
+
+        function animateBonusImageButton() {
+            const tapFrames = ["3.webp", "4.webp", "2.webp"];
+            const image = document.getElementById("bonus-round-button-image");
+            image.src = tapFrames[bonusButtonTapFrameIndex];
+            bonusButtonTapFrameIndex = (bonusButtonTapFrameIndex + 1) % tapFrames.length;
+            const button = document.getElementById("bonus-round-button");
+            button.classList.remove("is-hammering");
+            void button.offsetWidth;
+            button.classList.add("is-hammering");
+        }
+
+        const bonusRoundButton = document.getElementById("bonus-round-button");
+        bonusRoundButton.addEventListener("pointerdown", startBonusImageButtonHit);
+        bonusRoundButton.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") startBonusImageButtonHit();
+        });
+
         function renderBonusStandings(gameData) {
             const standings = Object.entries(gameData.teams || {})
                 .map(([teamId, team]) => {
@@ -2451,8 +2572,10 @@
                     return {
                         teamId,
                         name: team.name || `${team.colorName || "Team"} ${team.animalName || "Team"}`,
+                        avatar: team.avatar || teamPlayers[0]?.avatar || "🎮",
                         colorHex: team.colorHex || "#64748b",
-                        score: playerScore + bonusScore
+                        score: playerScore,
+                        bonusScore
                     };
                 })
                 .sort((first, second) => second.score - first.score || first.name.localeCompare(second.name));
@@ -2462,17 +2585,18 @@
                 const item = document.createElement("li");
                 item.className = "player-line";
                 item.style.setProperty("--team-color", entry.colorHex);
-                item.innerText = `${index + 1}. ${entry.avatar} ${entry.name} — ${entry.score} pts`;
+                item.innerText = `${index + 1}. ${entry.avatar} ${entry.name} — ${entry.score} pts${entry.bonusScore ? ` (+${entry.bonusScore} bonus)` : ""}`;
                 list.appendChild(item);
             });
             document.getElementById("bonus-standings-screen").classList.add("active");
         }
 
         function renderBonusPodium(gameData) {
+            const teams = getGameTeams(gameData);
             const standings = Object.values(gameData.players || {})
                 .filter((player) => player?.teamId)
                 .map((player) => ({
-                    name: player.name || player.teamName || "Player",
+                    name: teams[player.teamId]?.name || player.teamName || player.name || "Player",
                     avatar: player.avatar || "🎮",
                     colorHex: TEAM_COLORS.find((teamColor) => teamColor.id === player.teamId)?.hex || player.teamColor || "#64748b",
                     score: Number(player.score) || 0
@@ -2518,9 +2642,13 @@
             const button = document.getElementById("bonus-round-button");
             if (button.disabled) return;
             initializeBonusRoundTapBuffer(currentGameData);
-            button.classList.remove("is-pressed");
-            void button.offsetWidth;
-            button.classList.add("is-pressed");
+            if (currentGameData.bonusButtonStyle === "image-sequence") {
+                animateBonusImageButton();
+            } else {
+                button.classList.remove("is-pressed");
+                void button.offsetWidth;
+                button.classList.add("is-pressed");
+            }
             bonusRoundTapCount += 1;
             try {
                 localStorage.setItem(bonusRoundTapBufferKey, String(bonusRoundTapCount));

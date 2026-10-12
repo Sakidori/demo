@@ -180,6 +180,28 @@
             margin-top: 22px;
         }
 
+        .bonus-button-style-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto 4px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .bonus-button-style-control select {
+            width: auto;
+            margin: 0;
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel-soft);
+            color: var(--text);
+            font: inherit;
+        }
+
         ul {
             list-style: none;
             padding: 0;
@@ -709,6 +731,8 @@
             font-weight: 700;
         }
 
+        .team-chip[hidden] { display: none; }
+
         .team-chip::before {
             content: "";
             display: inline-block;
@@ -790,23 +814,145 @@
             margin: 14px auto 0;
         }
 
+        #bomb-holder-card {
+            width: min(346px, 100%);
+            margin: 8px auto 18px;
+            padding: 12px 16px;
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--team-color, #64748b);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            text-align: left;
+        }
+
+        .bomb-holder-label {
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            opacity: 0.72;
+        }
+
         #lost-team-chip { font-size: 1.2rem; margin: 14px 0; }
 
         .result-team-player { border-left: 5px solid var(--team-color, #64748b); }
 
+        #bomb-result-screen {
+            width: min(1100px, 100%);
+            padding: 12px 18px 14px;
+        }
+
+        #bomb-result-screen h1 {
+            margin: 4px 0 8px;
+            font-size: 2.25rem;
+        }
+
+        #bomb-result-screen h2 {
+            margin: 4px 0;
+            font-size: 1.25rem;
+        }
+
+        #bomb-holder-card {
+            margin: 0 auto 8px;
+            padding: 8px 12px;
+        }
+
+        #bomb-holder-card .avatar-chip {
+            flex-basis: 28px;
+            width: 28px;
+            height: 28px;
+        }
+
         #round-score-list {
-            width: min(520px, 100%);
-            margin: 12px auto 20px;
+            display: grid;
+            grid-auto-flow: column;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(var(--score-row-count, 9), minmax(0, auto));
+            gap: 5px 12px;
+            width: min(1000px, 100%);
+            margin: 8px auto 12px;
         }
 
         #round-score-list li {
             display: flex;
             align-items: center;
             width: 100%;
-            margin: 7px 0;
+            min-height: 36px;
+            margin: 0;
+            padding: 3px 8px;
+            gap: 7px;
+            border-radius: 10px;
+            font-size: 0.85rem;
         }
 
-        #round-score-list strong { margin-left: auto; color: var(--success-2); white-space: nowrap; }
+        #round-score-list .score-place--gold {
+            border-color: rgba(255,209,102,0.72);
+            background: linear-gradient(120deg, rgba(255,209,102,0.2), rgba(21,31,50,0.96));
+            box-shadow: 0 0 12px rgba(255,209,102,0.16);
+        }
+
+        #round-score-list .score-place--silver {
+            border-color: rgba(210,222,238,0.68);
+            background: linear-gradient(120deg, rgba(210,222,238,0.18), rgba(21,31,50,0.96));
+            box-shadow: 0 0 12px rgba(210,222,238,0.12);
+        }
+
+        #round-score-list .score-place--bronze {
+            border-color: rgba(216,147,96,0.72);
+            background: linear-gradient(120deg, rgba(216,147,96,0.18), rgba(21,31,50,0.96));
+            box-shadow: 0 0 12px rgba(216,147,96,0.12);
+        }
+
+        #round-score-list .avatar-chip {
+            flex-basis: 28px;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            border-radius: 9px;
+        }
+
+        #round-score-list .score-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 32px;
+            width: 32px;
+            height: 24px;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.07);
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        #round-score-list .score-rank--gold {
+            flex-basis: 38px;
+            width: 38px;
+            height: 30px;
+            border: 1px solid rgba(255,209,102,0.48);
+            background: rgba(255,209,102,0.15);
+            color: #ffd166;
+            font-size: 0.78rem;
+        }
+
+        #round-score-list .score-rank--silver {
+            border: 1px solid rgba(210,222,238,0.35);
+            background: rgba(210,222,238,0.12);
+            color: #d2deee;
+        }
+
+        #round-score-list .score-rank--bronze {
+            border: 1px solid rgba(216,147,96,0.38);
+            background: rgba(216,147,96,0.13);
+            color: #d89360;
+        }
+
+        #round-score-list strong {
+            margin-left: auto;
+            color: var(--success-2);
+            white-space: nowrap;
+            font-size: 0.8rem;
+        }
 
         .spyfall-art {
             display: block;
@@ -922,9 +1068,22 @@
 
         #spyfall-host-votes li {
             display: flex;
+            align-items: center;
+            gap: 10px;
             justify-content: space-between;
             width: 100%;
             margin: 6px 0;
+        }
+
+        #spyfall-host-votes .avatar-chip {
+            flex-basis: 30px;
+            width: 30px;
+            height: 30px;
+            font-size: 1rem;
+        }
+
+        #spyfall-host-votes .player-name {
+            flex: 1;
         }
 
         #spyfall-host-scores {
@@ -1105,6 +1264,23 @@
             margin: 6px 0;
         }
 
+        #spyfall-final-standings-list li {
+            display: grid;
+            grid-template-columns: 44px 38px minmax(0, 1fr) auto;
+            align-items: center;
+            justify-content: initial;
+            gap: 12px;
+        }
+
+        #spyfall-final-standings-list .avatar-chip {
+            justify-self: center;
+        }
+
+        #spyfall-final-standings-list strong {
+            justify-self: end;
+            white-space: nowrap;
+        }
+
         .spyfall-drumroll-icon {
             display: block;
             margin: 18px auto;
@@ -1276,13 +1452,15 @@
         }
 
         #bonus-podium {
-            width: min(760px, 100%);
+            width: min(900px, 100%);
             gap: 20px;
         }
 
         #bonus-podium-screen {
             isolation: isolate;
             overflow: hidden;
+            width: min(1040px, 100%);
+            padding: 22px 28px 26px;
             background: radial-gradient(ellipse at 50% 0, #253046 0, #101725 44%, #080c14 100%);
         }
 
@@ -1325,7 +1503,7 @@
 
         #bonus-podium-screen h1 {
             margin-bottom: 8px;
-            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+            font-size: 2.5rem;
             text-shadow: 0 0 18px rgba(255, 224, 143, 0.72), 0 0 44px rgba(255, 183, 72, 0.36);
             animation: podiumTitleReveal 850ms 180ms cubic-bezier(0.16, 0.85, 0.25, 1.2) both;
         }
@@ -1353,6 +1531,14 @@
 
         #bonus-podium .podium-item.rank-3 {
             background: linear-gradient(180deg, rgba(223, 128, 87, 0.25), rgba(151, 69, 52, 0.12));
+        }
+
+        #bonus-podium .podium-item.rank-1,
+        #bonus-podium .podium-item.rank-2,
+        #bonus-podium .podium-item.rank-3 {
+            height: 190px;
+            min-height: 190px;
+            justify-content: space-between;
         }
 
         .podium-avatar {
@@ -1681,7 +1867,7 @@
 <body>
 
     <div class="host-top-controls" role="group" aria-label="Music controls">
-        <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on">
+        <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on" disabled>
             <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
         </button>
     </div>
@@ -1709,6 +1895,13 @@
             </section>
         </div>
         <div class="lobby-actions">
+            <label class="bonus-button-style-control" for="bonus-button-style-select">
+                <span>Bonus button</span>
+                <select id="bonus-button-style-select" aria-label="Choose the Bonus Round button style">
+                    <option value="classic">Push button</option>
+                    <option value="image-sequence">Image button</option>
+                </select>
+            </label>
             <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Game</button>
             <button id="reset-lobby-btn" type="button" onclick="resetGame()">Reset Lobby</button>
         </div>
@@ -1755,13 +1948,20 @@
     <!-- BOMB RESULT SCREEN -->
     <div id="bomb-result-screen" class="screen">
         <div id="results-badge" class="results-badge">Bomb Exploded</div>
-        <h1 id="lost-team-title">Team lost</h1>
-        <div id="lost-team-chip" class="team-chip"></div>
+        <h1 id="lost-team-title">Results</h1>
+        <div id="lost-team-chip" class="team-chip" hidden></div>
         <p id="lost-player-name"></p>
+        <div id="bomb-holder-card" hidden>
+            <div class="bomb-holder-label">Bomb holder</div>
+            <div class="player-line">
+                <span id="bomb-holder-avatar" class="avatar-chip"></span>
+                <strong id="bomb-holder-name" class="player-name"></strong>
+            </div>
+        </div>
         <h2 id="score-heading">Round 1 Scores</h2>
         <p id="quiz-answer-reveal" hidden></p>
         <ul id="round-score-list"></ul>
-        <ul id="lost-team-players"></ul>
+        <ul id="lost-team-players" hidden></ul>
         <button id="round-result-action" onclick="resetGame()">Back to Lobby</button>
     </div>
 
@@ -1781,7 +1981,7 @@
     <div id="round-two-placeholder-screen" class="screen">
         <div class="results-badge">Round 2 · Spyfall</div>
         <h1 id="spyfall-host-title">Spyfall</h1>
-        <p id="spyfall-host-status">Assign roles, then wait until everyone is ready to reveal them.</p>
+        <p id="spyfall-host-status">Catch the spy!</p>
         <label class="spyfall-location-control" for="spyfall-location-select">
             <span>Location</span>
             <select id="spyfall-location-select" aria-label="Choose a Spyfall location image">
@@ -1839,7 +2039,7 @@
         <div class="results-badge">Spyfall Results · 3 of 3</div>
         <h1>Overall Standings</h1>
         <ul id="spyfall-final-standings-list"></ul>
-        <button id="spyfall-next-round-action">Start Pop Quiz 2</button>
+        <button id="spyfall-next-round-action">Next</button>
         <button id="spyfall-play-again-action" type="button">Play Again</button>
     </div>
 
@@ -1957,6 +2157,7 @@
         let bonusRoundTimerInterval = null;
         let bonusRoundStarting = false;
         let bonusRoundEnding = false;
+        let bonusPodiumRevealing = false;
         let bonusIntroTransitionTimeout = null;
         let bonusIntroCueTimeouts = [];
         let bonusIntroStartedAtKey = null;
@@ -2013,6 +2214,7 @@
         // Global game database reference
         const gameRef = ref(db, `game`);
         const spyfallLocationSelect = document.getElementById("spyfall-location-select");
+        const bonusButtonStyleSelect = document.getElementById("bonus-button-style-select");
         const syncSpyfallLocationControls = (location) => {
             const validLocation = ["location.webp", "location2.webp", "location3.webp"].includes(location)
                 ? location
@@ -2026,6 +2228,10 @@
         };
         spyfallLocationSelect.addEventListener("change", async () => {
             await window.selectSpyfallBackupLocation(spyfallLocationSelect.value);
+        });
+        bonusButtonStyleSelect.addEventListener("change", () => {
+            if (currentPhase !== "waiting") return;
+            update(gameRef, { bonusButtonStyle: bonusButtonStyleSelect.value });
         });
 
         // Initialize only when the game has not already started.
@@ -2053,27 +2259,53 @@
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
         const hostAttentionButton = document.getElementById("host-attention-btn");
+        const musicPhases = new Set(["spyfall-reveal", "spyfall-vote", "spyfall-results", "bonus-podium"]);
+        const forcedMutePhases = new Set(["bomb", "spyfall-active"]);
+        let manualMusicOverride = null;
+        let spyfallDrumrollActive = false;
+        let bonusFanfareActive = false;
+        let currentMusicPhase = null;
+        let backgroundMusicDesired = null;
+
+        function updateMusicControl(label = "") {
+            const isPlaying = funkyMusic.isPlaying;
+            musicToggle.setAttribute("aria-pressed", String(isPlaying));
+            musicToggle.setAttribute("aria-label", isPlaying ? "Turn music off" : "Turn music on");
+            musicLabel.innerText = label || (isPlaying ? "Music on" : "Music off");
+        }
+
+        function syncBackgroundMusic(phase) {
+            currentMusicPhase = phase;
+            const forcedMuted = forcedMutePhases.has(phase) || spyfallDrumrollActive || bonusFanfareActive;
+            musicToggle.disabled = forcedMuted;
+            const shouldPlay = !forcedMuted && (manualMusicOverride ?? musicPhases.has(phase));
+            if (shouldPlay === backgroundMusicDesired) {
+                if (shouldPlay && !funkyMusic.isPlaying) {
+                    funkyMusic.start().then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
+                }
+                return;
+            }
+            backgroundMusicDesired = shouldPlay;
+            if (!shouldPlay) {
+                funkyMusic.stop();
+                updateMusicControl();
+                return;
+            }
+            if (funkyMusic.isPlaying) {
+                updateMusicControl();
+                return;
+            }
+            funkyMusic.start().then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
+        }
 
         hostAttentionButton.addEventListener("click", () => {
             playAttentionSound();
             window.togglePauseGame();
         });
 
-        musicToggle.addEventListener("click", async () => {
-            if (funkyMusic.isPlaying) {
-                funkyMusic.stop();
-            } else {
-                try {
-                    await funkyMusic.start();
-                } catch (error) {
-                    musicLabel.innerText = "Audio unavailable";
-                    return;
-                }
-            }
-
-            musicToggle.setAttribute("aria-pressed", String(funkyMusic.isPlaying));
-            musicToggle.setAttribute("aria-label", funkyMusic.isPlaying ? "Turn music off" : "Turn music on");
-            musicLabel.innerText = funkyMusic.isPlaying ? "Music on" : "Music off";
+        musicToggle.addEventListener("click", () => {
+            manualMusicOverride = !funkyMusic.isPlaying;
+            syncBackgroundMusic(currentMusicPhase);
         });
 
         function getAudioContext() {
@@ -2098,6 +2330,52 @@
             gainNode.connect(audioCtx.destination);
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playBonusFanfare() {
+            return playBonusIntroSound("fanfare.mp3");
+        }
+
+        function playBombUnlockSound() {
+            playUiTone(520, 0.14, "triangle", 0.045);
+            window.setTimeout(() => playUiTone(760, 0.18, "triangle", 0.04), 65);
+        }
+
+        function playForcePassSound() {
+            playUiTone(760, 0.08, "square", 0.04);
+            window.setTimeout(() => playUiTone(500, 0.12, "square", 0.035), 70);
+        }
+
+        function playSpyfallDrumroll() {
+            const context = getAudioContext();
+            if (!context) return;
+            const noiseLength = Math.floor(context.sampleRate * 0.055);
+            const noiseBuffer = context.createBuffer(1, noiseLength, context.sampleRate);
+            const noiseSamples = noiseBuffer.getChannelData(0);
+            for (let index = 0; index < noiseLength; index++) noiseSamples[index] = Math.random() * 2 - 1;
+
+            const startTime = context.currentTime + 0.03;
+            const rollDuration = 2.55;
+            let elapsed = 0;
+            while (elapsed < rollDuration) {
+                const progress = elapsed / rollDuration;
+                const beatTime = startTime + elapsed;
+                const source = context.createBufferSource();
+                const filter = context.createBiquadFilter();
+                const envelope = context.createGain();
+                source.buffer = noiseBuffer;
+                filter.type = "bandpass";
+                filter.frequency.value = 1100 + progress * 500;
+                envelope.gain.setValueAtTime(0.0001, beatTime);
+                envelope.gain.exponentialRampToValueAtTime(0.018 + progress * 0.035, beatTime + 0.003);
+                envelope.gain.exponentialRampToValueAtTime(0.0001, beatTime + 0.05);
+                source.connect(filter);
+                filter.connect(envelope);
+                envelope.connect(context.destination);
+                source.start(beatTime);
+                source.stop(beatTime + 0.055);
+                elapsed += 0.15 - progress * 0.105;
+            }
         }
 
         let attentionAudioBufferPromise;
@@ -2307,6 +2585,8 @@
         onValue(gameRef, (snapshot) => {
             const gameData = snapshot.val();
             if (!gameData) return;
+            syncBackgroundMusic(gameData.phase);
+            bonusButtonStyleSelect.value = gameData.bonusButtonStyle === "image-sequence" ? "image-sequence" : "classic";
             if (gameData.phase === "bomb") {
                 const savedRoundStart = Number(gameData.bombRoundStartedAt || 0);
                 const savedHolderStart = Number(gameData.bombHolderStartedAt || gameData.handoffTime || 0);
@@ -2584,6 +2864,7 @@
             document.getElementById("lost-team-chip").hidden = true;
             document.getElementById("lost-player-name").innerText = "No team was eliminated.";
             document.getElementById("lost-player-name").hidden = false;
+            document.getElementById("bomb-holder-card").hidden = true;
             document.getElementById("lost-team-players").hidden = true;
             document.getElementById("quiz-answer-reveal").hidden = true;
             document.getElementById("score-heading").innerText = "Current Standings";
@@ -2717,6 +2998,7 @@
             if (currentPhase !== "bomb" || !bombLocked) return;
             bombLocked = false;
             bombUnlockedAt = Date.now();
+            playBombUnlockSound();
             renderBombLockState();
             updateHostFuse();
             await update(gameRef, {
@@ -2798,7 +3080,7 @@
                 lastBombPass: { from: previousActivePlayerId, to: nextPlayerId, reason, points: pointsEarned, penalty: holdPenalty }
             });
             if (result.committed) {
-                playUiTone(reason === "host" ? 620 : 560, 0.1, "triangle", 0.035);
+                if (reason !== "host") playUiTone(560, 0.1, "triangle", 0.035);
                 return true;
             }
             return false;
@@ -2806,6 +3088,7 @@
 
         window.forcePassBomb = async function() {
             if (currentPhase !== "bomb") return;
+            playForcePassSound();
             const snapshot = await get(gameRef);
             const gameData = snapshot.val() || {};
             const { nextPlayerId } = selectNextBombHolder(gameData, activePlayerId);
@@ -2886,30 +3169,20 @@
             if (losingPlayer) hostPlayers = { ...hostPlayers, [activePlayerId]: losingPlayer };
             const losingTeam = getTeam(losingPlayer?.teamId);
             const losingTeamName = losingPlayer?.teamName || losingTeam?.name || "Unknown Team";
-            const losingPlayers = Object.values(hostPlayers).filter((player) => player?.teamId === losingPlayer?.teamId);
             document.getElementById("task-screen").classList.remove("active");
             document.body.classList.remove("bomb-round-active");
             document.getElementById("bomb-result-screen").classList.add("active");
             document.getElementById("results-badge").innerText = `Round ${currentBombRound} Complete`;
-            document.getElementById("lost-team-title").innerText = `${losingTeamName} Lost`;
+            document.getElementById("lost-team-title").innerText = "Results";
             document.getElementById("lost-team-title").hidden = false;
-            document.getElementById("lost-team-chip").innerText = losingTeamName;
-            document.getElementById("lost-team-chip").hidden = false;
-            document.getElementById("lost-team-chip").style.setProperty("--team-color", losingTeam?.hex || "#64748b");
-            document.getElementById("lost-player-name").innerText = `Bomb holder: ${losingPlayer?.name || "Unknown player"}`;
-            document.getElementById("lost-player-name").hidden = false;
+            document.getElementById("lost-team-chip").hidden = true;
+            document.getElementById("lost-player-name").hidden = true;
+            document.getElementById("bomb-holder-card").hidden = false;
+            document.getElementById("bomb-holder-avatar").innerText = getPlayerAvatar(losingPlayer || { avatar: "🎮" });
+            document.getElementById("bomb-holder-name").innerText = losingPlayer?.name || "Unknown player";
+            document.getElementById("bomb-holder-card").style.setProperty("--team-color", losingTeam?.hex || "#64748b");
             document.getElementById("score-heading").innerText = currentBombRound === 1 ? "Round 1 Scores" : "Final Standings";
-            document.getElementById("lost-team-players").hidden = false;
             renderScoreList("round-score-list", hostPlayers, "bombRoundPoints");
-            const membersList = document.getElementById("lost-team-players");
-            membersList.innerHTML = "";
-            losingPlayers.forEach((player) => {
-                const row = document.createElement("li");
-                row.className = "player-line result-team-player";
-                row.style.setProperty("--team-color", losingTeam?.hex || "#64748b");
-                row.innerText = `${getPlayerAvatar(player)} ${player.name}`;
-                membersList.appendChild(row);
-            });
             currentPhase = "round-results";
             const resultButton = document.getElementById("round-result-action");
             resultButton.innerText = "Next Round";
@@ -2940,7 +3213,7 @@
             quizIntroTimeout = null;
             clearInterval(quizCountdownInterval);
             quizIntroEndsAt = Date.now() + 2400;
-            document.getElementById("bomb-result-screen").classList.remove("active");
+            document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             document.getElementById("quiz-splash").hidden = false;
             await update(gameRef, {
                 status: `quiz-${questionIndex + 1}-intro`,
@@ -3104,6 +3377,7 @@
             document.getElementById("lost-team-title").hidden = false;
             document.getElementById("lost-team-chip").hidden = true;
             document.getElementById("lost-player-name").hidden = true;
+            document.getElementById("bomb-holder-card").hidden = true;
             document.getElementById("lost-team-players").hidden = true;
             document.getElementById("score-heading").innerText = currentQuizQuestionIndex === 0 ? "Round 1 Scores" : "Final Standings";
             const answerReveal = document.getElementById("quiz-answer-reveal");
@@ -3254,6 +3528,7 @@
                     bonusRoundStartedAt: now + BONUS_INTRO_DURATION_MS,
                     bonusRoundEndsAt: now + BONUS_INTRO_DURATION_MS + BONUS_ROUND_SECONDS * 1000,
                     bonusRoundSeconds: BONUS_ROUND_SECONDS,
+                    bonusButtonStyle: bonusButtonStyleSelect.value,
                     bonusTapCounts: teamPoints,
                     bonusTapFlushes: {},
                     bonusPoints: teamPoints,
@@ -3280,9 +3555,15 @@
             bonusRoundEnding = true;
             const endButton = document.getElementById("bonus-round-end-button");
             endButton.disabled = true;
+            endButton.innerText = "Saving scores...";
+            document.getElementById("bonus-round-status").innerText = "Collecting team pushes...";
             try {
                 let gameData = (await get(gameRef)).val() || {};
-                if (gameData.phase !== "bonus-round") return;
+                if (gameData.phase !== "bonus-round") {
+                    endButton.disabled = false;
+                    endButton.innerText = "End Bonus Round";
+                    return;
+                }
                 const requiredTeamIds = [...new Set(Object.values(gameData.players || {})
                     .map((player) => player?.teamId)
                     .filter(Boolean))];
@@ -3296,21 +3577,42 @@
                     await new Promise((resolve) => window.setTimeout(resolve, 100));
                 }
 
+                const finalized = await runTransaction(gameRef, (currentData) => {
+                    if (currentData?.phase !== "bonus-round" || !currentData.bonusRoundFinalizing) return;
+                    const players = { ...(currentData.players || {}) };
+                    const bonusPoints = { ...(currentData.bonusPoints || {}) };
+                    const teamIds = new Set(Object.values(players).map((player) => player?.teamId).filter(Boolean));
+                    teamIds.forEach((teamId) => {
+                        const bonusScore = getBonusScore(currentData, teamId);
+                        bonusPoints[teamId] = bonusScore;
+                        const [playerId, player] = Object.entries(players).find(([, entry]) => entry?.teamId === teamId) || [];
+                        if (playerId) {
+                            players[playerId] = { ...player, score: (Number(player.score) || 0) + bonusScore };
+                        }
+                    });
+                    return {
+                        ...currentData,
+                        players,
+                        bonusPoints,
+                        status: "bonus-round-complete",
+                        phase: "bonus-standings",
+                        bonusRoundFinalizing: false,
+                        bonusRoundEndsAt: Date.now(),
+                        bonusRoundEndedAt: Date.now()
+                    };
+                }, { applyLocally: false });
+                if (!finalized.committed) throw new Error("Could not save the final team scores.");
+
+                hostPlayers = finalized.snapshot.val()?.players || hostPlayers;
                 currentPhase = "bonus-standings";
                 clearInterval(bonusRoundTimerInterval);
                 document.getElementById("bonus-round-screen").classList.remove("active");
                 document.getElementById("bonus-standings-screen").classList.add("active");
-                await update(gameRef, {
-                    status: "bonus-round-complete",
-                    phase: "bonus-standings",
-                    bonusRoundFinalizing: false,
-                    bonusRoundEndsAt: Date.now(),
-                    bonusRoundEndedAt: Date.now()
-                });
             } catch (error) {
                 console.error("Could not finalize Bonus Round taps.", error);
                 if (currentPhase === "bonus-round") {
                     endButton.disabled = false;
+                    endButton.innerText = "End Bonus Round";
                     document.getElementById("bonus-round-status").innerText = "Could not save team pushes. Try ending again.";
                     try {
                         await update(gameRef, { bonusRoundFinalizing: false });
@@ -3333,7 +3635,7 @@
                         teamId,
                         name: team.name || team.teamName || `${team.colorName || "Team"} ${team.animalName || "Team"}`,
                         colorHex: team.colorHex || team.color || "#64748b",
-                        score: playerScore + bonusScore,
+                        score: playerScore,
                         bonusScore,
                         playerCount: teamPlayers.length
                     };
@@ -3360,7 +3662,7 @@
             const standings = Object.values(gameData.players || {})
                 .filter((player) => player?.teamId)
                 .map((player) => ({
-                    name: player.name || player.teamName || "Player",
+                    name: player.teamName || `${getTeam(player.teamId)?.name || "Team"} ${getPlayerAnimalPlural(player)}`,
                     avatar: getPlayerAvatar(player),
                     colorHex: getTeam(player.teamId)?.hex || player.teamColor || "#64748b",
                     score: Number(player.score) || 0
@@ -3403,14 +3705,37 @@
         }
 
         window.revealBonusPodium = async function() {
-            if (currentPhase !== "bonus-standings") return;
-            const result = await get(gameRef);
-            if (result.val()?.phase !== "bonus-standings") return;
-            await update(gameRef, {
-                status: "bonus-podium",
-                phase: "bonus-podium",
-                bonusRoundRevealed: true
-            });
+            if (currentPhase !== "bonus-standings" || bonusPodiumRevealing) return;
+            bonusPodiumRevealing = true;
+            const revealButton = document.querySelector('#bonus-standings-screen button[onclick="revealBonusPodium()"]');
+            revealButton.disabled = true;
+            revealButton.innerText = "Revealing...";
+            bonusFanfareActive = true;
+            syncBackgroundMusic(currentMusicPhase);
+            const fanfare = playBonusFanfare();
+            try {
+                const result = await runTransaction(gameRef, (gameData) => {
+                    if (gameData?.phase !== "bonus-standings") return;
+                    return {
+                        ...gameData,
+                        status: "bonus-podium",
+                        phase: "bonus-podium",
+                        bonusRoundRevealed: true
+                    };
+                }, { applyLocally: false });
+                if (!result.committed) return;
+            } catch (error) {
+                console.error("Could not reveal Bonus Round podium.", error);
+            } finally {
+                await fanfare;
+                bonusFanfareActive = false;
+                syncBackgroundMusic(currentMusicPhase);
+                bonusPodiumRevealing = false;
+                if (currentPhase === "bonus-standings") {
+                    revealButton.disabled = false;
+                    revealButton.innerText = "Reveal Podium";
+                }
+            }
         };
 
         async function showRoundTwoPlaceholder() {
@@ -3420,7 +3745,7 @@
             document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             document.getElementById("round-two-placeholder-screen").classList.add("active");
             document.getElementById("spyfall-host-title").innerText = "Spyfall";
-            document.getElementById("spyfall-host-status").innerText = "Assign roles, then wait until everyone is ready to reveal them.";
+            document.getElementById("spyfall-host-status").innerText = "Catch the spy!";
             document.getElementById("spyfall-host-turn").innerText = "";
             document.getElementById("spyfall-host-timer").hidden = true;
             document.getElementById("spyfall-host-vote-count").hidden = true;
@@ -3490,7 +3815,7 @@
                 paused: false,
                 pausedAt: null
             });
-            document.getElementById("spyfall-host-status").innerText = "Roles are assigned and hidden. Reveal them when everyone is ready.";
+            document.getElementById("spyfall-host-status").innerText = "Catch the spy!";
             const action = document.getElementById("spyfall-host-action");
             action.innerText = "Reveal Roles";
             action.disabled = false;
@@ -3609,6 +3934,8 @@
                 startSpyfallVote();
                 return;
             }
+            playUiTone(640, 0.09, "triangle", 0.035);
+            window.setTimeout(() => playUiTone(880, 0.12, "triangle", 0.03), 70);
             spyfallTurnIndex = nextIndex;
             spyfallTurnEndsAt = Date.now() + 20000;
             const nextPlayerId = spyfallPlayerOrder[nextIndex];
@@ -3732,12 +4059,19 @@
             const list = document.getElementById("spyfall-host-votes");
             list.innerHTML = "";
             spyfallPlayerOrder.forEach((playerId) => {
+                const player = hostPlayers[playerId];
+                if (!player) return;
                 const row = document.createElement("li");
+                const avatar = document.createElement("span");
+                avatar.className = "avatar-chip";
+                avatar.setAttribute("aria-hidden", "true");
+                avatar.innerText = player.avatar || "🎮";
                 const name = document.createElement("span");
-                    name.innerText = hostPlayers[playerId]?.teamName || hostPlayers[playerId]?.name || "Player";
+                name.className = "player-name";
+                name.innerText = player.teamName || player.name || "Player";
                 const count = document.createElement("strong");
                 count.innerText = String(voteCounts[playerId] || 0);
-                row.append(name, count);
+                row.append(avatar, name, count);
                 list.appendChild(row);
             });
         }
@@ -3746,7 +4080,10 @@
             if (currentPhase !== "spyfall-vote" || !spyfallVotingStarted || !spyfallVotingEnded) return;
             clearInterval(spyfallTimerInterval);
             currentPhase = "spyfall-results";
+            spyfallDrumrollActive = true;
+            syncBackgroundMusic("spyfall-results");
             showSpyfallResultScreen("spyfall-drumroll-screen");
+            playSpyfallDrumroll();
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "spyfall-vote" || !gameData.spyfallVotingEnded) return;
                 const players = { ...(gameData.players || {}) };
@@ -3777,8 +4114,10 @@
                 };
             }, { applyLocally: false });
             if (!result.committed) {
+                spyfallDrumrollActive = false;
                 currentPhase = "spyfall-vote";
                 showSpyfallResultScreen("round-two-placeholder-screen");
+                syncBackgroundMusic("spyfall-vote");
                 return;
             }
 
@@ -3811,6 +4150,8 @@
             document.getElementById("spyfall-play-again-action").onclick = playAgainSpyfall;
             document.getElementById("spyfall-host-vote-count").hidden = true;
             await new Promise((resolve) => window.setTimeout(resolve, 2800));
+            spyfallDrumrollActive = false;
+            syncBackgroundMusic(currentPhase);
             if (currentPhase !== "spyfall-results") return;
             showSpyfallResultScreen("spyfall-spy-results-screen");
         }
@@ -3918,23 +4259,41 @@
         function renderScoreList(listId, playersData, scoreField = "score") {
             const list = document.getElementById(listId);
             list.innerHTML = "";
-            Object.values(playersData || {})
+            const rankedPlayers = Object.values(playersData || {})
                 .filter((player) => player?.teamId)
-                .sort((first, second) => (Number(second[scoreField]) || 0) - (Number(first[scoreField]) || 0))
-                .forEach((player) => {
-                    const row = document.createElement("li");
-                    row.className = "player-line";
-                    const avatar = document.createElement("span");
-                    avatar.className = "avatar-chip";
-                    avatar.innerText = getPlayerAvatar(player);
-                    const name = document.createElement("span");
-                    name.className = "player-name";
-                    name.innerText = player.teamName || player.name || "Player";
-                    const score = document.createElement("strong");
-                    score.innerText = `${Number(player[scoreField]) || 0} pts`;
-                    row.append(avatar, name, score);
-                    list.appendChild(row);
-                });
+                .sort((first, second) => (Number(second[scoreField]) || 0) - (Number(first[scoreField]) || 0));
+            list.style.setProperty("--score-row-count", String(Math.max(1, Math.ceil(rankedPlayers.length / 2))));
+            rankedPlayers.forEach((player, index) => {
+                const row = document.createElement("li");
+                row.className = "player-line";
+                const position = index + 1;
+                const suffix = position % 100 >= 11 && position % 100 <= 13
+                    ? "th"
+                    : ({ 1: "st", 2: "nd", 3: "rd" }[position % 10] || "th");
+                const rank = document.createElement("span");
+                rank.className = "score-rank";
+                if (position === 1) {
+                    rank.classList.add("score-rank--gold");
+                    row.classList.add("score-place--gold");
+                } else if (position === 2) {
+                    rank.classList.add("score-rank--silver");
+                    row.classList.add("score-place--silver");
+                } else if (position === 3) {
+                    rank.classList.add("score-rank--bronze");
+                    row.classList.add("score-place--bronze");
+                }
+                rank.innerText = `${position}${suffix}`;
+                const avatar = document.createElement("span");
+                avatar.className = "avatar-chip";
+                avatar.innerText = getPlayerAvatar(player);
+                const name = document.createElement("span");
+                name.className = "player-name";
+                name.innerText = player.teamName || player.name || "Player";
+                const score = document.createElement("strong");
+                score.innerText = `${Number(player[scoreField]) || 0} pts`;
+                row.append(rank, avatar, name, score);
+                list.appendChild(row);
+            });
         }
 
         window.resetGame = async function() {
