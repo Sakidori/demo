@@ -540,6 +540,8 @@
         .bonus-round-button.is-image-sequence::before,
         .bonus-round-button.is-image-sequence::after { display: none; }
 
+        .bonus-round-button.is-image-sequence { overflow: visible; }
+
         .bonus-round-button.is-image-sequence > span { display: none; }
 
         .bonus-round-button-image {
@@ -561,8 +563,8 @@
         .bonus-round-hammer {
             position: absolute;
             z-index: 3;
-            top: 13%;
-            left: 42%;
+            top: 10%;
+            left: 46%;
             width: 48%;
             height: auto;
             object-fit: contain;
@@ -576,10 +578,59 @@
         }
 
         @keyframes bonusHammerStrike {
-            0% { opacity: 0; transform: translate(45%, -58%) rotate(-35deg) scaleX(-1); }
-            48% { opacity: 1; transform: translate(0, 0) rotate(0) scaleX(-1); }
-            68% { opacity: 1; transform: translate(-2%, 4%) rotate(6deg) scaleX(-1); }
-            100% { opacity: 0; transform: translate(35%, -42%) rotate(-14deg) scaleX(-1); }
+            0% { opacity: 0; transform: translate(45%, -58%) rotate(28deg) scaleX(-1); }
+            48% { opacity: 1; transform: translate(0, 0) rotate(-25deg) scaleX(-1); }
+            68% { opacity: 1; transform: translate(-2%, 4%) rotate(-18deg) scaleX(-1); }
+            100% { opacity: 0; transform: translate(35%, -42%) rotate(14deg) scaleX(-1); }
+        }
+
+        .bonus-round-button > .bonus-button-speech {
+            position: absolute;
+            z-index: 4;
+            top: 5%;
+            left: 20%;
+            display: none;
+            place-items: center;
+            width: 30%;
+            aspect-ratio: 1.65;
+            padding: 5px 8px;
+            border: 2px solid #202735;
+            border-radius: 999px;
+            background: #fff7d6;
+            color: #202735;
+            font-size: 0.78rem;
+            font-weight: 900;
+            line-height: 1.05;
+            text-align: center;
+            text-shadow: none;
+            overflow-wrap: anywhere;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .bonus-button-speech::after {
+            position: absolute;
+            right: 20%;
+            bottom: -7px;
+            width: 13px;
+            aspect-ratio: 1;
+            border-right: 2px solid #202735;
+            border-bottom: 2px solid #202735;
+            background: #fff7d6;
+            content: "";
+            transform: rotate(45deg);
+        }
+
+        .bonus-round-button.is-image-sequence.is-speaking > .bonus-button-speech {
+            display: grid;
+            animation: bonusSpeechPop 720ms ease both;
+        }
+
+        @keyframes bonusSpeechPop {
+            0% { opacity: 0; transform: translateY(8px) scale(0.45) rotate(-8deg); }
+            18% { opacity: 1; transform: translateY(0) scale(1.08) rotate(2deg); }
+            28%, 72% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+            100% { opacity: 0; transform: translateY(-8px) scale(0.92) rotate(-3deg); }
         }
 
         #bonus-round-player-score {
@@ -1218,10 +1269,10 @@
 
     <div id="bonus-round-screen" class="screen">
         <div class="status-chip">Bonus Round · Live</div>
-        <h1>Push the button as many times as you can!</h1>
+        <h1 id="bonus-round-instruction">Push the button as many times as you can!</h1>
         <p id="bonus-round-player-timer">0:30</p>
         <p id="bonus-round-player-score" hidden>0 team points · 0 pushes</p>
-        <button id="bonus-round-button" class="bonus-round-button" type="button" aria-label="Push for bonus points" onclick="addBonusPoint()"><span>Push!</span><img id="bonus-round-button-image" class="bonus-round-button-image" src="1.webp" alt=""><img id="bonus-round-hammer" class="bonus-round-hammer" src="hammer.webp" alt=""></button>
+        <button id="bonus-round-button" class="bonus-round-button" type="button" aria-label="Push for bonus points" onclick="addBonusPoint()"><span>Push!</span><img id="bonus-round-button-image" class="bonus-round-button-image" src="1.webp" alt=""><img id="bonus-round-hammer" class="bonus-round-hammer" src="hammer.webp" alt=""><span id="bonus-button-speech" class="bonus-button-speech" aria-hidden="true"></span></button>
     </div>
 
     <div id="bonus-standings-screen" class="screen">
@@ -1293,6 +1344,8 @@
         let bonusButtonImageRoundId = "";
         let bonusButtonImageSequenceStarted = false;
         let bonusButtonTapFrameIndex = 0;
+        let bonusButtonSpeechPhraseIndex = 0;
+        const BONUS_BUTTON_SPEECH_PHRASES = ["QUIT IT!", "HEY!", "OW!", "WHY ME?!", "NOT AGAIN!"];
         let observedResetAt;
         const playerSoundStorageKey = "playerGameSoundEnabled";
         const BONUS_TAPS_PER_POINT = 4;
@@ -2516,12 +2569,16 @@
             const bonusPoints = Math.floor(tapCount / BONUS_TAPS_PER_POINT);
             const button = document.getElementById("bonus-round-button");
             const buttonImage = document.getElementById("bonus-round-button-image");
-            const imageButton = gameData.bonusButtonStyle === "image-sequence";
+            const imageButton = gameData.bonusButtonStyle !== "classic";
+            document.getElementById("bonus-round-instruction").textContent = imageButton
+                ? "Bonk him as many times as you can!"
+                : "Push the button as many times as you can!";
             const roundId = gameData.bonusRoundId || gameData.resetAt || "bonus-round";
             if (imageButton && roundId !== bonusButtonImageRoundId) {
                 bonusButtonImageRoundId = roundId;
                 bonusButtonImageSequenceStarted = false;
                 bonusButtonTapFrameIndex = 0;
+                bonusButtonSpeechPhraseIndex = 0;
                 buttonImage.src = "1.webp";
             }
             button.classList.toggle("is-image-sequence", imageButton);
@@ -2548,12 +2605,21 @@
         function animateBonusImageButton() {
             const tapFrames = ["3.webp", "4.webp", "2.webp"];
             const image = document.getElementById("bonus-round-button-image");
-            image.src = tapFrames[bonusButtonTapFrameIndex];
+            const frame = tapFrames[bonusButtonTapFrameIndex];
+            image.src = frame;
             bonusButtonTapFrameIndex = (bonusButtonTapFrameIndex + 1) % tapFrames.length;
             const button = document.getElementById("bonus-round-button");
             button.classList.remove("is-hammering");
+            if (frame !== "2.webp") {
+                void button.offsetWidth;
+                button.classList.add("is-hammering");
+            }
+            const speech = document.getElementById("bonus-button-speech");
+            speech.innerText = BONUS_BUTTON_SPEECH_PHRASES[bonusButtonSpeechPhraseIndex];
+            bonusButtonSpeechPhraseIndex = (bonusButtonSpeechPhraseIndex + 1) % BONUS_BUTTON_SPEECH_PHRASES.length;
+            button.classList.remove("is-speaking");
             void button.offsetWidth;
-            button.classList.add("is-hammering");
+            button.classList.add("is-speaking");
         }
 
         const bonusRoundButton = document.getElementById("bonus-round-button");

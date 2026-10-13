@@ -180,28 +180,6 @@
             margin-top: 22px;
         }
 
-        .bonus-button-style-control {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 0 auto 4px;
-            color: var(--muted);
-            font-size: 0.9rem;
-            font-weight: 700;
-        }
-
-        .bonus-button-style-control select {
-            width: auto;
-            margin: 0;
-            padding: 8px 12px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: var(--panel-soft);
-            color: var(--text);
-            font: inherit;
-        }
-
         ul {
             list-style: none;
             padding: 0;
@@ -1765,6 +1743,13 @@
             color: #ff9baa;
         }
 
+        #bonus-button-style-toggle[aria-pressed="true"] {
+            border: 1px solid rgba(255,209,102,0.72);
+            background: rgba(255,209,102,0.18);
+            color: #ffd166;
+            box-shadow: 0 0 14px rgba(255,209,102,0.22);
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1873,6 +1858,7 @@
     </div>
     <div class="host-player-controls" role="group" aria-label="Game controls">
         <button id="host-attention-btn" type="button" title="Play alert sound and toggle pause" aria-label="Play alert sound and toggle pause">📣</button>
+        <button id="bonus-button-style-toggle" type="button" aria-label="Use classic Bonus button" title="Use classic Bonus button" aria-pressed="false">🔘</button>
         <button id="pause-game-btn" type="button" onclick="togglePauseGame()" aria-label="Pause game" title="Pause game" aria-pressed="false" hidden>
             <span id="pause-game-icon" aria-hidden="true">&#9208;</span>
         </button>
@@ -1895,13 +1881,6 @@
             </section>
         </div>
         <div class="lobby-actions">
-            <label class="bonus-button-style-control" for="bonus-button-style-select">
-                <span>Bonus button</span>
-                <select id="bonus-button-style-select" aria-label="Choose the Bonus Round button style">
-                    <option value="classic">Push button</option>
-                    <option value="image-sequence">Image button</option>
-                </select>
-            </label>
             <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Game</button>
             <button id="reset-lobby-btn" type="button" onclick="resetGame()">Reset Lobby</button>
         </div>
@@ -2214,7 +2193,8 @@
         // Global game database reference
         const gameRef = ref(db, `game`);
         const spyfallLocationSelect = document.getElementById("spyfall-location-select");
-        const bonusButtonStyleSelect = document.getElementById("bonus-button-style-select");
+        const bonusButtonStyleToggle = document.getElementById("bonus-button-style-toggle");
+        let bonusButtonStyle = "image-sequence";
         const syncSpyfallLocationControls = (location) => {
             const validLocation = ["location.webp", "location2.webp", "location3.webp"].includes(location)
                 ? location
@@ -2229,9 +2209,23 @@
         spyfallLocationSelect.addEventListener("change", async () => {
             await window.selectSpyfallBackupLocation(spyfallLocationSelect.value);
         });
-        bonusButtonStyleSelect.addEventListener("change", () => {
+        function syncBonusButtonStyleToggle(phase = currentPhase) {
+            const classicMode = bonusButtonStyle === "classic";
+            const label = classicMode ? "Use image Bonus button" : "Use classic Bonus button";
+            bonusButtonStyleToggle.setAttribute("aria-pressed", String(classicMode));
+            bonusButtonStyleToggle.setAttribute("aria-label", label);
+            bonusButtonStyleToggle.title = label;
+            bonusButtonStyleToggle.disabled = phase !== "waiting";
+        }
+        bonusButtonStyleToggle.addEventListener("click", () => {
             if (currentPhase !== "waiting") return;
-            update(gameRef, { bonusButtonStyle: bonusButtonStyleSelect.value });
+            bonusButtonStyle = bonusButtonStyle === "image-sequence" ? "classic" : "image-sequence";
+            syncBonusButtonStyleToggle();
+            update(gameRef, { bonusButtonStyle }).catch((error) => {
+                console.error("Could not change the Bonus button style.", error);
+                bonusButtonStyle = bonusButtonStyle === "classic" ? "image-sequence" : "classic";
+                syncBonusButtonStyleToggle();
+            });
         });
 
         // Initialize only when the game has not already started.
@@ -2243,7 +2237,8 @@
                     phase: "waiting",
                     round: 1,
                     players: {},
-                    teams: {}
+                    teams: {},
+                    bonusButtonStyle: "image-sequence"
                 });
             }
         }).catch(() => {});
@@ -2586,7 +2581,8 @@
             const gameData = snapshot.val();
             if (!gameData) return;
             syncBackgroundMusic(gameData.phase);
-            bonusButtonStyleSelect.value = gameData.bonusButtonStyle === "image-sequence" ? "image-sequence" : "classic";
+            bonusButtonStyle = gameData.bonusButtonStyle === "classic" ? "classic" : "image-sequence";
+            syncBonusButtonStyleToggle(gameData.phase);
             if (gameData.phase === "bomb") {
                 const savedRoundStart = Number(gameData.bombRoundStartedAt || 0);
                 const savedHolderStart = Number(gameData.bombHolderStartedAt || gameData.handoffTime || 0);
@@ -2642,7 +2638,7 @@
                 document.getElementById("bonus-round-screen").classList.remove("active");
                 document.getElementById("bonus-intro-screen").classList.add("active");
                 const startedAt = Number(gameData.bonusRoundIntroStartedAt || Date.now());
-                showBonusRoundIntro(startedAt);
+                showBonusRoundIntro(startedAt, gameData.bonusButtonStyle);
                 clearTimeout(bonusIntroTransitionTimeout);
                 const remaining = Math.max(0, startedAt + BONUS_INTRO_DURATION_MS - Date.now());
                 bonusIntroTransitionTimeout = setTimeout(() => finishBonusRoundIntro(startedAt), remaining);
@@ -3444,15 +3440,21 @@
             });
         }
 
-        function showBonusRoundIntro(startedAt) {
+        function showBonusRoundIntro(startedAt, buttonStyle) {
             const startKey = String(startedAt);
             if (bonusIntroStartedAtKey === startKey) return;
             bonusIntroStartedAtKey = startKey;
+            const imageButton = buttonStyle === "image-sequence";
             bonusIntroCueTimeouts.forEach(clearTimeout);
             bonusIntroCueTimeouts = [];
             document.querySelectorAll(".bonus-intro-word").forEach((word) => word.classList.remove("visible"));
+            document.getElementById("bonus-intro-push").innerText = imageButton ? "BONK" : "PUSH";
+            document.getElementById("bonus-intro-button-word").innerText = imageButton ? "ALT!" : "BUTTON";
+            const introScreen = document.getElementById("bonus-intro-screen");
+            introScreen.setAttribute("aria-label", imageButton ? "Bonk the alt" : "Push the button");
             const buttonArt = document.querySelector(".bonus-intro-button-art");
             buttonArt.classList.remove("visible");
+            buttonArt.src = imageButton ? "1.webp" : "button.webp";
             const elapsed = Math.max(0, Date.now() - startedAt);
             const firstSoundKey = "1";
             const secondSoundKey = "2";
@@ -3528,7 +3530,7 @@
                     bonusRoundStartedAt: now + BONUS_INTRO_DURATION_MS,
                     bonusRoundEndsAt: now + BONUS_INTRO_DURATION_MS + BONUS_ROUND_SECONDS * 1000,
                     bonusRoundSeconds: BONUS_ROUND_SECONDS,
-                    bonusButtonStyle: bonusButtonStyleSelect.value,
+                    bonusButtonStyle,
                     bonusTapCounts: teamPoints,
                     bonusTapFlushes: {},
                     bonusPoints: teamPoints,
