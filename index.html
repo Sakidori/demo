@@ -1358,6 +1358,12 @@
         #bonus-intro-the { left: 50%; top: 38.5vh; --intro-x: -50%; --intro-scale-x: 0.78; font-size: 0.57em; line-height: 0.95; }
         #bonus-intro-button-word { left: 0; bottom: 0; --intro-scale-x: 0.82; font-size: 26vw; transform-origin: left bottom; }
 
+        #bonus-intro-the.is-bonk-aligned {
+            left: var(--intro-the-left);
+            --intro-x: 0;
+            transform-origin: right top;
+        }
+
         .bonus-intro-button-art {
             display: block;
             position: absolute;
@@ -1395,6 +1401,8 @@
             #bonus-intro-button-word { left: 0; bottom: 0; --intro-scale-x: 0.82; font-size: 45vh; }
             .bonus-intro-button-art { top: 1vh; right: 2.5vw; width: min(64vh, 46vw, 34rem); }
         }
+
+        #bonus-intro-button-word.is-image-variant { --intro-scale-x: 1.1; }
 
         #bonus-final-standings,
         #bonus-podium-standings {
@@ -3448,8 +3456,21 @@
             bonusIntroCueTimeouts.forEach(clearTimeout);
             bonusIntroCueTimeouts = [];
             document.querySelectorAll(".bonus-intro-word").forEach((word) => word.classList.remove("visible"));
-            document.getElementById("bonus-intro-push").innerText = imageButton ? "BONK" : "PUSH";
-            document.getElementById("bonus-intro-button-word").innerText = imageButton ? "ALT!" : "BUTTON";
+            const pushWord = document.getElementById("bonus-intro-push");
+            const theWord = document.getElementById("bonus-intro-the");
+            pushWord.innerText = imageButton ? "BONK" : "PUSH";
+            const buttonWord = document.getElementById("bonus-intro-button-word");
+            buttonWord.innerText = imageButton ? "ALT!" : "BUTTON";
+            buttonWord.classList.toggle("is-image-variant", imageButton);
+            if (imageButton) {
+                const introArt = document.querySelector(".bonus-intro-art");
+                const bonkRight = pushWord.getBoundingClientRect().right - introArt.getBoundingClientRect().left;
+                theWord.style.setProperty("--intro-the-left", `${bonkRight - theWord.offsetWidth}px`);
+                theWord.classList.add("is-bonk-aligned");
+            } else {
+                theWord.classList.remove("is-bonk-aligned");
+                theWord.style.removeProperty("--intro-the-left");
+            }
             const introScreen = document.getElementById("bonus-intro-screen");
             introScreen.setAttribute("aria-label", imageButton ? "Bonk the alt" : "Push the button");
             const buttonArt = document.querySelector(".bonus-intro-button-art");
@@ -3460,7 +3481,7 @@
             const secondSoundKey = "2";
             const revealSecondPhrase = () => {
                 if (bonusIntroStartedAtKey !== startKey) return;
-                document.getElementById("bonus-intro-the").classList.add("visible");
+                theWord.classList.add("visible");
                 document.getElementById("bonus-intro-button-word").classList.add("visible");
                 buttonArt.classList.add("visible");
             };
@@ -3470,7 +3491,7 @@
                 bonusIntroPlayedCues.add(secondSoundKey);
                 playBonusIntroSound("2.mp3");
             };
-            document.getElementById("bonus-intro-push").classList.add("visible");
+            pushWord.classList.add("visible");
             if (elapsed < 500 && !bonusIntroPlayedCues.has(firstSoundKey)) {
                 bonusIntroPlayedCues.add(firstSoundKey);
                 playBonusIntroSound("1.mp3", () => {
