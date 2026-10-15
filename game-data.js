@@ -20,6 +20,20 @@ export const TEAM_COLORS = [
 ];
 
 export const MAX_PLAYERS = 18;
+export const BOMB_PASS_BASE_POINTS = 50;
+export const BOMB_PASS_AUTO_SECONDS = 10;
+export const BOMB_PASS_POINT_DRAIN_PER_SECOND = 1;
+
+export function getBombUnlockedSeconds(unlockedAt, now = Date.now()) {
+    const timestamp = Number(unlockedAt);
+    if (!Number.isFinite(timestamp) || timestamp <= 0) return 0;
+    return Math.max(0, Math.floor((now - timestamp) / 1000));
+}
+
+export function getBombPassPoints(unlockedAt, now = Date.now()) {
+    const elapsedSeconds = getBombUnlockedSeconds(unlockedAt, now);
+    return Math.max(0, BOMB_PASS_BASE_POINTS - elapsedSeconds * BOMB_PASS_POINT_DRAIN_PER_SECOND);
+}
 
 export function shuffle(items) {
     const shuffled = [...items];

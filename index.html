@@ -108,6 +108,104 @@
             padding: 32px;
         }
 
+        .round-one-intro-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: none;
+            place-items: center;
+            width: 100%;
+            max-width: none;
+            min-height: 100vh;
+            min-height: 100svh;
+            padding: 36px 20px;
+            overflow-y: auto;
+            border: 0;
+            border-radius: 0;
+            background: radial-gradient(circle at 50% 42%, rgba(255,92,122,0.2), transparent 32%), linear-gradient(145deg, #171827, #080b14 72%);
+            box-shadow: none;
+            text-align: center;
+            animation: none;
+        }
+
+        .round-one-intro-screen.active { display: grid; }
+
+        .round-one-intro-content {
+            display: grid;
+            justify-items: center;
+            gap: 18px;
+            width: min(620px, 100%);
+        }
+
+        .round-one-intro-kicker {
+            margin: 0;
+            color: #ffb56b;
+            font-size: 1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .round-one-intro-screen h1 {
+            margin: 0;
+            font-size: 3rem;
+        }
+
+        .round-one-bomb-art {
+            display: grid;
+            place-items: center;
+            width: 220px;
+            aspect-ratio: 1;
+            font-size: 8rem;
+            line-height: 1;
+            animation: roundOneBombPulse 1.8s ease-in-out infinite;
+        }
+
+        #round-one-start-btn { width: min(320px, 100%); margin: 8px auto 0; }
+
+        #round-one-back-btn {
+            width: auto;
+            min-width: 160px;
+            background: rgba(255,255,255,0.08);
+            box-shadow: none;
+        }
+
+        @keyframes roundOneBombPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.045); }
+        }
+
+        @media (max-width: 600px) {
+            .round-one-intro-screen { padding: 72px 18px 28px; }
+            .round-one-intro-content { gap: 14px; }
+            .round-one-intro-screen h1 { font-size: 2.25rem; }
+            .round-one-bomb-art { width: 168px; font-size: 6rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .round-one-bomb-art { animation: none; }
+        }
+
+        .host-lobby-instructions {
+            margin: 0 0 24px;
+            padding: 14px 18px;
+            border: 2px solid var(--danger);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(255,92,122,0.2), rgba(255,92,122,0.08));
+            color: var(--text);
+            font-size: 1.15rem;
+            line-height: 1.5;
+            box-shadow: 0 0 0 3px rgba(255,92,122,0.08), 0 12px 28px rgba(255,92,122,0.12);
+        }
+
+        .host-lobby-instructions strong { color: var(--danger); font-weight: 800; }
+
+        .host-lobby-final-warning {
+            display: block;
+            margin-top: 8px;
+            color: #ffd166;
+            font-weight: 800;
+        }
+
         .lobby-layout {
             display: grid;
             grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
@@ -1695,7 +1793,7 @@
         .host-top-controls {
             position: fixed;
             top: 14px;
-            right: 16px;
+            right: 8px;
             z-index: 21;
             display: flex;
             align-items: center;
@@ -1728,9 +1826,11 @@
         .host-player-controls {
             position: fixed;
             top: 62px;
-            right: 16px;
+            right: 8px;
             z-index: 21;
             display: flex;
+            flex-direction: column;
+            align-items: flex-end;
             gap: 8px;
         }
 
@@ -1874,6 +1974,7 @@
 
     <!-- LOBBY SCREEN -->
     <div id="lobby-screen" class="screen active">
+        <p class="host-lobby-instructions"><strong>Only ONE PERSON from your BLOCK GROUP</strong> should scan the QR code, choose a team color and mascot, then come to the front to receive your team headbands.<span class="host-lobby-final-warning">[You can't change your selection after you get your headbands.]</span></p>
         <div class="lobby-layout">
             <section class="lobby-join" aria-label="Join the game">
                 <h1>Scan to Join Game</h1>
@@ -1891,6 +1992,16 @@
         <div class="lobby-actions">
             <button id="start-btn" style="display:none;" onclick="startNextRound()">Start Game</button>
             <button id="reset-lobby-btn" type="button" onclick="resetGame()">Reset Lobby</button>
+        </div>
+    </div>
+
+    <div id="round-one-intro-screen" class="screen round-one-intro-screen" aria-labelledby="round-one-intro-title">
+        <div class="round-one-intro-content">
+            <p class="round-one-intro-kicker">Round 1</p>
+            <h1 id="round-one-intro-title">Pass the Bomb</h1>
+            <div class="round-one-bomb-art" role="img" aria-label="Bomb">💣</div>
+            <button id="round-one-start-btn" type="button" onclick="startRoundOne()">Start</button>
+            <button id="round-one-back-btn" type="button" onclick="returnToLobby()">Back to Lobby</button>
         </div>
     </div>
 
@@ -2075,7 +2186,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
-        import { TEAM_ANIMALS, TEAM_COLORS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
+        import {
+            BOMB_PASS_AUTO_SECONDS,
+            BOMB_PASS_BASE_POINTS,
+            TEAM_ANIMALS,
+            TEAM_COLORS,
+            TONGUE_TWISTERS,
+            MAX_PLAYERS,
+            getBombPassPoints,
+            getBombUnlockedSeconds,
+            shuffle
+        } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -2127,6 +2248,7 @@
         let fuseStartedAt = 0;
         let bombRoundStartedAt = 0;
         let bombUnlockedAt = 0;
+        let bombPassInProgress = false;
         let currentPhase = "waiting";
         let bombLocked = true;
         let hostPlayers = {};
@@ -2170,11 +2292,6 @@
         const BONUS_INTRO_WORD_DELAY_MS = 1500;
         const BONUS_INTRO_FIRST_SOUND_DURATION_MS = 3048;
         const BONUS_TAPS_PER_POINT = 4;
-        const BOMB_PASS_BASE_POINTS = 20;
-        const BOMB_LOCKED_PENALTY_INTERVAL = 10;
-        const BOMB_UNLOCKED_PENALTY_INTERVAL = 5;
-        const BOMB_HOLD_PENALTY_PER_INTERVAL = 1;
-        const BOMB_FORCE_PASS_PENALTY = 5;
         const BOMB_EXPLOSION_PENALTY = 5;
         const BOMB_ROUND_SECONDS = 120;
         const getTeam = (teamId) => TEAM_COLORS.find((team) => team.id === teamId);
@@ -2527,7 +2644,7 @@
                 avatar.style.setProperty("--team-color", team?.hex || player.teamColor || "#64748b");
                 const name = document.createElement("span");
                 name.className = "player-name";
-                name.innerText = `${team?.name || player.teamName || "Team"} ${getPlayerAnimal(player)}`;
+                name.innerText = `${team?.name || player.teamName || "Team"} ${getPlayerAnimalPlural(player)}`;
                 const removeBtn = document.createElement("button");
                 removeBtn.type = "button";
                 removeBtn.className = "remove-player-btn";
@@ -2805,7 +2922,23 @@
         };
 
         window.startNextRound = function() {
-            startBombRound();
+            if (currentPhase !== "waiting") {
+                startBombRound();
+                return;
+            }
+            document.getElementById("lobby-screen").classList.remove("active");
+            document.getElementById("round-one-intro-screen").classList.add("active");
+        };
+
+        window.startRoundOne = async function() {
+            if (currentPhase !== "waiting") return;
+            await startBombRound();
+        };
+
+        window.returnToLobby = function() {
+            if (currentPhase !== "waiting") return;
+            document.getElementById("round-one-intro-screen").classList.remove("active");
+            document.getElementById("lobby-screen").classList.add("active");
         };
 
         window.skipCurrentRound = async function() {
@@ -2959,11 +3092,13 @@
             currentTask = taskQueue.pop();
             currentBombRound = 1;
             currentPhase = "bomb";
+            bombPassInProgress = false;
             bombLocked = true;
             fuseStartedAt = Date.now();
             bombRoundStartedAt = fuseStartedAt;
             bombUnlockedAt = 0;
             document.getElementById("lobby-screen").classList.remove("active");
+            document.getElementById("round-one-intro-screen").classList.remove("active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("quiz-screen").classList.remove("active");
             document.getElementById("task-screen").classList.add("active");
@@ -3032,71 +3167,90 @@
                 eligiblePlayers = players.filter(([id]) => id !== currentPlayerId);
                 nextCycle = [currentPlayerId];
             }
-            if (!eligiblePlayers.length) eligiblePlayers = players;
             return {
-                nextPlayerId: eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)][0],
+                nextPlayerId: eligiblePlayers.length
+                    ? eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)][0]
+                    : "",
                 nextCycle
             };
         }
 
-        async function passBombToPlayer(gameData, nextPlayerId, reason = "passed") {
-            if (currentPhase !== "bomb" || !nextPlayerId || !hostPlayers[nextPlayerId]) return false;
-            const currentPlayer = hostPlayers[activePlayerId];
-            const holdPenalty = getBombHoldPenalty();
-            const cumulativePenalty = (Number(currentPlayer.bombRoundPenalty) || 0) + holdPenalty;
-            const pointsEarned = Math.max(0, BOMB_PASS_BASE_POINTS - holdPenalty);
-            const currentPlayerUpdated = {
-                ...currentPlayer,
-                score: (Number(currentPlayer.score) || 0) + pointsEarned,
-                bombRoundPoints: (Number(currentPlayer.bombRoundPoints) || 0) + pointsEarned,
-                bombRoundPenalty: cumulativePenalty,
-                lastPassPoints: pointsEarned,
-                lastHoldPenalty: holdPenalty
-            };
-            const currentPlayers = { ...hostPlayers, [activePlayerId]: currentPlayerUpdated };
-            const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
-            if (!taskQueue.length) taskQueue.push(...shuffle(TONGUE_TWISTERS));
-            const nextTask = taskQueue.pop();
-            const previousActivePlayerId = activePlayerId;
-            const newCycle = Array.isArray(gameData.bombCyclePlayerIds)
-                ? [...new Set([...gameData.bombCyclePlayerIds, nextPlayerId])]
-                : [previousActivePlayerId, nextPlayerId];
-            activePlayerId = nextPlayerId;
-            bombLocked = true;
-            fuseStartedAt = Date.now();
-            bombUnlockedAt = 0;
-            hostPlayers = currentPlayers;
-            renderActivePlayer();
-            renderHostPlayerLists(hostPlayers);
-            renderBombLockState();
-            const result = await update(gameRef, {
-                phase: "bomb",
-                task: nextTask,
-                taskQueue,
-                activePlayerId,
-                previousActivePlayerId,
-                bombCyclePlayerIds: newCycle,
-                bombLocked,
-                bombHolderStartedAt: fuseStartedAt,
-                bombUnlockedAt: null,
-                handoffTime: Date.now(),
-                players: hostPlayers,
-                lastBombPass: { from: previousActivePlayerId, to: nextPlayerId, reason, points: pointsEarned, penalty: holdPenalty }
-            });
-            if (result.committed) {
+        async function passBombToPlayer(reason = "passed") {
+            if (currentPhase !== "bomb" || bombPassInProgress) return false;
+            bombPassInProgress = true;
+            const passAt = Date.now();
+            const fallbackTaskQueue = shuffle(TONGUE_TWISTERS);
+
+            try {
+                const result = await runTransaction(gameRef, (gameData) => {
+                    if (currentPhase !== "bomb" || gameData?.phase !== "bomb") return;
+                    if (reason !== "host" && gameData.bombLocked !== false) return;
+                    const previousActivePlayerId = gameData.activePlayerId;
+                    const currentPlayer = gameData.players?.[previousActivePlayerId];
+                    if (!currentPlayer?.teamId) return;
+                    const { nextPlayerId, nextCycle } = selectNextBombHolder(gameData, previousActivePlayerId);
+                    if (!nextPlayerId || nextPlayerId === previousActivePlayerId) return;
+
+                    const pointsEarned = getBombPassPoints(
+                        gameData.bombLocked === false ? gameData.bombUnlockedAt || gameData.handoffTime : 0,
+                        passAt
+                    );
+                    const pointDrain = BOMB_PASS_BASE_POINTS - pointsEarned;
+                    const players = { ...(gameData.players || {}) };
+                    players[previousActivePlayerId] = {
+                        ...currentPlayer,
+                        score: (Number(currentPlayer.score) || 0) + pointsEarned,
+                        bombRoundPoints: (Number(currentPlayer.bombRoundPoints) || 0) + pointsEarned,
+                        bombRoundPenalty: (Number(currentPlayer.bombRoundPenalty) || 0) + pointDrain,
+                        lastPassPoints: pointsEarned,
+                        lastHoldPenalty: pointDrain
+                    };
+
+                    const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
+                    if (!taskQueue.length) taskQueue.push(...fallbackTaskQueue);
+                    const nextTask = taskQueue.pop();
+                    const nextHolderStartedAt = passAt;
+                    return {
+                        ...gameData,
+                        players,
+                        activePlayerId: nextPlayerId,
+                        previousActivePlayerId,
+                        bombCyclePlayerIds: [...new Set([...nextCycle, nextPlayerId])],
+                        task: nextTask,
+                        taskQueue,
+                        bombLocked: true,
+                        bombHolderStartedAt: nextHolderStartedAt,
+                        bombUnlockedAt: null,
+                        handoffTime: nextHolderStartedAt,
+                        lastBombPass: { from: previousActivePlayerId, to: nextPlayerId, reason, points: pointsEarned, penalty: pointDrain }
+                    };
+                }, { applyLocally: false });
+
+                if (!result.committed) return false;
+                const gameData = result.snapshot.val();
+                hostPlayers = gameData.players || {};
+                activePlayerId = gameData.activePlayerId || "";
+                currentTask = gameData.task || "";
+                bombLocked = gameData.bombLocked !== false;
+                fuseStartedAt = Number(gameData.bombHolderStartedAt || passAt);
+                bombUnlockedAt = Number(gameData.bombUnlockedAt || 0);
+                renderActivePlayer();
+                renderHostPlayerLists(hostPlayers);
+                renderBombLockState();
                 if (reason !== "host") playUiTone(560, 0.1, "triangle", 0.035);
                 return true;
+            } catch (error) {
+                console.error("Could not pass the bomb.", error);
+                return false;
+            } finally {
+                bombPassInProgress = false;
             }
-            return false;
         }
 
         window.forcePassBomb = async function() {
-            if (currentPhase !== "bomb") return;
+            if (currentPhase !== "bomb" || bombPassInProgress) return;
             playForcePassSound();
-            const snapshot = await get(gameRef);
-            const gameData = snapshot.val() || {};
-            const { nextPlayerId } = selectNextBombHolder(gameData, activePlayerId);
-            if (nextPlayerId) await passBombToPlayer(gameData, nextPlayerId, "host");
+            await passBombToPlayer("host");
         };
 
         window.endTaskRound = function() {
@@ -3133,27 +3287,25 @@
             return Math.max(0, Math.floor((Date.now() - Number(bombRoundStartedAt || Date.now())) / 1000));
         }
 
-        function getBombHoldPenalty(now = Date.now()) {
-            const holderStartedAt = Number(fuseStartedAt || now);
-            const unlockedAt = Number(bombUnlockedAt || 0);
-            const lockedSeconds = Math.max(0, Math.floor(((unlockedAt || now) - holderStartedAt) / 1000));
-            const unlockedSeconds = unlockedAt
-                ? Math.max(0, Math.floor((now - Math.max(holderStartedAt, unlockedAt)) / 1000))
-                : 0;
-            const lockedPenalty = Math.floor(lockedSeconds / BOMB_LOCKED_PENALTY_INTERVAL);
-            const unlockedPenalty = Math.floor(unlockedSeconds / BOMB_UNLOCKED_PENALTY_INTERVAL);
-            return Math.min(10, (lockedPenalty + unlockedPenalty) * BOMB_HOLD_PENALTY_PER_INTERVAL);
-        }
-
         function updateHostFuse() {
             if (currentPhase !== "bomb") return;
             const roundElapsedSeconds = getBombRoundElapsedSeconds();
             const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
-            const holdPenalty = getBombHoldPenalty();
-            const cumulativePenalty = (Number(hostPlayers[activePlayerId]?.bombRoundPenalty) || 0) + holdPenalty;
             const holdTimeEl = document.getElementById("bomb-hold-time");
             const forcePassButton = document.getElementById("force-pass-btn");
-            holdTimeEl.innerText = `${cumulativePenalty} penalty`;
+            const unlockedAt = !bombLocked ? Number(bombUnlockedAt || 0) : 0;
+            if (unlockedAt) {
+                const unlockedSeconds = getBombUnlockedSeconds(unlockedAt);
+                const pointsAvailable = getBombPassPoints(unlockedAt);
+                const secondsRemaining = Math.max(0, BOMB_PASS_AUTO_SECONDS - unlockedSeconds);
+                holdTimeEl.innerText = `Pass in ${secondsRemaining}s · ${pointsAvailable} pts`;
+                const hasNextTeam = Object.entries(hostPlayers).some(([id, player]) => id !== activePlayerId && player?.teamId);
+                if (timeLeft > 0 && hasNextTeam && unlockedSeconds >= BOMB_PASS_AUTO_SECONDS && !bombPassInProgress) {
+                    void passBombToPlayer("automatic");
+                }
+            } else {
+                holdTimeEl.innerText = `Pass reward: ${BOMB_PASS_BASE_POINTS} pts`;
+            }
             forcePassButton.disabled = currentPhase !== "bomb";
             if (timeLeft <= 0) explodeBomb();
         }
@@ -4336,6 +4488,7 @@
             document.getElementById("quiz-screen").classList.remove("active");
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("round-two-placeholder-screen").classList.remove("active");
+            document.getElementById("round-one-intro-screen").classList.remove("active");
             document.body.classList.remove("bomb-round-active", "spyfall-host-active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("lobby-screen").classList.add("active");

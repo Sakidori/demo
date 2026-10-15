@@ -38,6 +38,11 @@
             overflow-x: hidden;
         }
 
+        body.bomb-spectator {
+            align-items: center;
+            padding: 20px;
+        }
+
         body::after {
             content: "";
             position: fixed;
@@ -72,6 +77,69 @@
         }
 
         .active { display: block; }
+
+        body.player-lobby {
+            align-items: stretch;
+            padding: 0;
+            background: var(--player-team-color, #64748b);
+        }
+
+        body.player-lobby #waiting-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100svh;
+            padding: 76px 24px 36px;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .lobby-avatar {
+            display: block;
+            font-size: 1.5rem;
+            line-height: 1;
+            filter: drop-shadow(0 16px 16px rgba(0,0,0,0.25));
+        }
+
+        .lobby-avatar[hidden] { display: none; }
+
+        body.player-lobby .lobby-avatar { font-size: 10rem; }
+
+        body.player-lobby #waiting-screen h2,
+        body.player-lobby #waiting-screen p { margin: 0; }
+
+        body.player-lobby #waiting-screen h2 { font-size: 1.8rem; }
+
+        .safe-indicator {
+            max-width: 100%;
+            color: var(--success-2);
+            font-size: 5.5rem;
+            font-weight: 900;
+            line-height: 0.95;
+            text-shadow: 0 0 24px rgba(122,247,208,0.5);
+            white-space: nowrap;
+        }
+
+        .safe-indicator[hidden] { display: none; }
+
+        #waiting-screen.bomb-spectator.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            padding: 42px 28px;
+            top: -10vh;
+        }
+
+        #waiting-screen.bomb-spectator > * { margin: 0; }
+
+        #waiting-screen.bomb-spectator #waiting-copy { white-space: pre-line; }
 
         h2, h3 {
             margin-top: 0;
@@ -304,8 +372,8 @@
 
         .sound-control {
             position: fixed;
-            top: 14px;
-            right: 16px;
+            top: 22px;
+            right: 24px;
             z-index: 10;
             display: inline-flex;
             align-items: center;
@@ -328,8 +396,8 @@
 
         .player-team-reminder {
             position: fixed;
-            top: 8px;
-            left: 12px;
+            top: 22px;
+            left: 24px;
             z-index: 10;
             display: inline-flex;
             align-items: center;
@@ -377,10 +445,47 @@
         }
 
         #get-ready-player {
+            display: grid;
+            justify-items: center;
+            gap: 10px;
+            width: min(100%, 420px);
             margin: 18px auto 0;
-            color: #ffd4dc;
-            font-weight: 700;
+            padding: 20px 24px;
+            border: 2px solid rgba(255,77,94,0.78);
+            border-radius: 20px;
+            background: linear-gradient(145deg, rgba(255,77,94,0.22), rgba(31,20,31,0.94));
+            color: #fff;
+            box-shadow: 0 12px 32px rgba(255,77,94,0.2), inset 0 1px rgba(255,255,255,0.1);
+            font-weight: 900;
+            line-height: 1.15;
+        }
+
+        #get-ready-player[hidden] { display: none; }
+
+        .bomb-holder-team-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            max-width: 100%;
+            text-align: center;
             overflow-wrap: anywhere;
+        }
+
+        .bomb-holder-team-avatar {
+            display: block;
+            font-size: 2.6rem;
+            line-height: 1;
+        }
+
+        .bomb-holder-team-name {
+            color: color-mix(in srgb, var(--bomb-holder-team-color, #fff) 58%, white);
+            text-shadow: 0 0 16px color-mix(in srgb, var(--bomb-holder-team-color, #fff) 48%, transparent);
+            overflow-wrap: anywhere;
+        }
+
+        .bomb-holder-action {
+            color: #ffd4dc;
         }
 
         @keyframes bombPulse {
@@ -1098,6 +1203,12 @@
             .quiz-splash-title { font-size: 2.5rem; }
             #bonus-podium-standings { gap: 5px; }
             #bonus-podium-standings .leaderboard-item { min-height: 36px; font-size: 0.82rem; }
+            #waiting-screen.bomb-spectator { gap: 20px; padding: 32px 18px; }
+            .safe-indicator { font-size: 4.5rem; }
+        }
+
+        @media (max-width: 340px) {
+            .safe-indicator { font-size: 3.5rem; }
         }
 
         @keyframes surpriseReveal {
@@ -1113,8 +1224,9 @@
 
         @media (max-width: 600px) {
             body { padding: 56px 8px 12px; }
+            body.player-lobby .lobby-avatar { font-size: 7rem; }
             body::after { inset: 4px; border-width: 5px; border-radius: 14px; }
-            .sound-control { top: 8px; right: 8px; padding: 8px 10px; font-size: 0.8rem; }
+            .sound-control { top: 15px; right: 16px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 18px 12px 20px; border-radius: 18px; }
             input, button { width: 100%; font-size: 16px; padding: 12px 14px; margin: 8px auto; }
             #join-screen { padding: 14px 10px 16px; }
@@ -1157,11 +1269,11 @@
     <!-- JOIN SCREEN -->
     <div id="join-screen" class="screen active">
         <fieldset class="team-picker">
-            <legend>Team color</legend>
+            <legend>Choose a team color:</legend>
             <div id="team-color-options" class="team-color-options"></div>
         </fieldset>
         <fieldset id="team-animal-picker" class="team-picker">
-            <legend>Mascot</legend>
+            <legend>Choose a mascot:</legend>
             <div id="team-animal-options" class="avatar-options team-animal-options"></div>
         </fieldset>
         <button id="join-game-btn" onclick="joinGame()">Join Lobby</button>
@@ -1170,18 +1282,24 @@
 
     <!-- WAITING FOR START -->
     <div id="waiting-screen" class="screen">
-        <h2><span id="waiting-avatar">🦊</span> <span id="waiting-title">You're in!</span></h2>
+        <span id="waiting-avatar" class="lobby-avatar" aria-hidden="true">🦊</span>
+        <div id="safe-indicator" class="safe-indicator" aria-hidden="true" hidden>SAFE</div>
+        <h2 id="waiting-title">You're in!</h2>
         <p id="waiting-copy">Waiting for the host to start the game...</p>
-        <span id="waiting-team-chip" class="team-chip"></span>
-        <p id="get-ready-player" hidden></p>
+        <div id="get-ready-player" role="status" aria-live="polite" hidden>
+            <span id="bomb-holder-avatar" class="bomb-holder-team-avatar" aria-hidden="true"></span>
+            <span class="bomb-holder-team-line">
+                <strong id="bomb-holder-team-name" class="bomb-holder-team-name"></strong>
+            </span>
+            <span id="bomb-holder-action" class="bomb-holder-action"></span>
+        </div>
     </div>
 
     <!-- ACTIVE TASK SCREEN -->
     <div id="task-screen" class="screen">
-        <div class="status-chip">Bomb Holder</div>
+        <div class="status-chip">You have the bomb!</div>
         <span class="task-bomb" aria-label="Pulsing bomb">💣</span>
         <h1 id="player-task-prompt">Get ready...</h1>
-        <span id="player-active-team" class="team-chip"></span>
         <p id="pass-lock-status">Waiting for the host to release the lock.</p>
         <button id="pass-bomb-btn" onclick="passBomb()" hidden>Pass the Bomb</button>
     </div>
@@ -1190,7 +1308,6 @@
         <div class="status-chip">Bomb Exploded</div>
         <span class="outcome-icon" aria-hidden="true">💥</span>
         <h1 id="bomb-loss-heading" class="loss-heading">Your team lost</h1>
-        <span id="bomb-loss-team" class="team-chip"></span>
         <p id="bomb-loss-copy"></p>
         <h2>Round Scores</h2>
         <ul id="bomb-loss-scores"></ul>
@@ -1201,7 +1318,6 @@
         <span class="outcome-icon" aria-hidden="true">🏆</span>
         <h1 class="win-heading">Your team won!</h1>
         <p id="bomb-win-copy"></p>
-        <span id="bomb-win-team" class="team-chip"></span>
         <h2>Round Scores</h2>
         <ul id="bomb-win-scores"></ul>
     </div>
@@ -1300,7 +1416,17 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { TEAM_COLORS, TEAM_ANIMALS, TONGUE_TWISTERS, MAX_PLAYERS, shuffle } from "./game-data.js";
+        import {
+            BOMB_PASS_AUTO_SECONDS,
+            BOMB_PASS_BASE_POINTS,
+            TEAM_COLORS,
+            TEAM_ANIMALS,
+            TONGUE_TWISTERS,
+            MAX_PLAYERS,
+            getBombPassPoints,
+            getBombUnlockedSeconds,
+            shuffle
+        } from "./game-data.js";
 
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
@@ -1327,6 +1453,7 @@
         let stopGameListener;
         let stopSpyfallRoleListener;
         let playerQuizCountdownInterval;
+        let playerBombPassCountdownInterval;
         let playerSpyfallTimerInterval;
         let playerBonusRoundInterval = null;
         let spyfallRole = "";
@@ -1349,12 +1476,6 @@
         let observedResetAt;
         const playerSoundStorageKey = "playerGameSoundEnabled";
         const BONUS_TAPS_PER_POINT = 4;
-        const BOMB_PASS_BASE_POINTS = 20;
-        const BOMB_LOCKED_HOLD_PENALTY_INTERVAL = 10;
-        const BOMB_UNLOCKED_HOLD_PENALTY_INTERVAL = 5;
-        const BOMB_HOLD_PENALTY_PER_INTERVAL = 1;
-        const BOMB_FORCE_PASS_SECONDS = 30;
-        const BOMB_FORCE_PASS_PENALTY = 5;
         let playerSoundEnabled = true;
         try {
             playerSoundEnabled = localStorage.getItem(playerSoundStorageKey) !== "false";
@@ -1479,16 +1600,25 @@
             document.getElementById("player-team-reminder-avatar").innerText = avatar || "🎮";
             reminder.setAttribute("aria-label", "Your team");
             reminder.style.setProperty("--team-color", teamColor || "#64748b");
+            document.body.style.setProperty("--player-team-color", teamColor || "#64748b");
             reminder.hidden = !teamName;
         }
+
+        const joinableGamePhases = new Set(["waiting", "round-2-placeholder", "final-round-placeholder"]);
+        const rejoinableGamePhases = new Set(["round-2-placeholder", "final-round-placeholder"]);
 
         function renderTeamColorOptions(gameData = {}) {
             const options = document.getElementById("team-color-options");
             const teams = getGameTeams(gameData);
+            const canRejoin = rejoinableGamePhases.has(gameData.phase);
             const previousSelection = options.querySelector('input[name="team-color"]:checked')?.value;
-            const selectedTeamId = (!teams[previousSelection] && TEAM_COLORS.some((color) => color.id === previousSelection))
+            const previousSelectionIsValid = TEAM_COLORS.some((color) => color.id === previousSelection)
+                && (canRejoin ? Boolean(teams[previousSelection]) : !teams[previousSelection]);
+            const selectedTeamId = previousSelectionIsValid
                 ? previousSelection
-                : TEAM_COLORS.find((color) => !teams[color.id])?.id;
+                : canRejoin
+                    ? TEAM_COLORS.find((color) => teams[color.id])?.id
+                    : TEAM_COLORS.find((color) => !teams[color.id])?.id;
             const playerCount = Object.keys(gameData.players || {}).length;
             options.innerHTML = "";
 
@@ -1500,9 +1630,13 @@
                 input.type = "radio";
                 input.name = "team-color";
                 input.value = color.id;
-                input.setAttribute("aria-label", existingTeam ? `${color.name} is taken` : `${color.name} team`);
+                input.setAttribute("aria-label", existingTeam
+                    ? canRejoin ? `${color.name} team, select to rejoin` : `${color.name} is taken`
+                    : `${color.name} team`);
                 input.checked = color.id === selectedTeamId;
-                input.disabled = Boolean(existingTeam) || playerCount >= MAX_PLAYERS;
+                input.disabled = canRejoin
+                    ? !existingTeam
+                    : gameData.phase !== "waiting" || Boolean(existingTeam) || playerCount >= MAX_PLAYERS;
                 const card = document.createElement("span");
                 card.className = "team-color-card";
                 card.style.setProperty("--team-color", color.hex);
@@ -1517,7 +1651,16 @@
                 options.appendChild(label);
                 input.addEventListener("change", () => renderTeamAnimalOptions(currentGameData));
             });
-            document.getElementById("join-game-btn").disabled = playerCount >= MAX_PLAYERS || !selectedTeamId;
+            const selectedTeam = teams[selectedTeamId];
+            const canJoinSelection = canRejoin
+                ? Boolean(selectedTeam)
+                : gameData.phase === "waiting" && !selectedTeam && playerCount < MAX_PLAYERS;
+            document.getElementById("join-game-btn").disabled = !canJoinSelection;
+            document.getElementById("join-game-btn").innerText = canRejoin ? "Rejoin Game" : "Join Lobby";
+            document.getElementById("random-join-btn").disabled = gameData.phase !== "waiting"
+                || playerCount >= MAX_PLAYERS
+                || !TEAM_COLORS.some((color) => !teams[color.id])
+                || !TEAM_ANIMALS.some((animal) => !Object.values(teams).some((team) => team.animalId === animal.id));
             renderTeamAnimalOptions(gameData);
         }
 
@@ -1526,7 +1669,9 @@
             const options = document.getElementById("team-animal-options");
             const selectedTeamId = document.querySelector('input[name="team-color"]:checked')?.value;
             const teams = getGameTeams(gameData);
-            if (!selectedTeamId || teams[selectedTeamId]) {
+            const teamToRejoin = teams[selectedTeamId];
+            if (!selectedTeamId || (teamToRejoin && !rejoinableGamePhases.has(gameData.phase))
+                || (!teamToRejoin && gameData.phase !== "waiting")) {
                 picker.hidden = true;
                 options.innerHTML = "";
                 return;
@@ -1535,7 +1680,9 @@
             picker.hidden = false;
             const reservedAnimals = new Set(Object.values(teams).map((team) => team.animalId));
             const previousAnimalId = options.querySelector('input[name="team-animal"]:checked')?.value;
-            const availableAnimals = TEAM_ANIMALS.filter((animal) => !reservedAnimals.has(animal.id));
+            const availableAnimals = teamToRejoin
+                ? TEAM_ANIMALS.filter((animal) => animal.id === teamToRejoin.animalId)
+                : TEAM_ANIMALS.filter((animal) => !reservedAnimals.has(animal.id));
             const selectedAnimalId = availableAnimals.some((animal) => animal.id === previousAnimalId)
                 ? previousAnimalId
                 : availableAnimals[0]?.id;
@@ -1602,9 +1749,8 @@
             renderPlayerTeamReminder(playerAvatar, playerTeamName, team?.colorHex || player.teamColor);
             document.getElementById("join-screen").classList.remove("active");
             document.getElementById("waiting-screen").classList.add("active");
+            document.body.classList.toggle("player-lobby", gameData.phase === "waiting");
             document.getElementById("waiting-avatar").innerText = playerAvatar;
-            document.getElementById("waiting-team-chip").innerText = playerTeamName;
-            document.getElementById("waiting-team-chip").style.setProperty("--team-color", team?.colorHex || player.teamColor || "#64748b");
             listenToPlayerGame();
         }
 
@@ -1624,14 +1770,15 @@
             }
         });
 
-        const joinableGamePhases = new Set(["waiting", "round-2-placeholder", "final-round-placeholder"]);
-
         window.joinRandomGame = async function() {
             unlockPlayerAudio();
             const snapshot = await get(gameRef);
             const gameData = snapshot.val() || {};
             if (!joinableGamePhases.has(gameData.phase)) {
                 return alert("The game has already started. Ask the host to reset the lobby.");
+            }
+            if (gameData.phase !== "waiting") {
+                return alert("Choose your original team color and mascot to rejoin.");
             }
 
             const teams = getGameTeams(gameData);
@@ -1676,62 +1823,84 @@
             const teamAnimalId = document.querySelector('input[name="team-animal"]:checked')?.value;
             const animal = TEAM_ANIMALS.find((item) => item.id === teamAnimalId);
             if (!animal) return alert("Choose a team mascot.");
-            playerId = "player_" + Math.random().toString(36).substring(2, 8);
-            playerName = animal.name;
             let joinedTeam;
+            const existingPlayerEntry = Object.entries(currentGame.players || {}).find(([, player]) => {
+                const existingAnimalId = player?.teamAnimalId
+                    || TEAM_ANIMALS.find((item) => item.avatar === player?.avatar)?.id;
+                return player?.teamId === color.id && existingAnimalId === animal.id;
+            });
 
-            try {
-                const result = await runTransaction(gameRef, (gameData) => {
-                    if (!gameData || gameData.phase !== "waiting") return;
-                    const teams = getGameTeams(gameData);
-                    const players = { ...(gameData.players || {}) };
-                    if (Object.keys(players).length >= MAX_PLAYERS || teams[color.id]) return;
-                    if (Object.values(teams).some((existingTeam) => existingTeam.animalId === animal.id)) return;
-                    const team = {
-                        id: color.id,
-                        colorId: color.id,
-                        colorName: color.name,
-                        colorHex: color.hex,
-                        animalId: animal.id,
-                        animalName: animal.name,
-                        animalPlural: animal.plural,
-                        avatar: animal.avatar,
-                        name: `${color.name} ${animal.plural}`
-                    };
-                    teams[color.id] = team;
-                    players[playerId] = {
-                        name: playerName,
-                        avatar: team.avatar,
-                        teamId: team.id,
-                        teamName: team.name,
-                        teamColor: team.colorHex,
-                        teamAnimalId: team.animalId,
-                        score: 0,
-                        answered: false
-                    };
-                    return { ...gameData, teams, players };
-                }, { applyLocally: false });
-
-                if (!result.committed) throw new Error("The selected color or mascot is no longer available.");
-                joinedTeam = result.snapshot.val().teams[color.id];
-                playerTeamId = joinedTeam.id;
-                playerTeamName = joinedTeam.name;
+            if (existingPlayerEntry) {
+                const [existingPlayerId, existingPlayer] = existingPlayerEntry;
+                playerId = existingPlayerId;
+                playerName = existingPlayer.name || animal.name;
+                const existingTeam = getGameTeams(currentGame)[color.id];
+                joinedTeam = {
+                    ...existingTeam,
+                    id: color.id,
+                    name: existingPlayer.teamName || existingTeam?.name || `${color.name} ${animal.plural}`,
+                    colorHex: existingTeam?.colorHex || existingPlayer.teamColor || color.hex,
+                    avatar: existingPlayer.avatar || existingTeam?.avatar || animal.avatar
+                };
                 playerAvatar = joinedTeam.avatar;
-                savePlayerId(playerId);
-            } catch (error) {
-                playerId = "";
-                playerName = "";
-                alert(error.message || "Could not join the lobby. Please try again.");
-                return;
+            } else {
+                if (currentGame.phase !== "waiting") {
+                    return alert("No player was found for that team color and mascot. Choose the ones you used before to rejoin.");
+                }
+
+                playerId = "player_" + Math.random().toString(36).substring(2, 8);
+                playerName = animal.name;
+                try {
+                    const result = await runTransaction(gameRef, (gameData) => {
+                        if (!gameData || gameData.phase !== "waiting") return;
+                        const teams = getGameTeams(gameData);
+                        const players = { ...(gameData.players || {}) };
+                        if (Object.keys(players).length >= MAX_PLAYERS || teams[color.id]) return;
+                        if (Object.values(teams).some((existingTeam) => existingTeam.animalId === animal.id)) return;
+                        const team = {
+                            id: color.id,
+                            colorId: color.id,
+                            colorName: color.name,
+                            colorHex: color.hex,
+                            animalId: animal.id,
+                            animalName: animal.name,
+                            animalPlural: animal.plural,
+                            avatar: animal.avatar,
+                            name: `${color.name} ${animal.plural}`
+                        };
+                        teams[color.id] = team;
+                        players[playerId] = {
+                            name: playerName,
+                            avatar: team.avatar,
+                            teamId: team.id,
+                            teamName: team.name,
+                            teamColor: team.colorHex,
+                            teamAnimalId: team.animalId,
+                            score: 0,
+                            answered: false
+                        };
+                        return { ...gameData, teams, players };
+                    }, { applyLocally: false });
+
+                    if (!result.committed) throw new Error("The selected color or mascot is no longer available.");
+                    joinedTeam = result.snapshot.val().teams[color.id];
+                    playerAvatar = joinedTeam.avatar;
+                } catch (error) {
+                    playerId = "";
+                    playerName = "";
+                    alert(error.message || "Could not join the lobby. Please try again.");
+                    return;
+                }
             }
 
+            playerTeamId = joinedTeam.id;
+            playerTeamName = joinedTeam.name;
+            savePlayerId(playerId);
             document.getElementById("join-screen").classList.remove("active");
             document.getElementById("waiting-screen").classList.add("active");
             document.getElementById("waiting-avatar").innerText = playerAvatar;
-            const waitingTeamChip = document.getElementById("waiting-team-chip");
-            waitingTeamChip.innerText = joinedTeam.name;
-            waitingTeamChip.style.setProperty("--team-color", joinedTeam.colorHex);
             renderPlayerTeamReminder(playerAvatar, joinedTeam.name, joinedTeam.colorHex);
+            document.body.classList.add("player-lobby");
             listenToPlayerGame();
         };
 
@@ -1746,6 +1915,7 @@
                 const gameData = snapshot.val();
                 if (!gameData) return;
                 currentGameData = gameData;
+                document.body.classList.toggle("player-lobby", Boolean(playerId) && gameData.phase === "waiting");
                 const gameIsPaused = Boolean(gameData.paused) && [
                     "bomb", "quiz-intro", "quiz", "round-2-placeholder", "spyfall-setup",
                     "spyfall-reveal", "spyfall-active", "spyfall-vote", "final-round-placeholder",
@@ -1754,9 +1924,16 @@
                 document.getElementById("player-pause-overlay").hidden = !gameIsPaused;
                 if (gameIsPaused) {
                     clearInterval(playerQuizCountdownInterval);
+                    clearInterval(playerBombPassCountdownInterval);
                     clearInterval(playerSpyfallTimerInterval);
                     clearInterval(playerBonusRoundInterval);
                     return;
+                }
+                if (gameData.phase !== "bomb") {
+                    clearInterval(playerBombPassCountdownInterval);
+                    document.body.classList.remove("bomb-spectator");
+                    document.getElementById("waiting-screen").classList.remove("bomb-spectator");
+                    document.getElementById("safe-indicator").hidden = true;
                 }
 
                 if (gameData.phase === "bonus-round") {
@@ -1767,8 +1944,13 @@
                 if (gameData.phase === "bomb") {
                     activePhase = "bomb";
                     clearInterval(playerQuizCountdownInterval);
+                    clearInterval(playerBombPassCountdownInterval);
                     document.getElementById("quiz-splash").hidden = true;
                     const hasBomb = playerId === gameData.activePlayerId;
+                    document.getElementById("safe-indicator").hidden = hasBomb;
+                    document.getElementById("waiting-screen").classList.toggle("bomb-spectator", !hasBomb);
+                    document.body.classList.toggle("bomb-spectator", !hasBomb);
+                    document.getElementById("waiting-avatar").hidden = !hasBomb;
                     const passButton = document.getElementById("pass-bomb-btn");
                     passButton.hidden = true;
                     passButton.disabled = false;
@@ -1780,24 +1962,41 @@
                     document.getElementById("quiz-results-screen").classList.remove("active");
                     document.getElementById("get-ready-player").hidden = false;
                     const activePlayer = gameData.players?.[gameData.activePlayerId];
-                    const activeTeam = TEAM_COLORS.find((teamColor) => teamColor.id === activePlayer?.teamId);
-                    document.getElementById("get-ready-player").innerText = `💣 ${activePlayer?.name || "A player"} has the bomb`;
+                    const activeTeam = getGameTeams(gameData)[activePlayer?.teamId];
+                    const activeTeamName = activePlayer?.teamName || activeTeam?.name;
+                    const activeTeamLabel = activeTeamName || activePlayer?.name || "A player";
+                    const activeTeamColor = activePlayer?.teamColor
+                        || activeTeam?.colorHex
+                        || TEAM_COLORS.find((teamColor) => teamColor.id === activePlayer?.teamId)?.hex
+                        || "#64748b";
+                    document.getElementById("bomb-holder-avatar").innerText = activePlayer?.avatar || activeTeam?.avatar || "🎮";
+                    document.getElementById("bomb-holder-team-name").innerText = activeTeamLabel;
+                    document.getElementById("bomb-holder-team-name").style.setProperty("--bomb-holder-team-color", activeTeamColor);
+                    document.getElementById("bomb-holder-action").innerText = activeTeamName ? "have the bomb" : "has the bomb";
                     if (hasBomb) {
                         document.getElementById("waiting-screen").classList.remove("active");
                         document.getElementById("task-screen").classList.add("active");
                         document.getElementById("player-task-prompt").innerText = gameData.task || "Complete the task!";
                         passButton.hidden = gameData.bombLocked !== false;
-                        document.getElementById("pass-lock-status").innerText = gameData.bombLocked === false
-                            ? "Bomb unlocked. Tap below when your task is complete."
-                            : "Task complete? Wait for the host to release the lock.";
-                        const activeTeamChip = document.getElementById("player-active-team");
-                        activeTeamChip.innerText = activePlayer?.teamName || activeTeam?.name || "Unknown team";
-                        activeTeamChip.style.setProperty("--team-color", activeTeam?.hex || "#64748b");
+                        if (gameData.bombLocked === false) {
+                            const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || Date.now());
+                            const updatePassCountdown = () => {
+                                const elapsedSeconds = getBombUnlockedSeconds(unlockedAt);
+                                const secondsRemaining = Math.max(0, BOMB_PASS_AUTO_SECONDS - elapsedSeconds);
+                                const pointsAvailable = getBombPassPoints(unlockedAt);
+                                document.getElementById("pass-lock-status").innerText =
+                                    `Pass in ${secondsRemaining}s · ${pointsAvailable} pts available`;
+                            };
+                            updatePassCountdown();
+                            playerBombPassCountdownInterval = window.setInterval(updatePassCountdown, 250);
+                        } else {
+                            document.getElementById("pass-lock-status").innerText = "Task complete? Wait for the host to release the lock.";
+                        }
                     } else {
                         document.getElementById("task-screen").classList.remove("active");
                         document.getElementById("waiting-screen").classList.add("active");
-                        document.getElementById("waiting-title").innerText = "Get ready!";
-                        document.getElementById("waiting-copy").innerText = "Stay ready. The host will pass the bomb to another player.";
+                        document.getElementById("waiting-title").innerText = "You don't have the bomb.";
+                        document.getElementById("waiting-copy").innerText = "Stay ready.\nThe bomb will be passed randomly to another player.";
                     }
                     return;
                 }
@@ -2090,6 +2289,8 @@
                     document.getElementById("quiz-splash").hidden = true;
                     if (gameData.status === "round-skipped") {
                         document.body.classList.remove("has-bomb", "safe");
+                        document.getElementById("waiting-screen").classList.remove("bomb-spectator");
+                        document.getElementById("waiting-avatar").hidden = false;
                         document.getElementById("waiting-title").innerText = "Round skipped";
                         document.getElementById("waiting-copy").innerText = "No team was eliminated. Waiting for the host to continue.";
                         document.getElementById("waiting-screen").classList.add("active");
@@ -2102,18 +2303,12 @@
                     document.body.classList.toggle("has-bomb", lost);
                     document.body.classList.toggle("safe", !lost);
                     if (lost) {
-                        const chip = document.getElementById("bomb-loss-team");
-                        chip.innerText = gameData.losingTeamName || playerTeamName || lostTeam?.name || "Unknown";
-                        chip.style.setProperty("--team-color", gameData.losingTeamColor || lostTeam?.hex || "#64748b");
                         document.getElementById("bomb-loss-copy").innerText = playerId === gameData.losingPlayerId
                             ? `You were holding the bomb when it exploded and lost ${Number(gameData.bombPenalty) || 0} points.`
                             : `Your teammate was holding the bomb when it exploded and lost ${Number(gameData.bombPenalty) || 0} points.`;
                         document.getElementById("bomb-loss-screen").classList.add("active");
                         document.getElementById("bomb-win-screen").classList.remove("active");
                     } else {
-                        const chip = document.getElementById("bomb-win-team");
-                        chip.innerText = playerTeamName || TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.name || "Unknown";
-                        chip.style.setProperty("--team-color", TEAM_COLORS.find((teamColor) => teamColor.id === playerTeamId)?.hex || "#64748b");
                         document.getElementById("bomb-win-copy").innerText = `${gameData.losingTeamName || playerTeamName || lostTeam?.name || "Unknown team"} had the bomb when it exploded.`;
                         document.getElementById("bomb-win-screen").classList.add("active");
                         document.getElementById("bomb-loss-screen").classList.remove("active");
@@ -2149,7 +2344,9 @@
                     }
                     document.getElementById("join-screen").classList.remove("active");
                     document.getElementById("waiting-screen").classList.add("active");
+                    document.getElementById("waiting-screen").classList.remove("bomb-spectator");
                     document.getElementById("get-ready-player").hidden = true;
+                    document.getElementById("waiting-avatar").hidden = false;
                     document.getElementById("waiting-title").innerText = "You're in!";
                     document.getElementById("waiting-copy").innerText = "Waiting for the host to start the game...";
                 }
@@ -2733,6 +2930,7 @@
             const passButton = document.getElementById("pass-bomb-btn");
             if (!playerId || activePhase !== "bomb" || passButton.hidden) return;
             passButton.disabled = true;
+            const passAt = Date.now();
 
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "bomb" || gameData.bombLocked !== false || gameData.activePlayerId !== playerId) return;
@@ -2746,34 +2944,24 @@
                     eligiblePlayers = players.filter(([id]) => id !== playerId);
                     nextCycle = [playerId];
                 }
-                if (!eligiblePlayers.length) eligiblePlayers = players;
                 if (!eligiblePlayers.length) return;
                 const [nextPlayerId] = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
                 const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
                 if (!taskQueue.length) taskQueue.push(...shuffle(TONGUE_TWISTERS));
                 const nextTask = taskQueue.pop();
-                const now = Date.now();
-                const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || now);
-                const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || holderStartedAt);
-                const lockedSeconds = Math.max(0, Math.floor((unlockedAt - holderStartedAt) / 1000));
-                const unlockedSeconds = Math.max(0, Math.floor((now - Math.max(holderStartedAt, unlockedAt)) / 1000));
-                const elapsedSeconds = Math.max(0, Math.floor((now - holderStartedAt) / 1000));
-                const holdPenalty = Math.min(
-                    10,
-                    (Math.floor(lockedSeconds / BOMB_LOCKED_HOLD_PENALTY_INTERVAL)
-                        + Math.floor(unlockedSeconds / BOMB_UNLOCKED_HOLD_PENALTY_INTERVAL)) * BOMB_HOLD_PENALTY_PER_INTERVAL
-                ) + (elapsedSeconds >= BOMB_FORCE_PASS_SECONDS ? BOMB_FORCE_PASS_PENALTY : 0);
-                const pointsEarned = Math.max(0, BOMB_PASS_BASE_POINTS - holdPenalty);
-                const nextHolderStartedAt = Date.now();
+                const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || passAt);
+                const pointsEarned = getBombPassPoints(unlockedAt, passAt);
+                const pointDrain = BOMB_PASS_BASE_POINTS - pointsEarned;
                 const gamePlayers = { ...gameData.players };
                 gamePlayers[playerId] = {
                     ...gamePlayers[playerId],
                     score: (Number(gamePlayers[playerId].score) || 0) + pointsEarned,
                     bombRoundPoints: (Number(gamePlayers[playerId].bombRoundPoints) || 0) + pointsEarned,
-                    bombRoundPenalty: (Number(gamePlayers[playerId].bombRoundPenalty) || 0) + holdPenalty,
+                    bombRoundPenalty: (Number(gamePlayers[playerId].bombRoundPenalty) || 0) + pointDrain,
                     lastPassPoints: pointsEarned,
-                    lastHoldPenalty: holdPenalty
+                    lastHoldPenalty: pointDrain
                 };
+                const nextHolderStartedAt = passAt;
                 return {
                     ...gameData,
                     players: gamePlayers,
@@ -2785,7 +2973,8 @@
                     bombLocked: true,
                     bombHolderStartedAt: nextHolderStartedAt,
                     bombUnlockedAt: null,
-                    handoffTime: nextHolderStartedAt
+                    handoffTime: nextHolderStartedAt,
+                    lastBombPass: { from: playerId, to: nextPlayerId, reason: "passed", points: pointsEarned, penalty: pointDrain }
                 };
             }, { applyLocally: false });
 
