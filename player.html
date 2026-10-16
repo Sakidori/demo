@@ -1457,7 +1457,7 @@
         <p id="spyfall-player-timer" hidden></p>
         <div id="spyfall-player-choices"></div>
         <p id="spyfall-player-status" aria-live="polite">Waiting for the host.</p>
-        <button id="spyfall-role-hide-btn" type="button" onclick="hideSpyfallRole()" hidden>Hide my role</button>
+        <button id="spyfall-role-hide-btn" type="button" onclick="toggleSpyfallRoleVisibility()" hidden>Hide my role</button>
     </div>
 
     <div id="spyfall-results-screen" class="screen">
@@ -2464,7 +2464,8 @@
                     return;
                 }
                 if (spyfallRoleHidden) {
-                    hideButton.hidden = true;
+                    hideButton.hidden = false;
+                    hideButton.innerText = "Show my role";
                     document.getElementById("spyfall-player-title").innerText = "Role hidden";
                     document.getElementById("spyfall-player-status").innerText = "Pass the device to the next player.";
                     document.getElementById("spyfall-player-timer").hidden = false;
@@ -2475,6 +2476,7 @@
                     return;
                 }
                 hideButton.hidden = false;
+                hideButton.innerText = "Hide my role";
                 document.getElementById("spyfall-player-title").innerText = "Your secret role";
                 document.getElementById("spyfall-player-status").innerText = spyfallRole === "spy"
                     ? "You are a spy. Keep it secret until the host starts the round."
@@ -2500,9 +2502,9 @@
             image.alt = "";
         }
 
-        window.hideSpyfallRole = function() {
+        window.toggleSpyfallRoleVisibility = function() {
             if (activePhase !== "spyfall-reveal" || !spyfallRole) return;
-            spyfallRoleHidden = true;
+            spyfallRoleHidden = !spyfallRoleHidden;
             renderSpyfallReveal(currentGameData);
         };
 
