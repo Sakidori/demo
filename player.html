@@ -1201,6 +1201,36 @@
 
         .spyfall-art[hidden] { display: none; }
 
+        #spyfall-turn-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            gap: 12px;
+            padding: 24px;
+            background: #ffc857;
+            color: #172033;
+            text-align: center;
+            pointer-events: none;
+            animation: spyfallTurnSplash 1.8s ease both;
+        }
+
+        #spyfall-turn-splash[hidden] { display: none; }
+        #spyfall-turn-splash strong { font-size: 2rem; font-weight: 900; }
+        #spyfall-turn-splash span { font-size: 1.2rem; font-weight: 700; }
+
+        @keyframes spyfallTurnSplash {
+            0% { opacity: 0; transform: scale(0.96); }
+            12%, 78% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.02); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #spyfall-turn-splash { animation: none; }
+        }
+
         #spyfall-role-hide-btn {
             width: min(320px, 100%);
             margin: 14px auto 0;
@@ -1356,6 +1386,10 @@
             <h1>Game Paused</h1>
             <p>Please wait for the host.</p>
         </div>
+    </div>
+    <div id="spyfall-turn-splash" role="status" aria-live="assertive" hidden>
+        <strong>Your team's turn</strong>
+        <span id="spyfall-turn-splash-team"></span>
     </div>
 
     <!-- JOIN SCREEN -->
@@ -1549,6 +1583,7 @@
         let spyfallRole = "";
         let spyfallRoleHidden = false;
         let playerSpyfallRevealEndsAt = 0;
+        let spyfallTurnSplashTimeout = null;
         let lastSpyfallTurnKey = "";
         let spyfallSelectedVotes = new Set();
         let spyfallVoteDirty = false;
@@ -2007,6 +2042,11 @@
                 const gameData = snapshot.val();
                 if (!gameData) return;
                 currentGameData = gameData;
+                if (gameData.phase !== "spyfall-active") {
+                    clearTimeout(spyfallTurnSplashTimeout);
+                    spyfallTurnSplashTimeout = null;
+                    document.getElementById("spyfall-turn-splash").hidden = true;
+                }
                 document.body.classList.toggle("player-lobby", Boolean(playerId) && gameData.phase === "waiting");
                 const gameIsPaused = Boolean(gameData.paused) && [
                     "bomb", "quiz-intro", "quiz", "round-2-placeholder", "spyfall-setup",
@@ -2163,6 +2203,7 @@
                     document.getElementById("spyfall-results-screen").classList.remove("active");
                     document.getElementById("spyfall-screen").classList.add("active");
                     if (gameData.phase === "spyfall-setup") {
+                        lastSpyfallTurnKey = "";
                         spyfallRole = "";
                         spyfallRoleHidden = false;
                         playerSpyfallRevealEndsAt = 0;
@@ -2209,7 +2250,21 @@
                         ? "Your team: give one hint now."
                         : `${activeTeamName} is giving a hint.`;
                     const turnKey = `${gameData.spyfallTurnIndex}:${gameData.spyfallActiveTeamId}`;
-                    if (ownTeamTurn && lastSpyfallTurnKey !== turnKey) window.navigator.vibrate?.([180, 80, 180]);
+                    if (ownTeamTurn && lastSpyfallTurnKey !== turnKey) {
+                        const turnSplash = document.getElementById("spyfall-turn-splash");
+                        document.getElementById("spyfall-turn-splash-team").innerText = activeTeamName;
+                        turnSplash.hidden = false;
+                        window.navigator.vibrate?.([180, 80, 180]);
+                        clearTimeout(spyfallTurnSplashTimeout);
+                        spyfallTurnSplashTimeout = window.setTimeout(() => {
+                            turnSplash.hidden = true;
+                            spyfallTurnSplashTimeout = null;
+                        }, 1800);
+                    } else if (!ownTeamTurn) {
+                        clearTimeout(spyfallTurnSplashTimeout);
+                        spyfallTurnSplashTimeout = null;
+                        document.getElementById("spyfall-turn-splash").hidden = true;
+                    }
                     lastSpyfallTurnKey = turnKey;
                     document.getElementById("spyfall-player-timer").hidden = false;
                     playerSpyfallTimerInterval = window.setInterval(() => renderSpyfallTimer(gameData), 200);
@@ -2235,7 +2290,7 @@
                     document.getElementById("round-two-placeholder-screen").classList.remove("active");
                     document.getElementById("spyfall-results-screen").classList.remove("active");
                     document.getElementById("spyfall-screen").classList.add("active");
-                    document.getElementById("spyfall-player-title").innerText = "Choose the spy";
+                    document.getElementById("spyfall-player-title").innerText = "Who do you think is the spy?";
                     document.getElementById("spyfall-role-image").hidden = true;
                     document.getElementById("spyfall-role-image").removeAttribute("src");
                     document.getElementById("spyfall-screen").classList.remove("my-team-turn");
