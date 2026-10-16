@@ -1058,6 +1058,79 @@
 
         #quiz-score-list strong { margin-left: auto; color: #9deed0; white-space: nowrap; }
 
+        #bomb-loss-scores,
+        #bomb-win-scores {
+            display: grid;
+            justify-items: center;
+            gap: 7px;
+            width: 100%;
+            margin: 12px auto;
+            padding: 0;
+            list-style: none;
+        }
+
+        #bomb-loss-scores .player-line,
+        #bomb-win-scores .player-line { width: min(100%, 420px); margin: 0 auto; }
+
+        #bomb-loss-scores .score-rank,
+        #bomb-win-scores .score-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 38px;
+            width: 38px;
+            height: 28px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: rgba(255,255,255,0.07);
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        #bomb-loss-scores .score-place--gold,
+        #bomb-win-scores .score-place--gold {
+            border-color: rgba(255,209,102,0.72);
+            background: linear-gradient(120deg, rgba(255,209,102,0.2), rgba(21,31,50,0.96));
+            box-shadow: 0 0 12px rgba(255,209,102,0.16);
+        }
+
+        #bomb-loss-scores .score-place--silver,
+        #bomb-win-scores .score-place--silver {
+            border-color: rgba(210,222,238,0.68);
+            background: linear-gradient(120deg, rgba(210,222,238,0.18), rgba(21,31,50,0.96));
+            box-shadow: 0 0 12px rgba(210,222,238,0.12);
+        }
+
+        #bomb-loss-scores .score-place--bronze,
+        #bomb-win-scores .score-place--bronze {
+            border-color: rgba(216,147,96,0.72);
+            background: linear-gradient(120deg, rgba(216,147,96,0.18), rgba(21,31,50,0.96));
+            box-shadow: 0 0 12px rgba(216,147,96,0.12);
+        }
+
+        #bomb-loss-scores .score-rank--gold,
+        #bomb-win-scores .score-rank--gold {
+            border-color: rgba(255,209,102,0.48);
+            background: rgba(255,209,102,0.15);
+            color: #ffd166;
+        }
+
+        #bomb-loss-scores .score-rank--silver,
+        #bomb-win-scores .score-rank--silver {
+            border-color: rgba(210,222,238,0.35);
+            background: rgba(210,222,238,0.12);
+            color: #d2deee;
+        }
+
+        #bomb-loss-scores .score-rank--bronze,
+        #bomb-win-scores .score-rank--bronze {
+            border-color: rgba(216,147,96,0.38);
+            background: rgba(216,147,96,0.13);
+            color: #d89360;
+        }
+
         .player-line {
             display: flex;
             align-items: center;
@@ -2281,8 +2354,8 @@
                         document.getElementById("waiting-screen").classList.add("active");
                         return;
                     }
-                    renderScoreList("bomb-loss-scores", gameData.players, "bombRoundPoints");
-                    renderScoreList("bomb-win-scores", gameData.players, "bombRoundPoints");
+                    renderScoreList("bomb-loss-scores", gameData.players, "bombRoundPoints", true);
+                    renderScoreList("bomb-win-scores", gameData.players, "bombRoundPoints", true);
                     const lostTeam = TEAM_COLORS.find((teamColor) => teamColor.id === gameData.losingTeamId);
                     const lost = playerTeamId === gameData.losingTeamId;
                     document.body.classList.toggle("has-bomb", lost);
@@ -2680,17 +2753,37 @@
             }
         };
 
-        function renderScoreList(listId, playersData, scoreField = "score") {
+        function renderScoreList(listId, playersData, scoreField = "score", showRank = false) {
             const list = document.getElementById(listId);
             list.innerHTML = "";
             Object.entries(playersData || {})
                 .filter(([, player]) => player?.teamId)
                 .sort((first, second) => (Number(second[1][scoreField]) || 0) - (Number(first[1][scoreField]) || 0))
-                .forEach(([id, player]) => {
+                .forEach(([id, player], index) => {
                     const row = document.createElement("li");
                     row.className = "player-line";
                     row.style.setProperty("--team-color", TEAM_COLORS.find((team) => team.id === player.teamId)?.hex || player.teamColor || "#64748b");
                     if (player.teamId === playerTeamId || id === playerId) row.classList.add("is-current-team");
+                    if (showRank) {
+                        const position = index + 1;
+                        const suffix = position % 100 >= 11 && position % 100 <= 13
+                            ? "th"
+                            : ({ 1: "st", 2: "nd", 3: "rd" }[position % 10] || "th");
+                        const rank = document.createElement("span");
+                        rank.className = "score-rank";
+                        if (position === 1) {
+                            rank.classList.add("score-rank--gold");
+                            row.classList.add("score-place--gold");
+                        } else if (position === 2) {
+                            rank.classList.add("score-rank--silver");
+                            row.classList.add("score-place--silver");
+                        } else if (position === 3) {
+                            rank.classList.add("score-rank--bronze");
+                            row.classList.add("score-place--bronze");
+                        }
+                        rank.innerText = `${position}${suffix}`;
+                        row.append(rank);
+                    }
                     const avatar = document.createElement("span");
                     avatar.className = "avatar-chip";
                     avatar.innerText = player.avatar || "🎮";
