@@ -22,7 +22,9 @@ export const TEAM_COLORS = [
 export const MAX_PLAYERS = 18;
 export const BOMB_PASS_BASE_POINTS = 50;
 export const BOMB_PASS_AUTO_SECONDS = 10;
-export const BOMB_PASS_POINT_DRAIN_PER_SECOND = 1;
+export const BOMB_HOLDER_LOCK_TIMEOUT_SECONDS = 20;
+export const BOMB_PASS_POINT_DRAIN_INTERVAL_SECONDS = 5;
+export const BOMB_PASS_POINTS_PER_INTERVAL = 1;
 
 export function getBombUnlockedSeconds(unlockedAt, now = Date.now()) {
     const timestamp = Number(unlockedAt);
@@ -32,7 +34,8 @@ export function getBombUnlockedSeconds(unlockedAt, now = Date.now()) {
 
 export function getBombPassPoints(unlockedAt, now = Date.now()) {
     const elapsedSeconds = getBombUnlockedSeconds(unlockedAt, now);
-    return Math.max(0, BOMB_PASS_BASE_POINTS - elapsedSeconds * BOMB_PASS_POINT_DRAIN_PER_SECOND);
+    const elapsedIntervals = Math.floor(elapsedSeconds / BOMB_PASS_POINT_DRAIN_INTERVAL_SECONDS);
+    return Math.max(0, BOMB_PASS_BASE_POINTS - elapsedIntervals * BOMB_PASS_POINTS_PER_INTERVAL);
 }
 
 export function shuffle(items) {

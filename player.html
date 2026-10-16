@@ -1419,6 +1419,7 @@
         import {
             BOMB_PASS_AUTO_SECONDS,
             BOMB_PASS_BASE_POINTS,
+            BOMB_HOLDER_LOCK_TIMEOUT_SECONDS,
             TEAM_COLORS,
             TEAM_ANIMALS,
             TONGUE_TWISTERS,
@@ -1979,18 +1980,27 @@
                         document.getElementById("player-task-prompt").innerText = gameData.task || "Complete the task!";
                         passButton.hidden = gameData.bombLocked !== false;
                         if (gameData.bombLocked === false) {
+                            const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || Date.now());
                             const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || Date.now());
                             const updatePassCountdown = () => {
                                 const elapsedSeconds = getBombUnlockedSeconds(unlockedAt);
                                 const secondsRemaining = Math.max(0, BOMB_PASS_AUTO_SECONDS - elapsedSeconds);
-                                const pointsAvailable = getBombPassPoints(unlockedAt);
-                                document.getElementById("pass-lock-status").innerText =
-                                    `Pass in ${secondsRemaining}s · ${pointsAvailable} pts available`;
+                                const pointsAvailable = getBombPassPoints(holderStartedAt);
+                                document.getElementById("pass-lock-status").innerText = `Pass in ${secondsRemaining}s · ${pointsAvailable} pts available`;
                             };
                             updatePassCountdown();
                             playerBombPassCountdownInterval = window.setInterval(updatePassCountdown, 250);
                         } else {
-                            document.getElementById("pass-lock-status").innerText = "Task complete? Wait for the host to release the lock.";
+                            const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || Date.now());
+                            const updatePassReward = () => {
+                                const holderElapsedSeconds = getBombUnlockedSeconds(holderStartedAt);
+                                const secondsRemaining = Math.max(0, BOMB_HOLDER_LOCK_TIMEOUT_SECONDS - holderElapsedSeconds);
+                                const pointsAvailable = getBombPassPoints(holderStartedAt);
+                                document.getElementById("pass-lock-status").innerText =
+                                    `Auto-pass in ${secondsRemaining}s · ${pointsAvailable} pts · Waiting for host.`;
+                            };
+                            updatePassReward();
+                            playerBombPassCountdownInterval = window.setInterval(updatePassReward, 250);
                         }
                     } else {
                         document.getElementById("task-screen").classList.remove("active");
@@ -2952,8 +2962,8 @@
                 const taskQueue = Array.isArray(gameData.taskQueue) ? [...gameData.taskQueue] : [];
                 if (!taskQueue.length) taskQueue.push(...shuffle(TONGUE_TWISTERS));
                 const nextTask = taskQueue.pop();
-                const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || passAt);
-                const pointsEarned = getBombPassPoints(unlockedAt, passAt);
+                const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || passAt);
+                const pointsEarned = getBombPassPoints(holderStartedAt, passAt);
                 const pointDrain = BOMB_PASS_BASE_POINTS - pointsEarned;
                 const gamePlayers = { ...gameData.players };
                 gamePlayers[playerId] = {

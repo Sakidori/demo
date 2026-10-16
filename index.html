@@ -2326,6 +2326,7 @@
         import {
             BOMB_PASS_AUTO_SECONDS,
             BOMB_PASS_BASE_POINTS,
+            BOMB_HOLDER_LOCK_TIMEOUT_SECONDS,
             TEAM_ANIMALS,
             TEAM_COLORS,
             TONGUE_TWISTERS,
@@ -3322,17 +3323,17 @@
             try {
                 const result = await runTransaction(gameRef, (gameData) => {
                     if (currentPhase !== "bomb" || gameData?.phase !== "bomb") return;
-                    if (reason !== "host" && gameData.bombLocked !== false) return;
+                    const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || passAt);
+                    const lockTimedOut = reason === "lock-timeout"
+                        && getBombUnlockedSeconds(holderStartedAt, passAt) >= BOMB_HOLDER_LOCK_TIMEOUT_SECONDS;
+                    if (reason !== "host" && gameData.bombLocked !== false && !lockTimedOut) return;
                     const previousActivePlayerId = gameData.activePlayerId;
                     const currentPlayer = gameData.players?.[previousActivePlayerId];
                     if (!currentPlayer?.teamId) return;
                     const { nextPlayerId, nextCycle } = selectNextBombHolder(gameData, previousActivePlayerId);
                     if (!nextPlayerId || nextPlayerId === previousActivePlayerId) return;
 
-                    const pointsEarned = getBombPassPoints(
-                        gameData.bombLocked === false ? gameData.bombUnlockedAt || gameData.handoffTime : 0,
-                        passAt
-                    );
+                    const pointsEarned = getBombPassPoints(holderStartedAt, passAt);
                     const pointDrain = BOMB_PASS_BASE_POINTS - pointsEarned;
                     const players = { ...(gameData.players || {}) };
                     players[previousActivePlayerId] = {
@@ -3431,18 +3432,23 @@
             const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
             const holdTimeEl = document.getElementById("bomb-hold-time");
             const forcePassButton = document.getElementById("force-pass-btn");
+            const holderElapsedSeconds = getBombUnlockedSeconds(fuseStartedAt);
+            const hasNextTeam = Object.entries(hostPlayers).some(([id, player]) => id !== activePlayerId && player?.teamId);
             const unlockedAt = !bombLocked ? Number(bombUnlockedAt || 0) : 0;
             if (unlockedAt) {
                 const unlockedSeconds = getBombUnlockedSeconds(unlockedAt);
-                const pointsAvailable = getBombPassPoints(unlockedAt);
+                const pointsAvailable = getBombPassPoints(fuseStartedAt);
                 const secondsRemaining = Math.max(0, BOMB_PASS_AUTO_SECONDS - unlockedSeconds);
                 holdTimeEl.innerText = `Pass in ${secondsRemaining}s · ${pointsAvailable} pts`;
-                const hasNextTeam = Object.entries(hostPlayers).some(([id, player]) => id !== activePlayerId && player?.teamId);
                 if (timeLeft > 0 && hasNextTeam && unlockedSeconds >= BOMB_PASS_AUTO_SECONDS && !bombPassInProgress) {
                     void passBombToPlayer("automatic");
                 }
             } else {
-                holdTimeEl.innerText = `Pass reward: ${BOMB_PASS_BASE_POINTS} pts`;
+                const secondsRemaining = Math.max(0, BOMB_HOLDER_LOCK_TIMEOUT_SECONDS - holderElapsedSeconds);
+                holdTimeEl.innerText = `Auto-pass in ${secondsRemaining}s · ${getBombPassPoints(fuseStartedAt)} pts`;
+                if (timeLeft > 0 && hasNextTeam && holderElapsedSeconds >= BOMB_HOLDER_LOCK_TIMEOUT_SECONDS && !bombPassInProgress) {
+                    void passBombToPlayer("lock-timeout");
+                }
             }
             forcePassButton.disabled = currentPhase !== "bomb";
             if (timeLeft <= 0) explodeBomb();
