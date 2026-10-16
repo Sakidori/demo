@@ -4438,7 +4438,7 @@
                     status: "spyfall-results",
                     spyfallVoteCounts: voteCounts,
                     spyfallSpyIds: spyIds,
-                    spyfallResultsRevealed: false
+                    spyfallResultsStage: "drumroll"
                 };
             }, { applyLocally: false });
             if (!result.committed) {
@@ -4481,7 +4481,7 @@
             spyfallDrumrollActive = false;
             syncBackgroundMusic(currentPhase);
             if (currentPhase !== "spyfall-results") return;
-            await update(gameRef, { spyfallResultsRevealed: true });
+            await update(gameRef, { spyfallResultsStage: "spies" });
             showSpyfallResultScreen("spyfall-spy-results-screen");
         }
 
@@ -4511,7 +4511,7 @@
                 spyfallVotes: {},
                 spyfallVoteCounts: {},
                 spyfallSpyIds: [],
-                spyfallResultsRevealed: false
+                spyfallResultsStage: null
             });
             showSpyfallResultScreen("round-two-placeholder-screen");
             await showRoundTwoPlaceholder();
@@ -4556,11 +4556,13 @@
                 .forEach((id) => document.getElementById(id).classList.toggle("active", id === screenId));
         }
 
-        window.showSpyfallScoreScreen = function() {
+        window.showSpyfallScoreScreen = async function() {
+            await update(gameRef, { spyfallResultsStage: "scores" });
             showSpyfallResultScreen("spyfall-score-results-screen");
         };
 
-        window.showSpyfallStandingsScreen = function() {
+        window.showSpyfallStandingsScreen = async function() {
+            await update(gameRef, { spyfallResultsStage: "standings" });
             showSpyfallResultScreen("spyfall-standings-screen");
         };
 

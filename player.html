@@ -1085,7 +1085,9 @@
         }
 
         #bomb-loss-scores .score-rank,
-        #bomb-win-scores .score-rank {
+        #bomb-win-scores .score-rank,
+        #spyfall-player-scores .score-rank,
+        #spyfall-player-overall-scores .score-rank {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1102,42 +1104,54 @@
         }
 
         #bomb-loss-scores .score-place--gold,
-        #bomb-win-scores .score-place--gold {
+        #bomb-win-scores .score-place--gold,
+        #spyfall-player-scores .score-place--gold,
+        #spyfall-player-overall-scores .score-place--gold {
             border-color: rgba(255,209,102,0.72);
             background: linear-gradient(120deg, rgba(255,209,102,0.2), rgba(21,31,50,0.96));
             box-shadow: 0 0 12px rgba(255,209,102,0.16);
         }
 
         #bomb-loss-scores .score-place--silver,
-        #bomb-win-scores .score-place--silver {
+        #bomb-win-scores .score-place--silver,
+        #spyfall-player-scores .score-place--silver,
+        #spyfall-player-overall-scores .score-place--silver {
             border-color: rgba(210,222,238,0.68);
             background: linear-gradient(120deg, rgba(210,222,238,0.18), rgba(21,31,50,0.96));
             box-shadow: 0 0 12px rgba(210,222,238,0.12);
         }
 
         #bomb-loss-scores .score-place--bronze,
-        #bomb-win-scores .score-place--bronze {
+        #bomb-win-scores .score-place--bronze,
+        #spyfall-player-scores .score-place--bronze,
+        #spyfall-player-overall-scores .score-place--bronze {
             border-color: rgba(216,147,96,0.72);
             background: linear-gradient(120deg, rgba(216,147,96,0.18), rgba(21,31,50,0.96));
             box-shadow: 0 0 12px rgba(216,147,96,0.12);
         }
 
         #bomb-loss-scores .score-rank--gold,
-        #bomb-win-scores .score-rank--gold {
+        #bomb-win-scores .score-rank--gold,
+        #spyfall-player-scores .score-rank--gold,
+        #spyfall-player-overall-scores .score-rank--gold {
             border-color: rgba(255,209,102,0.48);
             background: rgba(255,209,102,0.15);
             color: #ffd166;
         }
 
         #bomb-loss-scores .score-rank--silver,
-        #bomb-win-scores .score-rank--silver {
+        #bomb-win-scores .score-rank--silver,
+        #spyfall-player-scores .score-rank--silver,
+        #spyfall-player-overall-scores .score-rank--silver {
             border-color: rgba(210,222,238,0.35);
             background: rgba(210,222,238,0.12);
             color: #d2deee;
         }
 
         #bomb-loss-scores .score-rank--bronze,
-        #bomb-win-scores .score-rank--bronze {
+        #bomb-win-scores .score-rank--bronze,
+        #spyfall-player-scores .score-rank--bronze,
+        #spyfall-player-overall-scores .score-rank--bronze {
             border-color: rgba(216,147,96,0.38);
             background: rgba(216,147,96,0.13);
             color: #d89360;
@@ -1496,14 +1510,20 @@
 
     <div id="spyfall-results-screen" class="screen">
         <div class="status-chip">Spyfall Results</div>
-        <h1 id="spyfall-results-title">The spy was...</h1>
-        <img id="spyfall-results-location" class="spyfall-art" src="location.webp" alt="Spyfall location" hidden>
-        <h2>Votes by Team</h2>
-        <ul id="spyfall-player-tally"></ul>
-        <h2>Round Scores</h2>
-        <ul id="spyfall-player-scores"></ul>
-        <h2>Overall Standings</h2>
-        <ul id="spyfall-player-overall-scores"></ul>
+        <div id="spyfall-player-results-spies">
+            <h1 id="spyfall-results-title">The spies were...</h1>
+            <img id="spyfall-results-location" class="spyfall-art" src="location.webp" alt="Spyfall location" hidden>
+            <h2>Votes by Team</h2>
+            <ul id="spyfall-player-tally"></ul>
+        </div>
+        <div id="spyfall-player-results-scores" hidden>
+            <h1>Round Scores</h1>
+            <ul id="spyfall-player-scores"></ul>
+        </div>
+        <div id="spyfall-player-results-standings" hidden>
+            <h1>Overall Standings</h1>
+            <ul id="spyfall-player-overall-scores"></ul>
+        </div>
     </div>
 
     <div id="final-round-placeholder-screen" class="screen">
@@ -2319,10 +2339,12 @@
                     document.getElementById("spyfall-results-screen").classList.remove("active");
                     document.getElementById("final-round-placeholder-screen").classList.remove("active");
                     document.getElementById("spyfall-role-hide-btn").hidden = true;
-                    if (gameData.spyfallResultsRevealed) {
+                    const resultsStage = gameData.spyfallResultsStage
+                        || (gameData.spyfallResultsRevealed ? "spies" : "drumroll");
+                    if (resultsStage !== "drumroll") {
                         document.getElementById("spyfall-screen").classList.remove("active");
                         document.getElementById("spyfall-results-screen").classList.add("active");
-                        renderSpyfallResults(gameData);
+                        renderSpyfallResults(gameData, resultsStage);
                     } else {
                         document.getElementById("spyfall-screen").classList.add("active");
                         document.getElementById("spyfall-player-title").innerText = "Spyfall complete";
@@ -2445,8 +2467,8 @@
                         document.getElementById("waiting-screen").classList.add("active");
                         return;
                     }
-                    renderScoreList("bomb-loss-scores", gameData.players, "bombRoundPoints", true);
-                    renderScoreList("bomb-win-scores", gameData.players, "bombRoundPoints", true);
+                    renderScoreList("bomb-loss-scores", gameData.players, "bombRoundPoints", true, true);
+                    renderScoreList("bomb-win-scores", gameData.players, "bombRoundPoints", true, true);
                     const lostTeam = TEAM_COLORS.find((teamColor) => teamColor.id === gameData.losingTeamId);
                     const lost = playerTeamId === gameData.losingTeamId;
                     document.body.classList.toggle("has-bomb", lost);
@@ -2726,7 +2748,10 @@
             }
         };
 
-        function renderSpyfallResults(gameData) {
+        function renderSpyfallResults(gameData, stage = gameData.spyfallResultsStage || "spies") {
+            document.getElementById("spyfall-player-results-spies").hidden = stage !== "spies";
+            document.getElementById("spyfall-player-results-scores").hidden = stage !== "scores";
+            document.getElementById("spyfall-player-results-standings").hidden = stage !== "standings";
             const spyNames = (gameData.spyfallSpyIds || [])
                 .map((id) => gameData.players?.[id]?.name)
                 .filter(Boolean);
@@ -2757,8 +2782,8 @@
                     row.append(avatar, name, votes);
                     tally.appendChild(row);
                 });
-                    renderScoreList("spyfall-player-scores", gameData.players, "spyfallPoints");
-                    renderScoreList("spyfall-player-overall-scores", gameData.players);
+                    renderScoreList("spyfall-player-scores", gameData.players, "spyfallPoints", true);
+                    renderScoreList("spyfall-player-overall-scores", gameData.players, "score", true);
         }
 
         function renderPlayerQuiz(gameData) {
@@ -2874,7 +2899,7 @@
             }
         };
 
-        function renderScoreList(listId, playersData, scoreField = "score", showRank = false) {
+        function renderScoreList(listId, playersData, scoreField = "score", showRank = false, limitToTopFiveAndCurrentTeam = false) {
             const list = document.getElementById(listId);
             list.innerHTML = "";
             const rankedPlayers = Object.entries(playersData || {})
@@ -2882,7 +2907,7 @@
                 .sort((first, second) => (Number(second[1][scoreField]) || 0) - (Number(first[1][scoreField]) || 0))
                 .map(([id, player], index) => ({ id, player, position: index + 1 }));
             let visiblePlayers = rankedPlayers;
-            if (showRank) {
+            if (limitToTopFiveAndCurrentTeam) {
                 const currentTeamIndex = rankedPlayers.findIndex(({ id, player }) =>
                     player.teamId === playerTeamId || id === playerId
                 );
@@ -2895,7 +2920,7 @@
             }
 
             visiblePlayers.forEach(({ id, player, position }) => {
-                if (showRank && position >= 7) {
+                if (limitToTopFiveAndCurrentTeam && position >= 7) {
                     const ellipsis = document.createElement("li");
                     ellipsis.className = "score-list-ellipsis";
                     ellipsis.setAttribute("aria-label", "Teams ranked between fifth place and your team");
