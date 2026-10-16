@@ -1417,15 +1417,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, onValue, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import {
-            BOMB_PASS_AUTO_SECONDS,
             BOMB_PASS_BASE_POINTS,
-            BOMB_HOLDER_LOCK_TIMEOUT_SECONDS,
             TEAM_COLORS,
             TEAM_ANIMALS,
             TONGUE_TWISTERS,
             MAX_PLAYERS,
             getBombPassPoints,
-            getBombUnlockedSeconds,
             shuffle
         } from "./game-data.js";
 
@@ -1454,7 +1451,6 @@
         let stopGameListener;
         let stopSpyfallRoleListener;
         let playerQuizCountdownInterval;
-        let playerBombPassCountdownInterval;
         let playerSpyfallTimerInterval;
         let playerBonusRoundInterval = null;
         let spyfallRole = "";
@@ -1925,13 +1921,11 @@
                 document.getElementById("player-pause-overlay").hidden = !gameIsPaused;
                 if (gameIsPaused) {
                     clearInterval(playerQuizCountdownInterval);
-                    clearInterval(playerBombPassCountdownInterval);
                     clearInterval(playerSpyfallTimerInterval);
                     clearInterval(playerBonusRoundInterval);
                     return;
                 }
                 if (gameData.phase !== "bomb") {
-                    clearInterval(playerBombPassCountdownInterval);
                     document.body.classList.remove("bomb-spectator");
                     document.getElementById("waiting-screen").classList.remove("bomb-spectator");
                     document.getElementById("safe-indicator").hidden = true;
@@ -1945,7 +1939,6 @@
                 if (gameData.phase === "bomb") {
                     activePhase = "bomb";
                     clearInterval(playerQuizCountdownInterval);
-                    clearInterval(playerBombPassCountdownInterval);
                     document.getElementById("quiz-splash").hidden = true;
                     const hasBomb = playerId === gameData.activePlayerId;
                     document.getElementById("safe-indicator").hidden = hasBomb;
@@ -1980,27 +1973,9 @@
                         document.getElementById("player-task-prompt").innerText = gameData.task || "Complete the task!";
                         passButton.hidden = gameData.bombLocked !== false;
                         if (gameData.bombLocked === false) {
-                            const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || Date.now());
-                            const unlockedAt = Number(gameData.bombUnlockedAt || gameData.handoffTime || Date.now());
-                            const updatePassCountdown = () => {
-                                const elapsedSeconds = getBombUnlockedSeconds(unlockedAt);
-                                const secondsRemaining = Math.max(0, BOMB_PASS_AUTO_SECONDS - elapsedSeconds);
-                                const pointsAvailable = getBombPassPoints(holderStartedAt);
-                                document.getElementById("pass-lock-status").innerText = `Pass in ${secondsRemaining}s · ${pointsAvailable} pts available`;
-                            };
-                            updatePassCountdown();
-                            playerBombPassCountdownInterval = window.setInterval(updatePassCountdown, 250);
+                            document.getElementById("pass-lock-status").innerText = "Bomb unlocked. Pass when you're ready.";
                         } else {
-                            const holderStartedAt = Number(gameData.bombHolderStartedAt || gameData.handoffTime || Date.now());
-                            const updatePassReward = () => {
-                                const holderElapsedSeconds = getBombUnlockedSeconds(holderStartedAt);
-                                const secondsRemaining = Math.max(0, BOMB_HOLDER_LOCK_TIMEOUT_SECONDS - holderElapsedSeconds);
-                                const pointsAvailable = getBombPassPoints(holderStartedAt);
-                                document.getElementById("pass-lock-status").innerText =
-                                    `Auto-pass in ${secondsRemaining}s · ${pointsAvailable} pts · Waiting for host.`;
-                            };
-                            updatePassReward();
-                            playerBombPassCountdownInterval = window.setInterval(updatePassReward, 250);
+                            document.getElementById("pass-lock-status").innerText = "Waiting for the host to release the lock.";
                         }
                     } else {
                         document.getElementById("task-screen").classList.remove("active");
