@@ -1041,6 +1041,8 @@
 
         .spyfall-art[hidden] { display: none; }
 
+        .spyfall-location-control[hidden] { display: none; }
+
         #round-two-placeholder-screen.active {
             width: min(1400px, 100%);
             height: 100dvh;
@@ -1062,6 +1064,138 @@
 
         #round-two-placeholder-screen h1 {
             font-size: clamp(2rem, 4vw, 3rem);
+        }
+
+        .spyfall-intro-icon {
+            display: block;
+            margin: 4px 0;
+            font-size: clamp(5rem, 14vw, 10rem);
+            line-height: 0.9;
+            filter: drop-shadow(0 12px 20px rgba(255,209,102,0.28));
+        }
+
+        .spyfall-intro-icon[hidden] { display: none; }
+
+        #round-two-placeholder-screen.spyfall-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 30;
+            display: grid;
+            place-items: center;
+            width: 100%;
+            max-width: none;
+            height: 100dvh;
+            max-height: none;
+            min-height: 100svh;
+            padding: 36px 20px;
+            overflow-y: auto;
+            border: 0;
+            border-radius: 0;
+            background: radial-gradient(circle at 50% 42%, rgba(255,209,102,0.14), transparent 32%), linear-gradient(145deg, #171827, #080b14 72%);
+            box-shadow: none;
+            text-align: center;
+            animation: none;
+        }
+
+        #round-two-placeholder-screen.spyfall-splash .round-one-intro-content {
+            display: grid;
+            justify-items: center;
+            gap: 18px;
+            width: min(620px, calc(100vw - 40px));
+        }
+
+        #round-two-placeholder-screen.spyfall-splash h1 {
+            margin: 0;
+            font-size: 3rem;
+        }
+
+        #round-two-placeholder-screen.spyfall-splash .spyfall-intro-icon {
+            display: grid;
+            place-items: center;
+            width: 220px;
+            aspect-ratio: 1;
+            margin: 0;
+            font-size: 8rem;
+            line-height: 1;
+            animation: roundOneBombPulse 1.8s ease-in-out infinite;
+        }
+
+        #round-two-placeholder-screen.spyfall-splash .spyfall-intro-icon[hidden] { display: none; }
+
+        #round-two-placeholder-screen.spyfall-splash .spyfall-location-control {
+            margin: 0;
+        }
+
+        #round-two-placeholder-screen.spyfall-splash .spyfall-host-actions {
+            margin: 0;
+        }
+
+        #round-two-placeholder-screen.spyfall-splash .spyfall-host-actions button {
+            width: min(320px, 100%);
+            margin: 8px auto 0;
+        }
+
+        #round-two-placeholder-screen:not(.spyfall-splash) .round-one-intro-content {
+            display: contents;
+        }
+
+        @media (max-width: 600px) {
+            #round-two-placeholder-screen.spyfall-splash { padding: 72px 18px 28px; }
+            #round-two-placeholder-screen.spyfall-splash .round-one-intro-content {
+                gap: 14px;
+                width: min(620px, calc(100vw - 36px));
+            }
+            #round-two-placeholder-screen.spyfall-splash h1 { font-size: 2.25rem; }
+            #round-two-placeholder-screen.spyfall-splash .spyfall-intro-icon { width: 168px; font-size: 6rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #round-two-placeholder-screen.spyfall-splash .spyfall-intro-icon { animation: none; }
+        }
+
+        #round-two-placeholder-screen.spyfall-role-reveal {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+            align-items: center;
+            justify-items: center;
+            gap: 10px;
+            padding: clamp(20px, 4vh, 44px) 24px;
+        }
+
+        #round-two-placeholder-screen.spyfall-role-reveal .round-one-intro-content { display: contents; }
+        #round-two-placeholder-screen.spyfall-role-reveal .round-one-intro-kicker { grid-row: 1; }
+        #round-two-placeholder-screen.spyfall-role-reveal h1 { grid-row: 2; }
+        #round-two-placeholder-screen.spyfall-role-reveal #spyfall-host-status { grid-row: 3; }
+        #round-two-placeholder-screen.spyfall-role-reveal #spyfall-host-turn { display: none; }
+
+        #round-two-placeholder-screen.spyfall-role-reveal #spyfall-host-timer {
+            grid-row: 4;
+            align-self: center;
+            justify-self: center;
+            margin: 0;
+            font-size: clamp(4rem, 12vw, 7rem);
+        }
+
+        #round-two-placeholder-screen.spyfall-role-reveal .spyfall-host-actions {
+            grid-row: 5;
+            align-self: end;
+            width: min(620px, 100%);
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 0;
+            padding-bottom: clamp(0px, 3vh, 24px);
+        }
+
+        #round-two-placeholder-screen.spyfall-role-reveal .spyfall-host-actions button { min-width: 180px; }
+        #round-two-placeholder-screen.spyfall-role-reveal .spyfall-host-actions button[hidden] { display: none; }
+
+        @media (max-width: 600px) {
+            #round-two-placeholder-screen.spyfall-role-reveal { gap: 8px; padding: 18px 12px; }
+            #round-two-placeholder-screen.spyfall-role-reveal #spyfall-host-timer { font-size: clamp(3rem, 14vw, 5rem); }
+            #round-two-placeholder-screen.spyfall-role-reveal .spyfall-host-actions { gap: 8px; padding-bottom: 8px; }
+            #round-two-placeholder-screen.spyfall-role-reveal .spyfall-host-actions button { min-width: 140px; padding: 10px 12px; }
         }
 
         #round-two-placeholder-screen .results-badge {
@@ -2077,17 +2211,23 @@
     </div>
 
     <div id="round-two-placeholder-screen" class="screen">
-        <div class="results-badge">Round 2 · Spyfall</div>
-        <h1 id="spyfall-host-title">Spyfall</h1>
-        <p id="spyfall-host-status">Catch the spy!</p>
-        <label class="spyfall-location-control" for="spyfall-location-select">
-            <span>Location</span>
-            <select id="spyfall-location-select" aria-label="Choose a Spyfall location image">
-                <option value="location.webp">Location 1</option>
-                <option value="location2.webp">Location 2</option>
-                <option value="location3.webp">Location 3</option>
-            </select>
-        </label>
+        <div id="spyfall-intro-content" class="round-one-intro-content">
+            <p class="round-one-intro-kicker">Round 2</p>
+            <span id="spyfall-intro-icon" class="spyfall-intro-icon" aria-hidden="true" hidden>🕵️</span>
+            <h1 id="spyfall-host-title">Spyfall</h1>
+            <p id="spyfall-host-status">Catch the spy!</p>
+            <label id="spyfall-location-control" class="spyfall-location-control" for="spyfall-location-select">
+                <span>Location</span>
+                <select id="spyfall-location-select" aria-label="Choose a Spyfall location image">
+                    <option value="location.webp">Location 1</option>
+                    <option value="location2.webp">Location 2</option>
+                    <option value="location3.webp">Location 3</option>
+                </select>
+            </label>
+            <div class="spyfall-host-actions">
+                <button id="spyfall-host-action" onclick="startSpyfall()">Assign Roles</button>
+            </div>
+        </div>
         <p id="spyfall-host-turn"></p>
         <p id="spyfall-host-timer" class="spyfall-timer" hidden></p>
         <p id="spyfall-host-vote-count" hidden></p>
@@ -2101,9 +2241,6 @@
         </div>
         <h2 id="spyfall-host-score-heading" hidden>Score Standings</h2>
         <ul id="spyfall-host-scores" hidden></ul>
-        <div class="spyfall-host-actions">
-            <button id="spyfall-host-action" onclick="startSpyfall()">Assign Roles</button>
-        </div>
         <button id="spyfall-start-voting" type="button" onclick="beginSpyfallVoting()" hidden>Start Voting</button>
         <button id="spyfall-host-reveal-again" type="button" onclick="revealSpyfallRolesAgain()" hidden>Reveal Roles Again</button>
     </div>
@@ -2318,6 +2455,7 @@
         // Global game database reference
         const gameRef = ref(db, `game`);
         const spyfallLocationSelect = document.getElementById("spyfall-location-select");
+        const spyfallLocationControl = document.getElementById("spyfall-location-control");
         const bonusButtonStyleToggle = document.getElementById("bonus-button-style-toggle");
         let bonusButtonStyle = "image-sequence";
         const syncSpyfallLocationControls = (location) => {
@@ -2327,7 +2465,8 @@
             spyfallLocationSelect.value = validLocation;
         };
         const updateSpyfallLocationControls = (phase) => {
-            const canChangeLocation = ["waiting", "round-2-placeholder", "spyfall-setup"].includes(phase);
+            const canChangeLocation = ["waiting", "spyfall-setup"].includes(phase);
+            spyfallLocationControl.hidden = !canChangeLocation;
             spyfallLocationSelect.disabled = !canChangeLocation;
             spyfallLocationSelect.hidden = !canChangeLocation;
         };
@@ -3074,7 +3213,6 @@
 
             currentPhase = "quiz-results";
             await showRoundTwoPlaceholder();
-            await startSpyfall();
         };
 
         async function startBombRound() {
@@ -3919,6 +4057,9 @@
             document.body.classList.add("spyfall-host-active");
             document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             document.getElementById("round-two-placeholder-screen").classList.add("active");
+            document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-role-reveal");
+            document.getElementById("round-two-placeholder-screen").classList.add("spyfall-splash");
+            document.getElementById("spyfall-intro-icon").hidden = false;
             document.getElementById("spyfall-host-title").innerText = "Spyfall";
             document.getElementById("spyfall-host-status").innerText = "Catch the spy!";
             document.getElementById("spyfall-host-turn").innerText = "";
@@ -3932,7 +4073,7 @@
             document.getElementById("spyfall-start-voting").hidden = true;
             updateSpyfallLocationControls("round-2-placeholder");
             const action = document.getElementById("spyfall-host-action");
-            action.innerText = "Assign Roles";
+            action.innerText = "Start";
             action.hidden = false;
             action.disabled = false;
             action.onclick = startSpyfall;
@@ -3940,7 +4081,7 @@
         }
 
         window.selectSpyfallBackupLocation = async function(imageName) {
-            if (!["waiting", "round-2-placeholder", "spyfall-setup"].includes(currentPhase)) return;
+            if (!["waiting", "spyfall-setup"].includes(currentPhase)) return;
             const selectedLocation = ["location.webp", "location2.webp", "location3.webp"].includes(imageName)
                 ? imageName
                 : "location.webp";
@@ -3966,6 +4107,7 @@
             spyfallRevealIndex = -1;
             spyfallTurnIndex = -1;
             currentPhase = "spyfall-setup";
+            document.getElementById("spyfall-intro-icon").hidden = true;
             document.getElementById("spyfall-host-title").innerText = "Spyfall";
             document.getElementById("spyfall-host-timer").hidden = true;
             document.getElementById("spyfall-host-vote-count").hidden = true;
@@ -4013,6 +4155,7 @@
             spyfallRevealEndsAt = Date.now() + 15000;
             spyfallRevealIndex = spyfallPlayerOrder.length - 1;
             currentPhase = "spyfall-reveal";
+            document.getElementById("round-two-placeholder-screen").classList.add("spyfall-role-reveal");
             await update(gameRef, {
                 status: "spyfall-reveal",
                 phase: "spyfall-reveal",
@@ -4054,6 +4197,9 @@
         async function startSpyfallGame() {
             if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
             clearInterval(spyfallTimerInterval);
+            document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-role-reveal");
+            document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-splash");
+            document.getElementById("spyfall-intro-icon").hidden = true;
             document.getElementById("spyfall-host-reveal-again").hidden = true;
             document.getElementById("spyfall-start-voting").hidden = true;
             currentPhase = "spyfall-active";
