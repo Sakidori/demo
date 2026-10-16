@@ -4437,7 +4437,8 @@
                     phase: "spyfall-results",
                     status: "spyfall-results",
                     spyfallVoteCounts: voteCounts,
-                    spyfallSpyIds: spyIds
+                    spyfallSpyIds: spyIds,
+                    spyfallResultsRevealed: false
                 };
             }, { applyLocally: false });
             if (!result.committed) {
@@ -4480,6 +4481,7 @@
             spyfallDrumrollActive = false;
             syncBackgroundMusic(currentPhase);
             if (currentPhase !== "spyfall-results") return;
+            await update(gameRef, { spyfallResultsRevealed: true });
             showSpyfallResultScreen("spyfall-spy-results-screen");
         }
 
@@ -4508,7 +4510,8 @@
                 spyfallRoles: {},
                 spyfallVotes: {},
                 spyfallVoteCounts: {},
-                spyfallSpyIds: []
+                spyfallSpyIds: [],
+                spyfallResultsRevealed: false
             });
             showSpyfallResultScreen("round-two-placeholder-screen");
             await showRoundTwoPlaceholder();
