@@ -1201,6 +1201,13 @@
 
         .spyfall-art[hidden] { display: none; }
 
+        #spyfall-role-hide-btn {
+            width: min(320px, 100%);
+            margin: 14px auto 0;
+        }
+
+        #spyfall-role-hide-btn[hidden] { display: none; }
+
         #spyfall-player-timer {
             color: #9deed0;
             font-size: 2rem;
@@ -1450,6 +1457,7 @@
         <p id="spyfall-player-timer" hidden></p>
         <div id="spyfall-player-choices"></div>
         <p id="spyfall-player-status" aria-live="polite">Waiting for the host.</p>
+        <button id="spyfall-role-hide-btn" type="button" onclick="hideSpyfallRole()" hidden>Hide my role</button>
     </div>
 
     <div id="spyfall-results-screen" class="screen">
@@ -1539,6 +1547,8 @@
         let playerSpyfallTimerInterval;
         let playerBonusRoundInterval = null;
         let spyfallRole = "";
+        let spyfallRoleHidden = false;
+        let playerSpyfallRevealEndsAt = 0;
         let lastSpyfallTurnKey = "";
         let spyfallSelectedVotes = new Set();
         let spyfallVoteDirty = false;
@@ -2154,7 +2164,10 @@
                     document.getElementById("spyfall-screen").classList.add("active");
                     if (gameData.phase === "spyfall-setup") {
                         spyfallRole = "";
+                        spyfallRoleHidden = false;
+                        playerSpyfallRevealEndsAt = 0;
                         spyfallSelectedVotes = new Set();
+                        document.getElementById("spyfall-role-hide-btn").hidden = true;
                             document.getElementById("spyfall-screen").classList.remove("my-team-turn");
                         document.getElementById("spyfall-player-title").innerText = "Spyfall";
                         document.getElementById("spyfall-player-status").innerText = "Wait for the host to assign your role.";
@@ -2171,6 +2184,7 @@
                 if (gameData.phase === "spyfall-active") {
                     activePhase = "spyfall-active";
                     clearInterval(playerSpyfallTimerInterval);
+                    document.getElementById("spyfall-role-hide-btn").hidden = true;
                     document.body.classList.remove("has-bomb", "safe");
                     document.getElementById("task-screen").classList.remove("active");
                     document.getElementById("waiting-screen").classList.remove("active");
@@ -2428,12 +2442,18 @@
 
         function renderSpyfallReveal(gameData) {
             const image = document.getElementById("spyfall-role-image");
+            const hideButton = document.getElementById("spyfall-role-hide-btn");
             document.getElementById("spyfall-screen").classList.remove("my-team-turn");
             document.getElementById("spyfall-player-choices").innerHTML = "";
             const revealEndsAt = Number(gameData.spyfallRevealEndsAt || 0);
+            if (revealEndsAt && revealEndsAt !== playerSpyfallRevealEndsAt) {
+                playerSpyfallRevealEndsAt = revealEndsAt;
+                spyfallRoleHidden = false;
+            }
             const secondsLeft = revealEndsAt ? Math.max(0, Math.ceil((revealEndsAt - Date.now()) / 1000)) : 0;
             if (spyfallRole) {
                 if (!secondsLeft) {
+                    hideButton.hidden = true;
                     document.getElementById("spyfall-player-title").innerText = "Role assigned";
                     document.getElementById("spyfall-player-status").innerText = "Waiting for the host to start Spyfall.";
                     document.getElementById("spyfall-player-timer").hidden = false;
@@ -2443,6 +2463,18 @@
                     image.alt = "";
                     return;
                 }
+                if (spyfallRoleHidden) {
+                    hideButton.hidden = true;
+                    document.getElementById("spyfall-player-title").innerText = "Role hidden";
+                    document.getElementById("spyfall-player-status").innerText = "Pass the device to the next player.";
+                    document.getElementById("spyfall-player-timer").hidden = false;
+                    document.getElementById("spyfall-player-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
+                    image.hidden = true;
+                    image.removeAttribute("src");
+                    image.alt = "";
+                    return;
+                }
+                hideButton.hidden = false;
                 document.getElementById("spyfall-player-title").innerText = "Your secret role";
                 document.getElementById("spyfall-player-status").innerText = spyfallRole === "spy"
                     ? "You are a spy. Keep it secret until the host starts the round."
@@ -2456,6 +2488,7 @@
                 return;
             }
 
+            hideButton.hidden = true;
             document.getElementById("spyfall-player-title").innerText = "Spyfall";
             document.getElementById("spyfall-player-status").innerText = revealEndsAt ? "Waiting for everyone to receive their role." : "Waiting for the host to assign roles.";
             document.getElementById("spyfall-player-timer").hidden = revealEndsAt ? false : true;
@@ -2467,6 +2500,12 @@
             image.alt = "";
         }
 
+        window.hideSpyfallRole = function() {
+            if (activePhase !== "spyfall-reveal" || !spyfallRole) return;
+            spyfallRoleHidden = true;
+            renderSpyfallReveal(currentGameData);
+        };
+
         function updateSpyfallRevealTimer() {
             const revealEndsAt = Number(currentGameData.spyfallRevealEndsAt || 0);
             if (activePhase !== "spyfall-reveal" || !revealEndsAt) return;
@@ -2477,6 +2516,7 @@
                 document.getElementById("spyfall-player-title").innerText = "Role assigned";
                 document.getElementById("spyfall-player-status").innerText = "Waiting for the host to start Spyfall.";
                 document.getElementById("spyfall-role-image").hidden = true;
+                document.getElementById("spyfall-role-hide-btn").hidden = true;
             }
         }
 
