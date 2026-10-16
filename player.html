@@ -2247,7 +2247,7 @@
                     const ownTeamTurn = gameData.spyfallActiveTeamId === playerTeamId;
                     document.getElementById("spyfall-screen").classList.toggle("my-team-turn", ownTeamTurn);
                     document.getElementById("spyfall-player-status").innerText = ownTeamTurn
-                        ? "Your team: give one hint now."
+                        ? "It's YOUR turn. Give one hint now!"
                         : `${activeTeamName} is giving a hint.`;
                     const turnKey = `${gameData.spyfallTurnIndex}:${gameData.spyfallActiveTeamId}`;
                     if (ownTeamTurn && lastSpyfallTurnKey !== turnKey) {
