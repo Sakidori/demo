@@ -2338,6 +2338,9 @@
                         playerTeamId = "";
                         playerTeamName = "";
                         clearSavedPlayerId();
+                        document.body.classList.remove("player-lobby");
+                        document.body.style.removeProperty("--player-team-color");
+                        document.getElementById("player-team-reminder").hidden = true;
                         document.getElementById("waiting-screen").classList.remove("active");
                         document.getElementById("join-screen").classList.add("active");
                         return;
