@@ -2274,6 +2274,7 @@
                         : `${activeTeamName} is giving a hint.`;
                     const turnKey = `${gameData.spyfallTurnIndex}:${gameData.spyfallActiveTeamId}`;
                     if (ownTeamTurn && lastSpyfallTurnKey !== turnKey) {
+                        window.scrollTo(0, 0);
                         const turnSplash = document.getElementById("spyfall-turn-splash");
                         document.getElementById("spyfall-turn-splash-team").innerText = activeTeamName;
                         turnSplash.hidden = false;
@@ -2623,6 +2624,7 @@
             const existingVote = gameData.spyfallVotes?.[playerId];
             if (Array.isArray(existingVote) && !spyfallVoteDirty) spyfallSelectedVotes = new Set(existingVote);
             const hasVoted = Array.isArray(existingVote);
+            const discussionStarted = Boolean(gameData.spyfallDiscussionStarted);
             const votingStarted = Boolean(gameData.spyfallVotingStarted);
             const voteDeadline = Number(gameData.spyfallVoteEndsAt || 0);
             const votingOpen = votingStarted && !gameData.spyfallVotingEnded && Date.now() < voteDeadline;
@@ -2630,7 +2632,7 @@
             const teams = getGameTeams(gameData);
             list.classList.toggle("has-selection", spyfallSelectedVotes.size > 0);
             document.getElementById("spyfall-player-status").innerText = !votingStarted
-                ? "Waiting for voting to start."
+                ? discussionStarted ? "Discuss with your team. Waiting for voting to start." : "Waiting for the host to start discussion."
                 : gameData.spyfallVotingEnded
                     ? "Voting has ended. Waiting for results."
                 : !votingOpen
@@ -2669,9 +2671,16 @@
                 return;
             }
             if (!gameData.spyfallVotingStarted) {
+                if (!gameData.spyfallDiscussionStarted) {
+                    timer.innerText = "Discussion";
+                    document.getElementById("spyfall-player-status").innerText = "Waiting for the host to start discussion.";
+                    return;
+                }
                 const secondsLeft = Math.max(0, Math.ceil((Number(gameData.spyfallDiscussionEndsAt) - Date.now()) / 1000));
-                timer.innerText = `Voting starts in 0:${String(secondsLeft).padStart(2, "0")}`;
-                document.getElementById("spyfall-player-status").innerText = "Waiting for the host to start voting.";
+                timer.innerText = secondsLeft ? `Discussion · 0:${String(secondsLeft).padStart(2, "0")}` : "Discussion ended";
+                document.getElementById("spyfall-player-status").innerText = secondsLeft
+                    ? "Discuss with your team. Waiting for voting to start."
+                    : "Discussion ended. Waiting for the host to start voting.";
                 return;
             }
             const secondsLeft = Math.max(0, Math.ceil((Number(gameData.spyfallVoteEndsAt) - Date.now()) / 1000));

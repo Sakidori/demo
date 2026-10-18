@@ -2232,6 +2232,7 @@
         <p id="spyfall-host-timer" class="spyfall-timer" hidden></p>
         <p id="spyfall-host-vote-count" hidden></p>
         <ul id="spyfall-host-votes" hidden></ul>
+        <button id="spyfall-start-discussion" type="button" onclick="beginSpyfallDiscussion()" hidden>Start Discussion</button>
         <div id="spyfall-host-current-team" class="spyfall-host-team-card" hidden>
             <div id="spyfall-host-team-avatar" class="spyfall-host-team-avatar" aria-hidden="true">🎮</div>
             <div class="spyfall-host-team-copy">
@@ -2399,6 +2400,7 @@
         let spyfallRevealEndsAt = 0;
         let spyfallVoteOpensAt = 0;
         let spyfallVoteEndsAt = 0;
+        let spyfallDiscussionStarted = false;
         let spyfallVotingStarted = false;
         let spyfallVotingEnded = false;
         let bonusRoundTimerInterval = null;
@@ -2970,10 +2972,13 @@
             }
             if (gameData.phase === "spyfall-vote" && currentPhase === "spyfall-vote") {
                 hostPlayers = gameData.players || hostPlayers;
+                spyfallDiscussionStarted = Boolean(gameData.spyfallDiscussionStarted);
                 spyfallVotingStarted = Boolean(gameData.spyfallVotingStarted);
                 spyfallVotingEnded = Boolean(gameData.spyfallVotingEnded);
-                spyfallVoteOpensAt = Number(gameData.spyfallDiscussionEndsAt || spyfallVoteOpensAt);
+                spyfallVoteOpensAt = Number(gameData.spyfallDiscussionEndsAt || 0);
                 spyfallVoteEndsAt = Number(gameData.spyfallVoteEndsAt || 0);
+                document.getElementById("spyfall-start-discussion").hidden = spyfallDiscussionStarted || spyfallVotingStarted;
+                document.getElementById("spyfall-start-voting").hidden = !spyfallDiscussionStarted || spyfallVotingStarted;
                 renderSpyfallVotes(gameData);
                 const teamCount = Object.values(gameData.players || {}).filter((player) => player?.teamId).length;
                 const voteCount = Object.keys(gameData.spyfallVotes || {}).length;
@@ -3022,6 +3027,7 @@
             if (currentPhase === "spyfall-vote") {
                 spyfallVoteOpensAt = Number(resumeUpdates.spyfallDiscussionEndsAt || spyfallVoteOpensAt);
                 spyfallVoteEndsAt = Number(resumeUpdates.spyfallVoteEndsAt || spyfallVoteEndsAt);
+                spyfallDiscussionStarted = Boolean(currentGameData.spyfallDiscussionStarted);
                 spyfallVotingStarted = Boolean(currentGameData.spyfallVotingStarted);
                 spyfallVotingEnded = Boolean(currentGameData.spyfallVotingEnded);
             }
@@ -3119,7 +3125,7 @@
                 case "spyfall-vote":
                     if (spyfallVotingEnded) await finishSpyfallVote();
                     else if (spyfallVotingStarted) await endSpyfallVoting();
-                    else await beginSpyfallVoting();
+                    else await beginSpyfallVoting(true);
                     break;
                 case "spyfall-results":
                     await startPopQuiz(1);
@@ -4287,18 +4293,20 @@
             if (currentPhase !== "spyfall-active") return;
             clearInterval(spyfallTimerInterval);
             currentPhase = "spyfall-vote";
+            spyfallDiscussionStarted = false;
             spyfallVotingStarted = false;
             spyfallVotingEnded = false;
-            spyfallVoteOpensAt = Date.now() + 30000;
+            spyfallVoteOpensAt = 0;
             spyfallVoteEndsAt = 0;
             await update(gameRef, {
                 status: "spyfall-vote",
                 phase: "spyfall-vote",
                 spyfallVotes: null,
+                spyfallDiscussionStarted: false,
                 spyfallVotingStarted: false,
                 spyfallVotingEnded: false,
                 spyfallVoteEndsAt: 0,
-                spyfallDiscussionEndsAt: spyfallVoteOpensAt,
+                spyfallDiscussionEndsAt: 0,
                 paused: false
             });
             if (currentPhase !== "spyfall-vote") return;
@@ -4306,21 +4314,45 @@
             document.getElementById("spyfall-host-title").innerText = "Prepare to Vote";
             document.getElementById("spyfall-host-turn").innerText = "";
             document.getElementById("spyfall-host-current-team").hidden = true;
-            document.getElementById("spyfall-host-status").innerText = "Discussion time. Start voting whenever the teams are ready.";
+            document.getElementById("spyfall-host-status").innerText = "Start discussion when the teams are ready.";
             document.getElementById("spyfall-host-action").hidden = true;
-            document.getElementById("spyfall-start-voting").hidden = false;
+            document.getElementById("spyfall-start-discussion").hidden = false;
+            document.getElementById("spyfall-start-voting").hidden = true;
             document.getElementById("spyfall-host-vote-count").hidden = true;
             document.getElementById("spyfall-host-votes").hidden = true;
-            updateSpyfallVoteTimer();
-            spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
         }
 
-        window.beginSpyfallVoting = async function() {
-            if (currentPhase !== "spyfall-vote" || spyfallVotingStarted || isGamePaused) return;
+        window.beginSpyfallDiscussion = async function() {
+            if (currentPhase !== "spyfall-vote" || spyfallDiscussionStarted || isGamePaused) return;
+            spyfallDiscussionStarted = true;
+            spyfallVoteOpensAt = Date.now() + 30000;
+            await update(gameRef, {
+                spyfallDiscussionStarted: true,
+                spyfallDiscussionEndsAt: spyfallVoteOpensAt,
+                paused: false
+            });
+            if (currentPhase !== "spyfall-vote") return;
+            document.getElementById("spyfall-host-status").innerText = "Discuss the hints. Start voting whenever the teams are ready.";
+            document.getElementById("spyfall-start-discussion").hidden = true;
+            document.getElementById("spyfall-start-voting").hidden = false;
+            document.getElementById("spyfall-host-timer").hidden = false;
+            updateSpyfallVoteTimer();
+            clearInterval(spyfallTimerInterval);
+            spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
+        };
+
+        window.beginSpyfallVoting = async function(skipDiscussion = false) {
+            if (currentPhase !== "spyfall-vote" || (!spyfallDiscussionStarted && !skipDiscussion) || spyfallVotingStarted || isGamePaused) return;
+            if (skipDiscussion && !spyfallDiscussionStarted) {
+                spyfallDiscussionStarted = true;
+                spyfallVoteOpensAt = Date.now();
+            }
             spyfallVotingStarted = true;
             spyfallVotingEnded = false;
             spyfallVoteEndsAt = Date.now() + 30000;
             await update(gameRef, {
+                spyfallDiscussionStarted: true,
+                spyfallDiscussionEndsAt: spyfallVoteOpensAt,
                 spyfallVotingStarted: true,
                 spyfallVotingEnded: false,
                 spyfallVoteEndsAt,
@@ -4346,10 +4378,16 @@
                 document.getElementById("spyfall-host-timer").innerText = "Voting ended";
                 return;
             }
+            if (!spyfallDiscussionStarted) {
+                document.getElementById("spyfall-host-timer").innerText = "Discussion not started";
+                return;
+            }
             if (!spyfallVotingStarted) {
                 const secondsLeft = Math.max(0, Math.ceil((spyfallVoteOpensAt - Date.now()) / 1000));
-                document.getElementById("spyfall-host-timer").innerText = `Discussion · 0:${String(secondsLeft).padStart(2, "0")}`;
-                if (!secondsLeft) beginSpyfallVoting();
+                document.getElementById("spyfall-host-timer").innerText = secondsLeft
+                    ? `Discussion · 0:${String(secondsLeft).padStart(2, "0")}`
+                    : "Discussion ended";
+                if (!secondsLeft) document.getElementById("spyfall-host-status").innerText = "Discussion ended. Start voting whenever the teams are ready.";
                 return;
             }
             const secondsLeft = Math.max(0, Math.ceil((spyfallVoteEndsAt - Date.now()) / 1000));
@@ -4501,6 +4539,7 @@
             spyfallTurnIndex = -1;
             spyfallVotingStarted = false;
             spyfallVotingEnded = false;
+            spyfallDiscussionStarted = false;
             await update(gameRef, {
                 status: "round-2-placeholder",
                 phase: "round-2-placeholder",
@@ -4511,6 +4550,8 @@
                 spyfallVotes: {},
                 spyfallVoteCounts: {},
                 spyfallSpyIds: [],
+                spyfallDiscussionStarted: false,
+                spyfallDiscussionEndsAt: 0,
                 spyfallResultsStage: null
             });
             showSpyfallResultScreen("round-two-placeholder-screen");
