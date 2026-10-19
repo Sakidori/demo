@@ -2606,6 +2606,8 @@
         let bonusPodiumRevealing = false;
         let bonusIntroTransitionTimeout = null;
         let gameInstructionsSplashTimeout = null;
+        let instructionsSplashSoundTimeout = null;
+        let instructionsSplashSoundStartedAt = null;
         let bonusIntroCueTimeouts = [];
         let bonusIntroStartedAtKey = null;
         const bonusIntroPlayedCues = new Set();
@@ -2728,8 +2730,6 @@
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
         const hostAttentionButton = document.getElementById("host-attention-btn");
-        const musicPhases = new Set(["spyfall-reveal", "spyfall-vote", "spyfall-results", "bonus-podium"]);
-        const forcedMutePhases = new Set(["bomb", "spyfall-active"]);
         let manualMusicOverride = null;
         let spyfallDrumrollActive = false;
         let bonusFanfareActive = false;
@@ -2745,12 +2745,14 @@
 
         function syncBackgroundMusic(phase) {
             currentMusicPhase = phase;
-            const forcedMuted = forcedMutePhases.has(phase) || spyfallDrumrollActive || bonusFanfareActive;
+            const forcedMuted = spyfallDrumrollActive || bonusFanfareActive;
             musicToggle.disabled = forcedMuted;
-            const shouldPlay = !forcedMuted && (manualMusicOverride ?? musicPhases.has(phase));
-            if (shouldPlay === backgroundMusicDesired) {
+            const shouldPlay = !forcedMuted && (manualMusicOverride ?? true);
+            const trackName = phase === "waiting" ? "lobby" : "game";
+            if (shouldPlay === backgroundMusicDesired
+                && (!shouldPlay || funkyMusic.currentTrack === trackName)) {
                 if (shouldPlay && !funkyMusic.isPlaying) {
-                    funkyMusic.start().then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
+                    funkyMusic.start(trackName).then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
                 }
                 return;
             }
@@ -2764,7 +2766,7 @@
                 updateMusicControl();
                 return;
             }
-            funkyMusic.start().then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
+            funkyMusic.start(trackName).then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
         }
 
         hostAttentionButton.addEventListener("click", () => {
@@ -3103,6 +3105,9 @@
             if (gameData.phase !== "game-instructions-splash") {
                 clearTimeout(gameInstructionsSplashTimeout);
                 gameInstructionsSplashTimeout = null;
+                clearTimeout(instructionsSplashSoundTimeout);
+                instructionsSplashSoundTimeout = null;
+                instructionsSplashSoundStartedAt = null;
                 document.getElementById("game-instructions-splash").hidden = true;
             }
             if (gameData.phase === "game-instructions-splash") {
@@ -3111,6 +3116,17 @@
                 document.getElementById("quiz-splash").hidden = true;
                 document.getElementById("game-instructions-splash").hidden = false;
                 const startedAt = Number(gameData.gameInstructionsSplashStartedAt || Date.now());
+                if (instructionsSplashSoundStartedAt !== startedAt) {
+                    clearTimeout(instructionsSplashSoundTimeout);
+                    instructionsSplashSoundStartedAt = startedAt;
+                    const soundDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 500;
+                    instructionsSplashSoundTimeout = window.setTimeout(() => {
+                        instructionsSplashSoundTimeout = null;
+                        if (currentPhase !== "game-instructions-splash") return;
+                        const sound = new Audio("./setsumei.mp3");
+                        sound.play().catch((error) => console.error("Could not play the instructions sound.", error));
+                    }, soundDelay);
+                }
                 clearTimeout(gameInstructionsSplashTimeout);
                 gameInstructionsSplashTimeout = window.setTimeout(
                     () => finishGameInstructionsSplash(startedAt),
