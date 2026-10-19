@@ -1,5 +1,5 @@
 export function createFunkyMusic() {
-    const volume = 0.3;
+    let volume = 0.3;
     const fadeDuration = 1000;
     const tracks = new Map([
         ["lobby", new Audio(new URL("./bgm.mp3", import.meta.url))],
@@ -69,10 +69,19 @@ export function createFunkyMusic() {
         fadeTo(null);
     }
 
+    function setVolume(level) {
+        const nextVolume = Math.max(0, Math.min(1, Number(level) || 0));
+        if (nextVolume === volume) return;
+        volume = nextVolume;
+        if (desiredTrack !== null) fadeTo(desiredTrack);
+    }
+
     return {
         start,
         stop,
+        setVolume,
         get isPlaying() { return desiredTrack !== null; },
-        get currentTrack() { return desiredTrack; }
+        get currentTrack() { return desiredTrack; },
+        get volume() { return volume; }
     };
 }

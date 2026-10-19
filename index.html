@@ -1327,6 +1327,10 @@
             #round-two-placeholder-screen.spyfall-role-reveal .spyfall-host-actions button { min-width: 140px; padding: 10px 12px; }
         }
 
+        #round-two-placeholder-screen:not(.active) {
+            display: none;
+        }
+
         #round-two-placeholder-screen .results-badge {
             margin-bottom: 2px;
         }
@@ -2730,10 +2734,12 @@
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
         const hostAttentionButton = document.getElementById("host-attention-btn");
-        const lobbyMusicPhases = new Set([
-            "waiting", "game-splash", "game-instructions-splash", "game-instructions",
-            "round-2-placeholder", "final-round-placeholder"
+        const lobbyMusicPhases = new Set(["waiting"]);
+        const gameplayMusicPhases = new Set([
+            "bomb", "spyfall-setup", "spyfall-reveal", "spyfall-active", "spyfall-vote"
         ]);
+        const GAME_MUSIC_VOLUME = 0.3;
+        const GAMEPLAY_MUSIC_VOLUME = 0.05;
         let manualMusicOverride = null;
         let spyfallDrumrollActive = false;
         let bonusFanfareActive = false;
@@ -2753,6 +2759,9 @@
             musicToggle.disabled = forcedMuted;
             const shouldPlay = !forcedMuted && (manualMusicOverride ?? true);
             const trackName = lobbyMusicPhases.has(phase) || !phase ? "lobby" : "game";
+            if (shouldPlay) {
+                funkyMusic.setVolume(gameplayMusicPhases.has(phase) ? GAMEPLAY_MUSIC_VOLUME : GAME_MUSIC_VOLUME);
+            }
             if (shouldPlay === backgroundMusicDesired
                 && (!shouldPlay || funkyMusic.currentTrack === trackName)) {
                 if (shouldPlay && !funkyMusic.isPlaying) {
