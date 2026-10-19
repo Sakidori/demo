@@ -2730,6 +2730,10 @@
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
         const hostAttentionButton = document.getElementById("host-attention-btn");
+        const lobbyMusicPhases = new Set([
+            "waiting", "game-splash", "game-instructions-splash", "game-instructions",
+            "round-2-placeholder", "final-round-placeholder"
+        ]);
         let manualMusicOverride = null;
         let spyfallDrumrollActive = false;
         let bonusFanfareActive = false;
@@ -2748,7 +2752,7 @@
             const forcedMuted = spyfallDrumrollActive || bonusFanfareActive;
             musicToggle.disabled = forcedMuted;
             const shouldPlay = !forcedMuted && (manualMusicOverride ?? true);
-            const trackName = phase === "waiting" ? "lobby" : "game";
+            const trackName = lobbyMusicPhases.has(phase) || !phase ? "lobby" : "game";
             if (shouldPlay === backgroundMusicDesired
                 && (!shouldPlay || funkyMusic.currentTrack === trackName)) {
                 if (shouldPlay && !funkyMusic.isPlaying) {
@@ -2759,10 +2763,6 @@
             backgroundMusicDesired = shouldPlay;
             if (!shouldPlay) {
                 funkyMusic.stop();
-                updateMusicControl();
-                return;
-            }
-            if (funkyMusic.isPlaying) {
                 updateMusicControl();
                 return;
             }
@@ -3059,6 +3059,7 @@
             syncBackgroundMusic(gameData.phase);
             bonusButtonStyle = gameData.bonusButtonStyle === "classic" ? "classic" : "image-sequence";
             syncBonusButtonStyleToggle(gameData.phase);
+            const enteringBombPhase = gameData.phase === "bomb" && currentPhase !== "bomb";
             if (gameData.phase === "bomb") {
                 const savedRoundStart = Number(gameData.bombRoundStartedAt || 0);
                 const savedHolderStart = Number(gameData.bombHolderStartedAt || gameData.handoffTime || 0);
@@ -3069,6 +3070,27 @@
                     bombUnlockedAt = Number(gameData.handoffTime || Date.now());
                 }
                 bombLocked = gameData.bombLocked !== false;
+                if (enteringBombPhase) {
+                    currentPhase = "bomb";
+                    currentBombRound = Number(gameData.round) || 1;
+                    activePlayerId = gameData.activePlayerId || "";
+                    currentTask = gameData.task || "";
+                    hostPlayers = gameData.players || {};
+                    fuseStartedAt = fuseStartedAt || Date.now();
+                    bombRoundStartedAt = bombRoundStartedAt || fuseStartedAt;
+                    document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                    document.getElementById("task-screen").classList.add("active");
+                    document.body.classList.add("bomb-round-active");
+                    renderActivePlayer();
+                    renderHostPlayerLists(hostPlayers);
+                    renderBombLockState();
+                    if (!gameData.paused) {
+                        updateHostFuse();
+                        clearInterval(countdownInterval);
+                        countdownInterval = setInterval(updateHostFuse, 250);
+                        startFuseBeepLoop();
+                    }
+                }
             }
             const selectedLocation = ["location.webp", "location2.webp", "location3.webp"].includes(gameData.spyfallLocation)
                 ? gameData.spyfallLocation
