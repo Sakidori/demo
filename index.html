@@ -130,6 +130,135 @@
 
         .round-one-intro-screen.active { display: grid; }
 
+        .game-instructions-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            display: none;
+            place-items: center;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100svh;
+            padding: 24px;
+            border: 0;
+            border-radius: 0;
+            background: radial-gradient(ellipse at 50% 0, #28374b, #111a29 62%, #090e17);
+            box-shadow: none;
+        }
+
+        .game-instructions-screen.active { display: grid; }
+
+        .game-instructions-panel {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            align-items: center;
+            gap: 24px;
+            width: min(620px, 100%);
+            padding: 28px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 18px;
+            background: rgba(18,26,42,0.94);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.4);
+            text-align: left;
+        }
+
+        .game-instructions-panel.has-art {
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+            width: min(960px, 100%);
+        }
+
+        .game-instructions-copy { min-width: 0; }
+
+        .game-instructions-art {
+            display: block;
+            width: 100%;
+            max-height: min(68vh, 620px);
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        .game-instructions-art[hidden] { display: none; }
+
+        .game-instructions-kicker {
+            margin: 0 0 8px;
+            color: #ffc857;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .game-instructions-panel h1 {
+            margin: 0 0 18px;
+            font-size: 2rem;
+            text-align: left;
+        }
+
+        .game-instructions-list {
+            display: grid;
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            counter-reset: instruction;
+        }
+
+        .game-instructions-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            color: var(--text);
+            line-height: 1.4;
+            counter-increment: instruction;
+        }
+
+        .game-instructions-list li::before {
+            display: grid;
+            place-items: center;
+            flex: 0 0 28px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ffc857;
+            color: #172033;
+            content: counter(instruction);
+            font-size: 0.85rem;
+            font-weight: 900;
+        }
+
+        .game-instructions-waiting {
+            margin: 18px 0 0;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .game-instructions-start {
+            width: min(100%, 360px);
+            min-height: 58px;
+            margin: 24px auto 0;
+            border: 2px solid rgba(255,255,255,0.72);
+            background: linear-gradient(135deg, #ff6b35, #ff3b4f);
+            box-shadow: 0 10px 24px rgba(255,75,65,0.28);
+            font-size: 1.15rem;
+            font-weight: 900;
+        }
+
+        .game-instructions-start[hidden] { display: none; }
+
+        .game-instructions-back {
+            width: min(100%, 360px);
+            margin: 8px auto 0;
+            background: rgba(255,255,255,0.08);
+            box-shadow: none;
+        }
+
+        @media (max-width: 600px) {
+            .game-instructions-screen { padding: 16px; }
+            .game-instructions-panel { padding: 22px 18px; }
+            .game-instructions-panel.has-art { grid-template-columns: minmax(0, 1fr); }
+            .game-instructions-art { max-height: 30vh; }
+            .game-instructions-panel h1 { font-size: 1.65rem; }
+        }
+
         .round-one-intro-content {
             display: grid;
             justify-items: center;
@@ -1876,6 +2005,57 @@
             animation: quizTitlePop 1.35s 650ms cubic-bezier(0.18, 1.7, 0.4, 1) both;
         }
 
+        .instructions-splash-title {
+            display: flex;
+            justify-content: center;
+            gap: 0.08em;
+            margin: 0;
+            color: #fff8d8;
+            font-size: clamp(7rem, 28vw, 18rem);
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 0 18px #ff9f1c, 0 0 54px rgba(255,194,74,0.9);
+        }
+
+        .instructions-splash-title span {
+            opacity: 0;
+            animation: instructionsGlyphPop 500ms steps(2, end) both;
+            animation-delay: 0.5s;
+        }
+
+        .instructions-splash-title span:nth-child(2) { animation-delay: 1.5s; }
+
+        #game-instructions-splash {
+            animation: instructionsScreenShake 500ms steps(2, end) 0.5s,
+                instructionsScreenShake 500ms steps(2, end) 1.5s;
+        }
+
+        #game-instructions-splash .quiz-splash-light {
+            opacity: 0.65;
+            transform: scale(1);
+            animation: none;
+        }
+
+        @keyframes instructionsGlyphPop {
+            0% { opacity: 0; transform: scale(0.1) rotate(-15deg); }
+            35% { opacity: 1; transform: scale(1.25) rotate(5deg); }
+            65% { opacity: 1; transform: scale(0.88) rotate(-2deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0); }
+        }
+
+        @keyframes instructionsScreenShake {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            15% { transform: translate(-7px, 2px) rotate(-0.4deg); }
+            30% { transform: translate(6px, -2px) rotate(0.4deg); }
+            45% { transform: translate(-4px, 1px) rotate(-0.25deg); }
+            60% { transform: translate(2px, -1px) rotate(0.15deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #game-instructions-splash { animation: none; }
+            .instructions-splash-title span { animation-duration: 1ms; animation-delay: 0ms; }
+        }
+
         @keyframes spotlightZoom {
             0% { opacity: 0; transform: scale(0.2); }
             55% { opacity: 0.95; transform: scale(1.2); }
@@ -2134,9 +2314,22 @@
             <p class="round-one-intro-kicker">Round 1</p>
             <h1 id="round-one-intro-title">Pass the Bomb</h1>
             <div class="round-one-bomb-art" role="img" aria-label="Bomb">💣</div>
-            <button id="round-one-start-btn" type="button" onclick="startRoundOne()">Start</button>
+            <button id="round-one-start-btn" type="button" onclick="startRoundOne()">Instructions</button>
             <button id="round-one-back-btn" type="button" onclick="returnToLobby()">Back to Lobby</button>
         </div>
+    </div>
+
+    <div id="game-instructions-screen" class="screen game-instructions-screen" aria-labelledby="game-instructions-title">
+        <section class="game-instructions-panel">
+            <div class="game-instructions-copy">
+                <p id="game-instructions-kicker" class="game-instructions-kicker">How to play</p>
+                <h1 id="game-instructions-title">Game Instructions</h1>
+                <ol id="game-instructions-list" class="game-instructions-list"></ol>
+                <button id="game-instructions-start" class="game-instructions-start" type="button" onclick="startGameFromInstructions()">Start Game</button>
+                <button id="game-instructions-back" class="game-instructions-back" type="button" onclick="returnToLobby()">Back to Lobby</button>
+            </div>
+            <img id="game-instructions-art" class="game-instructions-art" src="bombexplain.gif" alt="Bomb game instructions animation" hidden>
+        </section>
     </div>
 
     <details id="host-dev-tools" class="host-dev-tools">
@@ -2318,6 +2511,10 @@
         <div class="quiz-splash-light"></div>
         <div class="quiz-splash-title">POP QUIZ</div>
     </div>
+    <div id="game-instructions-splash" class="quiz-splash" role="status" aria-label="Instructions" hidden>
+        <div class="quiz-splash-light"></div>
+        <h1 class="instructions-splash-title"><span>説</span><span>明</span></h1>
+    </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -2408,6 +2605,7 @@
         let bonusRoundEnding = false;
         let bonusPodiumRevealing = false;
         let bonusIntroTransitionTimeout = null;
+        let gameInstructionsSplashTimeout = null;
         let bonusIntroCueTimeouts = [];
         let bonusIntroStartedAtKey = null;
         const bonusIntroPlayedCues = new Set();
@@ -2429,6 +2627,7 @@
         }
         const BONUS_ROUND_SECONDS = 30;
         const BONUS_INTRO_DURATION_MS = 5000;
+        const GAME_INSTRUCTIONS_SPLASH_DURATION_MS = 2500;
         const BONUS_INTRO_WORD_DELAY_MS = 1500;
         const BONUS_INTRO_FIRST_SOUND_DURATION_MS = 3048;
         const BONUS_TAPS_PER_POINT = 4;
@@ -2495,17 +2694,25 @@
             });
         });
 
-        // Initialize only when the game has not already started.
-        // Re-loading the host page should preserve the live round state instead of erasing it.
-        get(gameRef).then((snapshot) => {
+        const restartableIntroPhases = new Set(["game-splash", "game-instructions-splash", "game-instructions"]);
+        get(gameRef).then(async (snapshot) => {
             if (!snapshot.exists()) {
-                set(gameRef, {
+            await set(gameRef, {
                     status: "waiting",
                     phase: "waiting",
                     round: 1,
                     players: {},
                     teams: {},
                     bonusButtonStyle: "image-sequence"
+                });
+            } else if (restartableIntroPhases.has(snapshot.val()?.phase)) {
+                await update(gameRef, {
+                    status: "waiting",
+                    phase: "waiting",
+                    gameInstructionsGame: null,
+                    gameInstructionsSplashStartedAt: null,
+                    paused: false,
+                    pausedAt: null
                 });
             }
         }).catch(() => {});
@@ -2868,7 +3075,7 @@
             updateSpyfallLocationControls(gameData.phase);
             const skipButton = document.getElementById("skip-round-btn");
             skipButton.disabled = !gameData.phase || [
-                "waiting", "exploding", "final-round-placeholder", "bonus-intro", "spyfall-setup",
+                "waiting", "exploding", "game-splash", "game-instructions-splash", "final-round-placeholder", "game-instructions", "bonus-intro", "spyfall-setup",
                 "bonus-round", "bonus-standings", "bonus-podium"
             ].includes(gameData.phase);
             const pauseButton = document.getElementById("pause-game-btn");
@@ -2893,6 +3100,42 @@
                 return;
             }
             isGamePaused = false;
+            if (gameData.phase !== "game-instructions-splash") {
+                clearTimeout(gameInstructionsSplashTimeout);
+                gameInstructionsSplashTimeout = null;
+                document.getElementById("game-instructions-splash").hidden = true;
+            }
+            if (gameData.phase === "game-instructions-splash") {
+                currentPhase = "game-instructions-splash";
+                document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                document.getElementById("quiz-splash").hidden = true;
+                document.getElementById("game-instructions-splash").hidden = false;
+                const startedAt = Number(gameData.gameInstructionsSplashStartedAt || Date.now());
+                clearTimeout(gameInstructionsSplashTimeout);
+                gameInstructionsSplashTimeout = window.setTimeout(
+                    () => finishGameInstructionsSplash(startedAt),
+                    Math.max(0, startedAt + GAME_INSTRUCTIONS_SPLASH_DURATION_MS - Date.now())
+                );
+                return;
+            }
+            if (gameData.phase === "game-splash") {
+                currentPhase = "game-splash";
+                document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                document.getElementById("round-one-intro-screen").classList.add("active");
+                return;
+            }
+            if (gameData.phase === "game-instructions") {
+                currentPhase = "game-instructions";
+                document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                const instructionsReady = renderGameInstructions(gameData.gameInstructionsGame);
+                const startButton = document.getElementById("game-instructions-start");
+                startButton.hidden = !instructionsReady;
+                if (!instructionsReady) return;
+                startButton.innerText = gameData.gameInstructionsGame === "spyfall" ? "Assign Roles" : "Start Game";
+                document.getElementById("game-instructions-screen").classList.add("active");
+                return;
+            }
+            document.getElementById("game-instructions-screen").classList.remove("active");
             if (gameData.phase !== "bonus-intro") {
                 clearTimeout(bonusIntroTransitionTimeout);
                 bonusIntroCueTimeouts.forEach(clearTimeout);
@@ -3072,19 +3315,146 @@
                 startBombRound();
                 return;
             }
+            currentPhase = "game-splash";
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("round-one-intro-screen").classList.add("active");
+            update(gameRef, {
+                status: "bomb-game-splash",
+                phase: "game-splash",
+                gameInstructionsGame: "bomb",
+                paused: false,
+                pausedAt: null
+            });
+        };
+
+        const gameInstructionContent = {
+            bomb: {
+                kicker: "Round 1 · Pass the Bomb",
+                title: "Keep it moving",
+                rules: [
+                    "Complete the tongue twister to pass the bomb.",
+                    "The button will appear when you've completed the task.",
+                    "Pass quickly to earn more points. It will automatically be passed if you take too long."
+                ]
+            },
+            spyfall: {
+                kicker: "Round 2 · Spyfall",
+                title: "Find the spies",
+                rules: [
+                    "Everyone gets a secret role. The spies do not know the location.",
+                    "Take turns giving one hint without saying the location out loud. Spies should try to blend in and figure out the location.",
+                    "After all teams give a hint, discuss, and then vote for the spies."
+                ]
+            }
+        };
+
+        function renderGameInstructions(gameKey) {
+            const content = gameInstructionContent[gameKey];
+            if (!content) return false;
+            const panel = document.querySelector("#game-instructions-screen .game-instructions-panel");
+            const artwork = document.getElementById("game-instructions-art");
+            const hasArtwork = gameKey === "bomb" || gameKey === "spyfall";
+            panel.classList.toggle("has-art", hasArtwork);
+            artwork.src = gameKey === "spyfall" ? "spyexplain.gif" : "bombexplain.gif";
+            artwork.alt = gameKey === "spyfall" ? "Spyfall game instructions animation" : "Bomb game instructions animation";
+            artwork.hidden = !hasArtwork;
+            document.getElementById("game-instructions-kicker").innerText = content.kicker;
+            document.getElementById("game-instructions-title").innerText = content.title;
+            const list = document.getElementById("game-instructions-list");
+            list.replaceChildren(...content.rules.map((rule) => {
+                const item = document.createElement("li");
+                item.innerText = rule;
+                return item;
+            }));
+            return true;
+        }
+
+        async function showGameInstructions(gameKey) {
+            const content = gameInstructionContent[gameKey];
+            if (!content) return;
+            currentPhase = "game-instructions";
+            document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+            renderGameInstructions(gameKey);
+            document.getElementById("game-instructions-start").innerText = gameKey === "spyfall" ? "Assign Roles" : "Start Game";
+            document.getElementById("game-instructions-screen").classList.add("active");
+            await update(gameRef, {
+                status: "game-instructions",
+                phase: "game-instructions",
+                gameInstructionsGame: gameKey,
+                paused: false,
+                pausedAt: null
+            });
+        }
+
+        async function showGameInstructionsSplash(gameKey) {
+            if (!gameInstructionContent[gameKey]) return;
+            const startedAt = Date.now();
+            currentPhase = "game-instructions-splash";
+            document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+            document.getElementById("quiz-splash").hidden = true;
+            document.getElementById("game-instructions-splash").hidden = false;
+            await update(gameRef, {
+                status: "game-instructions-splash",
+                phase: "game-instructions-splash",
+                gameInstructionsGame: gameKey,
+                gameInstructionsSplashStartedAt: startedAt,
+                paused: false,
+                pausedAt: null
+            });
+        }
+
+        async function finishGameInstructionsSplash(expectedStartAt) {
+            gameInstructionsSplashTimeout = null;
+            const snapshot = await get(gameRef);
+            const gameData = snapshot.val() || {};
+            if (gameData.phase !== "game-instructions-splash"
+                || Number(gameData.gameInstructionsSplashStartedAt) !== expectedStartAt) return;
+            await showGameInstructions(gameData.gameInstructionsGame);
+        }
+
+        window.startGameFromInstructions = async function() {
+            if (currentPhase !== "game-instructions" || isGamePaused) return;
+            const button = document.getElementById("game-instructions-start");
+            button.disabled = true;
+            try {
+                const snapshot = await get(gameRef);
+                const gameData = snapshot.val() || {};
+                if (gameData.phase !== "game-instructions" || !gameInstructionContent[gameData.gameInstructionsGame]) return;
+                document.getElementById("game-instructions-screen").classList.remove("active");
+                if (gameData.gameInstructionsGame === "bomb") {
+                    currentPhase = "waiting";
+                    await startBombRound();
+                } else if (gameData.gameInstructionsGame === "spyfall") {
+                    currentPhase = "round-2-placeholder";
+                    await beginSpyfallRoleSetup();
+                }
+            } finally {
+                button.disabled = false;
+            }
         };
 
         window.startRoundOne = async function() {
-            if (currentPhase !== "waiting") return;
-            await startBombRound();
+            if (currentPhase !== "game-splash") return;
+            await showGameInstructionsSplash("bomb");
         };
 
         window.returnToLobby = function() {
-            if (currentPhase !== "waiting") return;
+            if (!restartableIntroPhases.has(currentPhase)) return;
+            currentPhase = "waiting";
+            clearTimeout(gameInstructionsSplashTimeout);
+            gameInstructionsSplashTimeout = null;
             document.getElementById("round-one-intro-screen").classList.remove("active");
+            document.getElementById("game-instructions-screen").classList.remove("active");
+            document.getElementById("game-instructions-splash").hidden = true;
             document.getElementById("lobby-screen").classList.add("active");
+            update(gameRef, {
+                status: "waiting",
+                phase: "waiting",
+                gameInstructionsGame: null,
+                gameInstructionsSplashStartedAt: null,
+                paused: false,
+                pausedAt: null
+            });
         };
 
         window.skipCurrentRound = async function() {
@@ -3177,8 +3547,8 @@
                 window.alert("Join at least one team before launching a game.");
                 return;
             }
-            if (selectedGame === "spyfall" && players.length < 4) {
-                window.alert("Spyfall needs at least four teams.");
+            if (selectedGame === "spyfall" && players.length < 2) {
+                window.alert("Spyfall needs at least two teams.");
                 return;
             }
 
@@ -3207,7 +3577,7 @@
             await update(gameRef, { paused: false, pausedAt: null });
             if (selectedGame === "bomb") {
                 currentPhase = "waiting";
-                await startBombRound();
+                await showGameInstructions("bomb");
                 return;
             }
             if (selectedGame === "quiz-1" || selectedGame === "quiz-2") {
@@ -4089,7 +4459,12 @@
             action.hidden = false;
             action.disabled = false;
             action.onclick = startSpyfall;
-            await update(gameRef, { status: "round-2-placeholder", phase: "round-2-placeholder", round: 2 });
+            await update(gameRef, {
+                status: "round-2-placeholder",
+                phase: "round-2-placeholder",
+                round: 2,
+                gameInstructionsGame: "spyfall"
+            });
         }
 
         window.selectSpyfallBackupLocation = async function(imageName) {
@@ -4103,14 +4478,19 @@
 
         window.startSpyfall = async function() {
             if (currentPhase !== "round-2-placeholder") return;
+            await showGameInstructionsSplash("spyfall");
+        };
+
+        async function beginSpyfallRoleSetup() {
+            if (currentPhase !== "round-2-placeholder") return;
             const snapshot = await get(playersRef);
             hostPlayers = snapshot.val() || {};
             spyfallPlayerOrder = Object.entries(hostPlayers)
                 .filter(([, player]) => player?.teamId)
                 .map(([id]) => id);
             spyfallPlayerOrder = shuffle(spyfallPlayerOrder);
-            if (spyfallPlayerOrder.length < 4) {
-                document.getElementById("spyfall-host-status").innerText = "Spyfall needs at least four players to make the rounds work.";
+            if (spyfallPlayerOrder.length < 2) {
+                document.getElementById("spyfall-host-status").innerText = "Spyfall needs at least two players to make the rounds work.";
                 return;
             }
 
