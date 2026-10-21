@@ -3541,7 +3541,7 @@
                     break;
                 case "spyfall-vote":
                     if (spyfallVotingEnded) await finishSpyfallVote();
-                    else if (spyfallVotingStarted) await endSpyfallVoting();
+                    else if (spyfallVotingStarted) await endSpyfallVoting("Voting ended by host. Reveal results when ready.");
                     else await beginSpyfallVoting(true);
                     break;
                 case "spyfall-results":
@@ -4831,6 +4831,9 @@
         }
 
         async function endSpyfallVoting(statusText = "Voting ended by host. Reveal results when ready.") {
+            if (typeof statusText !== "string") {
+                statusText = "Voting ended by host. Reveal results when ready.";
+            }
             if (currentPhase !== "spyfall-vote" || !spyfallVotingStarted || spyfallVotingEnded) return;
             spyfallVotingEnded = true;
             clearInterval(spyfallTimerInterval);
