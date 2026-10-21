@@ -4556,6 +4556,10 @@
             document.getElementById("spyfall-host-action").hidden = false;
             document.getElementById("spyfall-host-reveal-again").hidden = true;
             document.getElementById("spyfall-start-voting").hidden = true;
+            document.getElementById("round-two-placeholder-screen").classList.add("active");
+            document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-splash");
+            document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-role-reveal");
+            document.body.classList.add("spyfall-host-active");
             updateSpyfallLocationControls("spyfall-setup");
             await set(ref(db, "spyfallRoles"), {});
             await update(gameRef, {
