@@ -2296,7 +2296,7 @@
 
     <!-- LOBBY SCREEN -->
     <div id="lobby-screen" class="screen active">
-        <p class="host-lobby-instructions"><strong>Only ONE PERSON from your BLOCK GROUP</strong> should scan the QR code, choose a team color and mascot, then come to the front to receive your team headbands.<span class="host-lobby-final-warning">[You can't change your selection after you get your headbands.]</span></p>
+        <p class="host-lobby-instructions"><strong>Only ONE PERSON from your BLOCK GROUP</strong> should scan the QR code. <br> You will use their smartphone to play. <br> Choose a team color and mascot, then come to the front to receive your team headbands.<span class="host-lobby-final-warning">[You can't change your selection after you get your headbands.]</span></p>
         <div class="lobby-layout">
             <section class="lobby-join" aria-label="Join the game">
                 <h1>Scan to Join Game</h1>
@@ -2705,6 +2705,10 @@
         });
 
         const restartableIntroPhases = new Set(["game-splash", "game-instructions-splash", "game-instructions"]);
+        const resumableGamePhases = new Set([
+            "waiting", "bomb", "quiz-intro", "quiz", "bonus-intro", "final-round-placeholder",
+            "bonus-round", "bonus-standings", "bonus-podium", "spyfall-vote"
+        ]);
         get(gameRef).then(async (snapshot) => {
             if (!snapshot.exists()) {
             await set(gameRef, {
@@ -2715,7 +2719,7 @@
                     teams: {},
                     bonusButtonStyle: "image-sequence"
                 });
-            } else if (restartableIntroPhases.has(snapshot.val()?.phase)) {
+            } else if (!resumableGamePhases.has(snapshot.val()?.phase)) {
                 await update(gameRef, {
                     status: "waiting",
                     phase: "waiting",
@@ -2740,12 +2744,23 @@
         const hostAttentionButton = document.getElementById("host-attention-btn");
         const lobbyMusicPhases = new Set(["waiting"]);
         const gameplayMusicPhases = new Set([
-            "bomb", "spyfall-setup", "spyfall-reveal", "spyfall-active", "spyfall-vote"
+            "bomb", "spyfall-active", "spyfall-vote"
         ]);
         const GAME_MUSIC_VOLUME = 0.3;
         const GAMEPLAY_MUSIC_VOLUME = 0.05;
+        const LOW_MUSIC_VOLUME = 0.1;
+        const SPLASH_AUDIO_GAIN = 2;
+        const ROUND_SOUND_GAIN = 3;
+        const QUIZ_SFX_GAIN = 1.4;
+        const SPYFALL_DRUMROLL_MS = 2500;
+        const lowMusicPhases = new Set([
+            "game-splash", "bonus-intro", "quiz-intro", "game-instructions-splash"
+        ]);
         let manualMusicOverride = null;
+        let activeRoundSounds = 0;
+        let roundSoundDucking = false;
         let spyfallDrumrollActive = false;
+        let spyfallDrumrollAudio = null;
         let bonusFanfareActive = false;
         let currentMusicPhase = null;
         let backgroundMusicDesired = null;
@@ -2764,7 +2779,10 @@
             const shouldPlay = !forcedMuted && (manualMusicOverride ?? true);
             const trackName = lobbyMusicPhases.has(phase) || !phase ? "lobby" : "game";
             if (shouldPlay) {
-                funkyMusic.setVolume(gameplayMusicPhases.has(phase) ? GAMEPLAY_MUSIC_VOLUME : GAME_MUSIC_VOLUME);
+                const targetVolume = roundSoundDucking || lowMusicPhases.has(phase)
+                    ? LOW_MUSIC_VOLUME
+                    : (gameplayMusicPhases.has(phase) ? GAMEPLAY_MUSIC_VOLUME : GAME_MUSIC_VOLUME);
+                funkyMusic.setVolume(targetVolume);
             }
             if (shouldPlay === backgroundMusicDesired
                 && (!shouldPlay || funkyMusic.currentTrack === trackName)) {
@@ -2820,13 +2838,55 @@
             return playBonusIntroSound("fanfare.mp3");
         }
 
-        function playRoundSound(source) {
-            try {
-                const sound = new Audio(`./${source}`);
-                sound.play().catch(() => {});
-            } catch (error) {
-                // ignore
+        const splashAudioBuffers = new Map();
+
+        function playSplashAudio(source, gain = SPLASH_AUDIO_GAIN) {
+            const context = getAudioContext();
+            if (!context) return Promise.resolve();
+            let bufferPromise = splashAudioBuffers.get(source);
+            if (!bufferPromise) {
+                bufferPromise = fetch(`./${source}`)
+                    .then((response) => {
+                        if (!response.ok) throw new Error(`Could not load ${source}.`);
+                        return response.arrayBuffer();
+                    })
+                    .then((audioData) => context.decodeAudioData(audioData));
+                splashAudioBuffers.set(source, bufferPromise);
             }
+            return bufferPromise.then((buffer) => new Promise((resolve) => {
+                const gainNode = context.createGain();
+                const limiter = context.createDynamicsCompressor();
+                const audioSource = context.createBufferSource();
+                gainNode.gain.value = gain;
+                limiter.threshold.value = -3;
+                limiter.knee.value = 0;
+                limiter.ratio.value = 20;
+                limiter.attack.value = 0.003;
+                limiter.release.value = 0.25;
+                audioSource.buffer = buffer;
+                audioSource.connect(gainNode);
+                gainNode.connect(limiter);
+                limiter.connect(context.destination);
+                audioSource.onended = resolve;
+                audioSource.start();
+                window.setTimeout(resolve, (buffer.duration + 1.5) * 1000);
+            })).catch((error) => {
+                console.error(`Could not play ${source}.`, error);
+                splashAudioBuffers.delete(source);
+            });
+        }
+
+        function playRoundSound(source) {
+            activeRoundSounds += 1;
+            roundSoundDucking = true;
+            funkyMusic.setVolume(LOW_MUSIC_VOLUME);
+            const restore = () => {
+                activeRoundSounds = Math.max(0, activeRoundSounds - 1);
+                if (activeRoundSounds > 0) return;
+                roundSoundDucking = false;
+                syncBackgroundMusic(currentMusicPhase);
+            };
+            playSplashAudio(source, ROUND_SOUND_GAIN).then(restore, restore);
         }
 
         function playBombUnlockSound() {
@@ -2839,36 +2899,25 @@
             window.setTimeout(() => playUiTone(500, 0.12, "square", 0.035), 70);
         }
 
-        function playSpyfallDrumroll() {
-            const context = getAudioContext();
-            if (!context) return;
-            const noiseLength = Math.floor(context.sampleRate * 0.055);
-            const noiseBuffer = context.createBuffer(1, noiseLength, context.sampleRate);
-            const noiseSamples = noiseBuffer.getChannelData(0);
-            for (let index = 0; index < noiseLength; index++) noiseSamples[index] = Math.random() * 2 - 1;
+        function stopSpyfallDrumroll() {
+            if (!spyfallDrumrollAudio) return;
+            spyfallDrumrollAudio.pause();
+            spyfallDrumrollAudio = null;
+        }
 
-            const startTime = context.currentTime + 0.03;
-            const rollDuration = 2.55;
-            let elapsed = 0;
-            while (elapsed < rollDuration) {
-                const progress = elapsed / rollDuration;
-                const beatTime = startTime + elapsed;
-                const source = context.createBufferSource();
-                const filter = context.createBiquadFilter();
-                const envelope = context.createGain();
-                source.buffer = noiseBuffer;
-                filter.type = "bandpass";
-                filter.frequency.value = 1100 + progress * 500;
-                envelope.gain.setValueAtTime(0.0001, beatTime);
-                envelope.gain.exponentialRampToValueAtTime(0.018 + progress * 0.035, beatTime + 0.003);
-                envelope.gain.exponentialRampToValueAtTime(0.0001, beatTime + 0.05);
-                source.connect(filter);
-                filter.connect(envelope);
-                envelope.connect(context.destination);
-                source.start(beatTime);
-                source.stop(beatTime + 0.055);
-                elapsed += 0.15 - progress * 0.105;
+        function playSpyfallDrumroll() {
+            stopSpyfallDrumroll();
+            try {
+                const sound = new Audio("./drumroll.mp3");
+                spyfallDrumrollAudio = sound;
+                sound.addEventListener("ended", () => {
+                    if (spyfallDrumrollAudio === sound) spyfallDrumrollAudio = null;
+                }, { once: true });
+                sound.play().catch(() => {});
+            } catch (error) {
+                // ignore
             }
+            return new Promise((resolve) => window.setTimeout(resolve, SPYFALL_DRUMROLL_MS));
         }
 
         let attentionAudioBufferPromise;
@@ -3167,8 +3216,7 @@
                     instructionsSplashSoundTimeout = window.setTimeout(() => {
                         instructionsSplashSoundTimeout = null;
                         if (currentPhase !== "game-instructions-splash") return;
-                        const sound = new Audio("./setsumei.mp3");
-                        sound.play().catch((error) => console.error("Could not play the instructions sound.", error));
+                        playSplashAudio("setsumei.mp3");
                     }, soundDelay);
                 }
                 clearTimeout(gameInstructionsSplashTimeout);
@@ -3508,6 +3556,7 @@
             document.getElementById("game-instructions-screen").classList.remove("active");
             document.getElementById("game-instructions-splash").hidden = true;
             document.getElementById("lobby-screen").classList.add("active");
+            syncBackgroundMusic("waiting");
             update(gameRef, {
                 status: "waiting",
                 phase: "waiting",
@@ -3952,12 +4001,7 @@
             quizIntroEndsAt = Date.now() + 2400;
             document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             document.getElementById("quiz-splash").hidden = false;
-            try {
-                const quizVoice = new Audio("./quizvoice.mp3");
-                quizVoice.play().catch(() => {});
-            } catch (error) {
-                // ignore
-            }
+            playSplashAudio("quizvoice.mp3");
             await update(gameRef, {
                 status: `quiz-${questionIndex + 1}-intro`,
                 phase: "quiz-intro",
@@ -3990,12 +4034,7 @@
             currentPhase = "quiz";
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("quiz-screen").classList.add("active");
-            try {
-                const quizSfx = new Audio("./quizsfx.mp3");
-                quizSfx.play().catch(() => {});
-            } catch (error) {
-                // ignore
-            }
+            playSplashAudio("quizsfx.mp3", QUIZ_SFX_GAIN);
             document.getElementById("quiz-title").innerText = currentQuizQuestionIndex === 1 ? "Emoji Quiz" : "Pop Quiz";
             document.getElementById("quiz-question-text").innerText = currentQuizQuestion.text;
             const questionImage = document.getElementById("quiz-question-image");
@@ -4910,7 +4949,7 @@
             spyfallDrumrollActive = true;
             syncBackgroundMusic("spyfall-results");
             showSpyfallResultScreen("spyfall-drumroll-screen");
-            playSpyfallDrumroll();
+            const drumrollFinished = playSpyfallDrumroll();
             const result = await runTransaction(gameRef, (gameData) => {
                 if (gameData?.phase !== "spyfall-vote" || !gameData.spyfallVotingEnded) return;
                 const players = { ...(gameData.players || {}) };
@@ -4942,6 +4981,7 @@
                 };
             }, { applyLocally: false });
             if (!result.committed) {
+                stopSpyfallDrumroll();
                 spyfallDrumrollActive = false;
                 currentPhase = "spyfall-vote";
                 showSpyfallResultScreen("round-two-placeholder-screen");
@@ -4977,7 +5017,7 @@
             document.getElementById("spyfall-next-round-action").onclick = () => startPopQuiz(1);
             document.getElementById("spyfall-play-again-action").onclick = playAgainSpyfall;
             document.getElementById("spyfall-host-vote-count").hidden = true;
-            await new Promise((resolve) => window.setTimeout(resolve, 2800));
+            await drumrollFinished;
             spyfallDrumrollActive = false;
             syncBackgroundMusic(currentPhase);
             if (currentPhase !== "spyfall-results") return;
