@@ -2591,6 +2591,7 @@
         let currentTask = "";
         let fuseStartedAt = 0;
         let bombRoundStartedAt = 0;
+        let bombFuseLastTickAt = 0;
         let bombUnlockedAt = 0;
         let bombPassInProgress = false;
         let currentPhase = "waiting";
@@ -2751,6 +2752,7 @@
         const LOW_MUSIC_VOLUME = 0.1;
         const SPLASH_AUDIO_GAIN = 2;
         const ROUND_SOUND_GAIN = 3;
+        const SETSUMEI_GAIN = 3;
         const QUIZ_SFX_GAIN = 1.4;
         const SPYFALL_DRUMROLL_MS = 2500;
         const lowMusicPhases = new Set([
@@ -3134,8 +3136,8 @@
             if (gameData.phase === "bomb") {
                 const savedRoundStart = Number(gameData.bombRoundStartedAt || 0);
                 const savedHolderStart = Number(gameData.bombHolderStartedAt || gameData.handoffTime || 0);
-                if (savedRoundStart) bombRoundStartedAt = savedRoundStart;
-                if (savedHolderStart) fuseStartedAt = savedHolderStart;
+                if (enteringBombPhase && savedRoundStart) bombRoundStartedAt = savedRoundStart;
+                if (enteringBombPhase && savedHolderStart) fuseStartedAt = savedHolderStart;
                 bombUnlockedAt = Number(gameData.bombUnlockedAt || 0);
                 if (gameData.bombLocked === false && !bombUnlockedAt) {
                     bombUnlockedAt = Number(gameData.handoffTime || Date.now());
@@ -3149,6 +3151,7 @@
                     hostPlayers = gameData.players || {};
                     fuseStartedAt = fuseStartedAt || Date.now();
                     bombRoundStartedAt = bombRoundStartedAt || fuseStartedAt;
+                    bombFuseLastTickAt = 0;
                     document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
                     document.getElementById("task-screen").classList.add("active");
                     document.body.classList.add("bomb-round-active");
@@ -3216,7 +3219,7 @@
                     instructionsSplashSoundTimeout = window.setTimeout(() => {
                         instructionsSplashSoundTimeout = null;
                         if (currentPhase !== "game-instructions-splash") return;
-                        playSplashAudio("setsumei.mp3");
+                        playSplashAudio("setsumei.mp3", SETSUMEI_GAIN);
                     }, soundDelay);
                 }
                 clearTimeout(gameInstructionsSplashTimeout);
@@ -3345,7 +3348,9 @@
             if (!pausableGamePhases.has(currentGameData.phase)) return;
             const paused = !Boolean(currentGameData.paused);
             if (paused) {
-                await update(gameRef, { paused: true, pausedAt: Date.now() });
+                const pauseUpdates = { paused: true, pausedAt: Date.now() };
+                if (currentPhase === "bomb") pauseUpdates.bombRoundStartedAt = bombRoundStartedAt;
+                await update(gameRef, pauseUpdates);
                 setPauseButtonState(true);
                 clearInterval(countdownInterval);
                 clearInterval(quizCountdownInterval);
@@ -3388,6 +3393,7 @@
             if (currentPhase === "quiz-intro") {
                 ensureQuizIntroTimer(quizIntroEndsAt);
             } else if (currentPhase === "bomb") {
+                bombFuseLastTickAt = Date.now();
                 updateHostFuse();
                 clearInterval(countdownInterval);
                 countdownInterval = setInterval(updateHostFuse, 250);
@@ -3721,6 +3727,7 @@
             bombLocked = true;
             fuseStartedAt = Date.now();
             bombRoundStartedAt = fuseStartedAt;
+            bombFuseLastTickAt = fuseStartedAt;
             bombUnlockedAt = 0;
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("round-one-intro-screen").classList.remove("active");
@@ -3768,6 +3775,7 @@
             await update(gameRef, {
                 bombLocked: false,
                 bombUnlockedAt,
+                bombRoundStartedAt,
                 bombHolderStartedAt: fuseStartedAt,
                 handoffTime: bombUnlockedAt
             });
@@ -3844,6 +3852,7 @@
                         task: nextTask,
                         taskQueue,
                         bombLocked: true,
+                        bombRoundStartedAt,
                         bombHolderStartedAt: nextHolderStartedAt,
                         bombUnlockedAt: null,
                         handoffTime: nextHolderStartedAt,
@@ -3914,6 +3923,12 @@
 
         function updateHostFuse() {
             if (currentPhase !== "bomb") return;
+            const now = Date.now();
+            if (bombFuseLastTickAt) {
+                const delta = Math.max(0, now - bombFuseLastTickAt);
+                if (bombLocked) bombRoundStartedAt += delta / 2;
+            }
+            bombFuseLastTickAt = now;
             const roundElapsedSeconds = getBombRoundElapsedSeconds();
             const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
             const holdTimeEl = document.getElementById("bomb-hold-time");
