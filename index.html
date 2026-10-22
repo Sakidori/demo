@@ -80,10 +80,6 @@
             z-index: 1;
         }
 
-        .screen:not(.active) {
-            display: none !important;
-        }
-
         .active { display: block; }
 
         h1, h2, h3 {
@@ -1332,7 +1328,7 @@
         }
 
         #round-two-placeholder-screen:not(.active) {
-            display: none !important;
+            display: none;
         }
 
         #round-two-placeholder-screen .results-badge {
@@ -2490,9 +2486,9 @@
     </div>
 
     <div id="bonus-round-screen" class="screen">
-        <div class="results-badge">Final Round · Live</div>
+        <div class="results-badge">Final Round</div>
         <h1>Bonus Round</h1>
-        <p>Push your team button as many times as you can.</p>
+        <p>Tap your device as many times as you can!</p>
         <p id="bonus-round-timer">0:30</p>
         <p id="bonus-round-status">The round is live.</p>
         <button id="bonus-round-end-button" type="button" onclick="endBonusRound()">End Bonus Round</button>
@@ -2818,15 +2814,6 @@
 
         function playBonusFanfare() {
             return playBonusIntroSound("fanfare.mp3");
-        }
-
-        function playRoundSound(source) {
-            try {
-                const sound = new Audio(`./${source}`);
-                sound.play().catch(() => {});
-            } catch (error) {
-                // ignore
-            }
         }
 
         function playBombUnlockSound() {
@@ -3378,7 +3365,6 @@
             currentPhase = "game-splash";
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("round-one-intro-screen").classList.add("active");
-            playRoundSound("round1.mp3");
             update(gameRef, {
                 status: "bomb-game-splash",
                 phase: "game-splash",
@@ -3952,12 +3938,6 @@
             quizIntroEndsAt = Date.now() + 2400;
             document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             document.getElementById("quiz-splash").hidden = false;
-            try {
-                const quizVoice = new Audio("./quizvoice.mp3");
-                quizVoice.play().catch(() => {});
-            } catch (error) {
-                // ignore
-            }
             await update(gameRef, {
                 status: `quiz-${questionIndex + 1}-intro`,
                 phase: "quiz-intro",
@@ -3990,12 +3970,6 @@
             currentPhase = "quiz";
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("quiz-screen").classList.add("active");
-            try {
-                const quizSfx = new Audio("./quizsfx.mp3");
-                quizSfx.play().catch(() => {});
-            } catch (error) {
-                // ignore
-            }
             document.getElementById("quiz-title").innerText = currentQuizQuestionIndex === 1 ? "Emoji Quiz" : "Pop Quiz";
             document.getElementById("quiz-question-text").innerText = currentQuizQuestion.text;
             const questionImage = document.getElementById("quiz-question-image");
@@ -4310,7 +4284,6 @@
                 };
                 currentPhase = "bonus-intro";
                 document.getElementById("bonus-intro-screen").classList.add("active");
-                playRoundSound("bonusround.mp3");
                 await update(gameRef, startData);
             } catch (error) {
                 console.error("Could not start Bonus Round", error);
@@ -4533,7 +4506,6 @@
             action.hidden = false;
             action.disabled = false;
             action.onclick = startSpyfall;
-            playRoundSound("round2.mp3");
             await update(gameRef, {
                 status: "round-2-placeholder",
                 phase: "round-2-placeholder",
