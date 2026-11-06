@@ -1,22 +1,22 @@
 export const TEAM_COLORS = [
     { id: "red", name: "Red", hex: "#e11d48" },
+    { id: "flamingo", name: "Flamingo", hex: "#ff1493" },
     { id: "orange", name: "Orange", hex: "#ea580c" },
-    { id: "amber", name: "Amber", hex: "#ca8a04" },
+    { id: "yellow", name: "Yellow", hex: "#eab308" },
     { id: "lime", name: "Lime", hex: "#65a30d" },
-    { id: "green", name: "Green", hex: "#16a34a" },
     { id: "emerald", name: "Emerald", hex: "#059669" },
     { id: "teal", name: "Teal", hex: "#0d9488" },
-    { id: "cyan", name: "Cyan", hex: "#0891b2" },
-    { id: "sky", name: "Sky", hex: "#0284c7" },
+    { id: "sky", name: "Sky", hex: "#7dd3fc" },
     { id: "blue", name: "Blue", hex: "#2563eb" },
-    { id: "indigo", name: "Indigo", hex: "#4f46e5" },
-    { id: "violet", name: "Violet", hex: "#7c3aed" },
-    { id: "purple", name: "Purple", hex: "#9333ea" },
-    { id: "fuchsia", name: "Fuchsia", hex: "#c026d3" },
-    { id: "pink", name: "Pink", hex: "#db2777" },
-    { id: "slate", name: "Slate", hex: "#475569" },
-    { id: "silver", name: "Silver", hex: "#cbd5e1" },
-    { id: "brown", name: "Brown", hex: "#92400e" }
+    { id: "denim", name: "Denim", hex: "#1e3a8a" },
+    { id: "purple", name: "Purple", hex: "#6f2da8" },
+    { id: "peach", name: "Peach", hex: "#ffb38a" },
+    { id: "lavender", name: "Lavender", hex: "#a78bfa" },
+    { id: "pink", name: "Pink", hex: "#f9a8d4" },
+    { id: "brown", name: "Brown", hex: "#92400e" },
+    { id: "ash", name: "Ash", hex: "#9ca3af" },
+    { id: "carbon", name: "Carbon", hex: "#111827" },
+    { id: "snow", name: "Snow", hex: "#f8fafc" }
 ];
 
 export const MAX_PLAYERS = 18;

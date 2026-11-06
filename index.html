@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Game Host - Quiz Master</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --bg: #0b1020;
@@ -82,6 +81,24 @@
 
         .screen:not(.active) {
             display: none !important;
+        }
+
+        body.spyfall-host-active #round-two-placeholder-screen.active,
+        body.spyfall-host-active #spyfall-spy-results-screen.active,
+        body.spyfall-host-active #spyfall-score-results-screen.active,
+        body.spyfall-host-active #spyfall-standings-screen.active {
+            max-height: 100dvh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        body.spyfall-host-active #spyfall-score-results-screen.active,
+        body.spyfall-host-active #spyfall-standings-screen.active {
+            padding: 12px;
+        }
+
+        body.spyfall-host-active #round-two-placeholder-screen.active:not(.spyfall-splash):not(.spyfall-role-reveal) {
+            justify-content: flex-start;
         }
 
         .active { display: block; }
@@ -408,6 +425,10 @@
         }
 
         .lobby-actions {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-top: 22px;
         }
 
@@ -1409,17 +1430,24 @@
         }
 
         #spyfall-host-votes {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
             width: min(520px, 100%);
-            margin: 14px auto;
+            margin: 8px auto;
+            padding: 0;
+            list-style: none;
         }
 
         #spyfall-host-votes li {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
             justify-content: space-between;
             width: 100%;
-            margin: 6px 0;
+            min-width: 0;
+            margin: 0;
+            padding: 6px 8px;
         }
 
         #spyfall-host-votes .avatar-chip {
@@ -1431,23 +1459,63 @@
 
         #spyfall-host-votes .player-name {
             flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+            font-size: 0.9rem;
         }
 
-        #spyfall-host-scores {
+        #round-two-placeholder-screen:has(#spyfall-host-votes:not([hidden])) #spyfall-host-timer {
+            font-size: 2rem;
+        }
+
+        #round-two-placeholder-screen:has(#spyfall-host-votes:not([hidden])) #spyfall-host-votes {
+            row-gap: 4px;
+            margin: 4px auto;
+        }
+
+        #round-two-placeholder-screen:has(#spyfall-host-votes:not([hidden])) #spyfall-host-votes li {
+            padding-block: 3px;
+        }
+
+        #round-two-placeholder-screen:has(#spyfall-host-votes:not([hidden])) #spyfall-host-votes .avatar-chip {
+            flex-basis: 24px;
+            width: 24px;
+            height: 24px;
+            font-size: 0.85rem;
+        }
+
+        #spyfall-host-scores,
+        #spyfall-round-score-list,
+        #spyfall-final-standings-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
             width: min(520px, 100%);
-            margin: 14px auto;
+            margin: 8px auto;
+            padding: 0;
+            list-style: none;
         }
 
-        #spyfall-host-scores li {
+        #spyfall-host-votes[hidden],
+        #spyfall-host-scores[hidden],
+        #spyfall-round-score-list[hidden],
+        #spyfall-final-standings-list[hidden] {
+            display: none;
+        }
+
+        #spyfall-host-scores li,
+        #spyfall-round-score-list li,
+        #spyfall-final-standings-list li {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin: 6px 0;
+            min-width: 0;
+            margin: 0;
+            padding: 6px 8px;
+            gap: 6px;
         }
 
-        #spyfall-spy-results-list,
-        #spyfall-round-score-list,
-        #spyfall-final-standings-list {
+        #spyfall-spy-results-list {
             width: min(520px, 100%);
             margin: 14px auto;
         }
@@ -1609,6 +1677,12 @@
             justify-content: space-between;
             width: 100%;
             margin: 6px 0;
+        }
+
+        #spyfall-round-score-list li,
+        #spyfall-final-standings-list li {
+            margin: 0;
+            padding-block: 4px;
         }
 
         #spyfall-final-standings-list li {
@@ -2156,7 +2230,8 @@
             gap: 8px;
         }
 
-        .host-player-controls button {
+        .host-player-controls button,
+        .host-player-controls a {
             display: grid;
             place-items: center;
             width: 42px;
@@ -2166,6 +2241,11 @@
             border-radius: 8px;
             background: rgba(18,26,42,0.96);
             font-size: 1.2rem;
+        }
+
+        .host-player-controls a {
+            color: var(--text);
+            text-decoration: none;
         }
 
         .host-player-controls button[aria-pressed="true"] {
@@ -2178,6 +2258,83 @@
             background: rgba(255,209,102,0.18);
             color: #ffd166;
             box-shadow: 0 0 14px rgba(255,209,102,0.22);
+        }
+
+        #bonus-button-style-toggle[hidden] { display: none; }
+
+        #demo-player-panel[hidden] { display: none; }
+
+        #demo-player-panel {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 50;
+            display: grid;
+            grid-template-rows: auto auto;
+            width: min(260px, calc(100vw - 24px));
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(8,12,22,0.94);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+        }
+
+        #demo-player-panel h2 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 0 8px;
+            font-size: 0.9rem;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #demo-player-panel h2:active { cursor: grabbing; }
+
+        #demo-player-panel h2:focus-visible {
+            outline: 2px solid var(--primary-2);
+            outline-offset: 3px;
+            border-radius: 3px;
+        }
+
+        #demo-player-panel h2 span {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        #demo-player-frame-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 390 / 844;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: #0b1020;
+        }
+
+        #demo-player-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 390px;
+            height: 844px;
+            border: 0;
+            transform: scale(var(--demo-preview-scale, 1));
+            transform-origin: top left;
+            pointer-events: none;
+        }
+
+        @media (max-width: 760px) {
+            #demo-player-panel {
+                right: 10px;
+                bottom: 10px;
+                width: min(220px, calc(100vw - 20px));
+                padding: 8px;
+            }
+
+            #demo-player-frame-wrap { border-radius: 15px; }
         }
 
         @keyframes fadeInUp {
@@ -2280,6 +2437,7 @@
     </style>
 </head>
 <body>
+    <div id="demo-host-view">
 
     <div class="host-top-controls" role="group" aria-label="Music controls">
         <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on" disabled>
@@ -2289,6 +2447,7 @@
     <div class="host-player-controls" role="group" aria-label="Game controls">
         <button id="host-attention-btn" type="button" title="Play alert sound and toggle pause" aria-label="Play alert sound and toggle pause">📣</button>
         <button id="bonus-button-style-toggle" type="button" aria-label="Use classic Bonus button" title="Use classic Bonus button" aria-pressed="false">🔘</button>
+        <a id="offline-demo-toggle" href="?demo=1" title="Start offline demo mode" aria-label="Start offline demo mode">🎭</a>
         <button id="pause-game-btn" type="button" onclick="togglePauseGame()" aria-label="Pause game" title="Pause game" aria-pressed="false" hidden>
             <span id="pause-game-icon" aria-hidden="true">&#9208;</span>
         </button>
@@ -2299,8 +2458,9 @@
         <p class="host-lobby-instructions"><strong>Only ONE PERSON from your BLOCK GROUP</strong> should scan the QR code. <br> You will use their smartphone to play. <br> Choose a team color and mascot, then come to the front to receive your team headbands.<span class="host-lobby-final-warning">[You can't change your selection after you get your headbands.]</span></p>
         <div class="lobby-layout">
             <section class="lobby-join" aria-label="Join the game">
-                <h1>Scan to Join Game</h1>
+                <h1 id="lobby-join-title">Scan to Join Game</h1>
                 <div id="qrcode"></div>
+                <p id="demo-mode-notice" hidden>Running locally with simulated players. No internet connection is needed.</p>
             </section>
             <section class="lobby-roster" aria-labelledby="lobby-roster-title">
                 <div class="roster-heading">
@@ -2523,11 +2683,19 @@
         <div class="quiz-splash-light"></div>
         <h1 class="instructions-splash-title"><span>説</span><span>明</span></h1>
     </div>
+    </div>
 
-    <!-- Firebase SDKs -->
+    <aside id="demo-player-panel" aria-label="Simulated player view" hidden>
+        <h2 id="demo-player-drag-handle" tabindex="0" aria-label="Move player preview (use arrow keys)">
+            Player view <span>Fox Demo</span>
+        </h2>
+        <div id="demo-player-frame-wrap">
+            <iframe id="demo-player-frame" title="Simulated player screen"></iframe>
+        </div>
+    </aside>
+
+    <!-- Multiplayer host and offline demo -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { createFunkyMusic } from "./music.js";
         import {
             BOMB_PASS_AUTO_SECONDS,
@@ -2542,6 +2710,104 @@
             shuffle
         } from "./game-data.js";
 
+        const demoMode = new URLSearchParams(window.location.search).get("demo") === "1";
+        const demoPlayerPanel = document.getElementById("demo-player-panel");
+        const demoPlayerFrame = document.getElementById("demo-player-frame");
+        const demoPlayerFrameWrap = document.getElementById("demo-player-frame-wrap");
+        const demoPlayerDragHandle = document.getElementById("demo-player-drag-handle");
+        demoPlayerPanel.hidden = !demoMode;
+        const resizeDemoPlayerPreview = () => {
+            const previewWidth = demoPlayerFrameWrap.clientWidth;
+            if (previewWidth) {
+                demoPlayerFrameWrap.style.setProperty("--demo-preview-scale", String(previewWidth / 390));
+            }
+        };
+        new ResizeObserver(resizeDemoPlayerPreview).observe(demoPlayerFrameWrap);
+        resizeDemoPlayerPreview();
+        let demoPlayerDrag = null;
+        const moveDemoPlayerPanel = (left, top) => {
+            const maxLeft = Math.max(0, window.innerWidth - demoPlayerPanel.offsetWidth);
+            const maxTop = Math.max(0, window.innerHeight - demoPlayerPanel.offsetHeight);
+            demoPlayerPanel.style.left = `${Math.max(0, Math.min(left, maxLeft))}px`;
+            demoPlayerPanel.style.top = `${Math.max(0, Math.min(top, maxTop))}px`;
+            demoPlayerPanel.style.right = "auto";
+            demoPlayerPanel.style.bottom = "auto";
+        };
+        demoPlayerDragHandle.addEventListener("pointerdown", (event) => {
+            if (event.button !== 0) return;
+            const bounds = demoPlayerPanel.getBoundingClientRect();
+            demoPlayerDrag = {
+                pointerId: event.pointerId,
+                offsetX: event.clientX - bounds.left,
+                offsetY: event.clientY - bounds.top
+            };
+            demoPlayerDragHandle.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+        demoPlayerDragHandle.addEventListener("pointermove", (event) => {
+            if (!demoPlayerDrag || demoPlayerDrag.pointerId !== event.pointerId) return;
+            moveDemoPlayerPanel(
+                event.clientX - demoPlayerDrag.offsetX,
+                event.clientY - demoPlayerDrag.offsetY
+            );
+        });
+        const stopDemoPlayerDrag = (event) => {
+            if (!demoPlayerDrag || demoPlayerDrag.pointerId !== event.pointerId) return;
+            demoPlayerDrag = null;
+        };
+        demoPlayerDragHandle.addEventListener("pointerup", stopDemoPlayerDrag);
+        demoPlayerDragHandle.addEventListener("pointercancel", stopDemoPlayerDrag);
+        demoPlayerDragHandle.addEventListener("keydown", (event) => {
+            const directions = {
+                ArrowUp: [0, -1],
+                ArrowDown: [0, 1],
+                ArrowLeft: [-1, 0],
+                ArrowRight: [1, 0]
+            };
+            const direction = directions[event.key];
+            if (!direction) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const bounds = demoPlayerPanel.getBoundingClientRect();
+            const distance = event.shiftKey ? 5 : 20;
+            moveDemoPlayerPanel(
+                bounds.left + direction[0] * distance,
+                bounds.top + direction[1] * distance
+            );
+        });
+        window.addEventListener("resize", () => {
+            if (!demoPlayerPanel.hidden && demoPlayerPanel.style.left) {
+                const bounds = demoPlayerPanel.getBoundingClientRect();
+                moveDemoPlayerPanel(bounds.left, bounds.top);
+            }
+        });
+        const demoModeToggle = document.getElementById("offline-demo-toggle");
+        const demoModeUrl = new URL(window.location.href);
+        if (demoMode) demoModeUrl.searchParams.delete("demo");
+        else demoModeUrl.searchParams.set("demo", "1");
+        demoModeToggle.href = `${demoModeUrl.pathname}${demoModeUrl.search}${demoModeUrl.hash}`;
+        demoModeToggle.setAttribute("aria-label", demoMode ? "Exit offline demo mode" : "Start offline demo mode");
+        demoModeToggle.title = demoMode ? "Exit offline demo mode" : "Start offline demo mode";
+        if (!demoMode && !window.QRCode) {
+            const qrCodeScript = document.createElement("script");
+            qrCodeScript.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+            await new Promise((resolve) => {
+                qrCodeScript.addEventListener("load", resolve, { once: true });
+                qrCodeScript.addEventListener("error", () => {
+                    console.error("Could not load the QR code library.");
+                    resolve();
+                }, { once: true });
+                document.head.append(qrCodeScript);
+            });
+        }
+        const firebaseModules = demoMode
+            ? await import("./demo-database.js")
+            : await Promise.all([
+                import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"),
+                import("https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js")
+            ]).then(([appModule, databaseModule]) => ({ ...appModule, ...databaseModule }));
+        const { initializeApp, getDatabase, ref, set, onValue, update, get, runTransaction } = firebaseModules;
+
         // TODO: Replace with your actual Firebase config from Step 1
         const firebaseConfig = {
             apiKey: "AIzaSyDRg8ZJ4eFlHsbU-mvZGkeET49WZjbW4JQ",
@@ -2553,13 +2819,19 @@
             appId: "1:251212598778:web:8e12a0d06b6191fe6ae843"
         };
 
-               const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const app = demoMode ? null : initializeApp(firebaseConfig);
+        const db = demoMode ? getDatabase() : getDatabase(app);
 
         // QR code points directly to the player page without any room codes.
         // Use a relative URL so it also works when opened via file:// during local testing.
         const playerUrl = new URL("player.html", window.location.href).href;
-        new QRCode(document.getElementById("qrcode"), playerUrl);
+        if (!demoMode && window.QRCode) new window.QRCode(document.getElementById("qrcode"), playerUrl);
+        if (demoMode) {
+            document.querySelector(".host-lobby-instructions").innerText = "Offline demo mode is active. Fake players participate in each round; use the host controls to move the game along.";
+            document.getElementById("lobby-join-title").innerText = "Scan to Join Game";
+            document.getElementById("qrcode").hidden = true;
+            document.getElementById("demo-mode-notice").hidden = false;
+        }
 
         const questions = [
             { text: "Which JHS in Ichikawa did Atsuko Maeda (AKB48) attend?", image: "Maeda.webp", imageAlt: "Atsuko Maeda performing with a microphone", choices: ["1中", "7中", "東国分", "8中", "下貝塚", "妙典"], answerIndex: 1 },
@@ -2667,6 +2939,42 @@
 
         // Global game database reference
         const gameRef = ref(db, `game`);
+        if (demoMode) {
+            const players = Object.fromEntries(TEAM_COLORS.slice(0, 16).map((team, index) => {
+                const animal = TEAM_ANIMALS[index];
+                const id = `demo-player-${index + 1}`;
+                return [id, {
+                    name: `${animal.name} Demo`,
+                    teamId: team.id,
+                    teamName: team.name,
+                    teamColor: team.hex,
+                    avatar: animal.avatar,
+                    score: 0
+                }];
+            }));
+            await set(gameRef, {
+                status: "waiting",
+                phase: "waiting",
+                round: 1,
+                players,
+                teams: {},
+                bonusButtonStyle: "image-sequence"
+            });
+        }
+        function syncDemoPlayerView(gameData) {
+            if (!demoMode || !demoPlayerFrame.contentWindow || !gameData) return;
+            demoPlayerFrame.contentWindow.postMessage({
+                type: "demo-player-state",
+                game: gameData
+            }, "*");
+        }
+        if (demoMode) {
+            demoPlayerFrame.addEventListener("load", () => {
+                get(gameRef).then((snapshot) => syncDemoPlayerView(snapshot.val()))
+                    .catch((error) => console.error("Could not load the demo player view.", error));
+            });
+            demoPlayerFrame.src = new URL("player.html?demo-preview=1&playerId=demo-player-1", window.location.href).href;
+        }
         const spyfallLocationSelect = document.getElementById("spyfall-location-select");
         const spyfallLocationControl = document.getElementById("spyfall-location-control");
         const bonusButtonStyleToggle = document.getElementById("bonus-button-style-toggle");
@@ -2687,15 +2995,16 @@
             await window.selectSpyfallBackupLocation(spyfallLocationSelect.value);
         });
         function syncBonusButtonStyleToggle(phase = currentPhase) {
+            bonusButtonStyleToggle.hidden = demoMode;
             const classicMode = bonusButtonStyle === "classic";
             const label = classicMode ? "Use image Bonus button" : "Use classic Bonus button";
             bonusButtonStyleToggle.setAttribute("aria-pressed", String(classicMode));
             bonusButtonStyleToggle.setAttribute("aria-label", label);
             bonusButtonStyleToggle.title = label;
-            bonusButtonStyleToggle.disabled = phase !== "waiting";
+            bonusButtonStyleToggle.disabled = demoMode || phase !== "waiting";
         }
         bonusButtonStyleToggle.addEventListener("click", () => {
-            if (currentPhase !== "waiting") return;
+            if (demoMode || currentPhase !== "waiting") return;
             bonusButtonStyle = bonusButtonStyle === "image-sequence" ? "classic" : "image-sequence";
             syncBonusButtonStyleToggle();
             update(gameRef, { bonusButtonStyle }).catch((error) => {
@@ -2753,7 +3062,9 @@
         const SPLASH_AUDIO_GAIN = 2;
         const ROUND_SOUND_GAIN = 3;
         const SETSUMEI_GAIN = 3;
+        const START_SOUND_GAIN = 3;
         const QUIZ_SFX_GAIN = 1.4;
+        const BUTTON_SOUND_GAIN = 2;
         const SPYFALL_DRUMROLL_MS = 2500;
         const lowMusicPhases = new Set([
             "game-splash", "bonus-intro", "quiz-intro", "game-instructions-splash"
@@ -2811,6 +3122,40 @@
             manualMusicOverride = !funkyMusic.isPlaying;
             syncBackgroundMusic(currentMusicPhase);
         });
+
+        const buttonsWithOwnSound = new Set([
+            "music-toggle",
+            "host-attention-btn",
+            "game-instructions-start",
+            "unlock-bomb-btn",
+            "force-pass-btn",
+            "skip-round-btn",
+            "round-result-action",
+            "spyfall-host-action",
+            "spyfall-next-round-action",
+            "spyfall-play-again-action"
+        ]);
+
+        function isBackButton(button) {
+            return button.dataset.sfx === "back" || /\b(back|reset)\b/i.test(button.textContent || "");
+        }
+
+        function playBackSound() {
+            playUiTone(330, 0.09, "sine", 0.06);
+            window.setTimeout(() => playUiTone(220, 0.18, "sine", 0.05), 80);
+        }
+
+        document.addEventListener("click", (event) => {
+            const button = event.target.closest?.("button");
+            if (!button || button.disabled) return;
+            if (button.closest("#bonus-standings-screen")) return;
+            if (isBackButton(button)) {
+                playBackSound();
+                return;
+            }
+            if (buttonsWithOwnSound.has(button.id)) return;
+            void playSplashAudio("beep.mp3", BUTTON_SOUND_GAIN);
+        }, true);
 
         function getAudioContext() {
             const AudioCtor = window.AudioContext || window.webkitAudioContext;
@@ -3077,8 +3422,7 @@
                 removeBtn.setAttribute("aria-label", `Remove ${player.name}`);
                 removeBtn.addEventListener("click", async (event) => {
                     event.stopPropagation();
-                    if (currentPhase !== "waiting") return;
-                    await set(ref(db, `game/players/${id}`), null);
+                    await window.removePlayer(id);
                 });
                 li.append(avatar, name, removeBtn);
                 listEl.appendChild(li);
@@ -3119,18 +3463,150 @@
         const playersRef = ref(db, `game/players`);
         window.removePlayer = async function(playerId) {
             if (!playerId || currentPhase !== "waiting") return;
-            await set(ref(db, `game/players/${playerId}`), null);
+            try {
+                const result = await runTransaction(gameRef, (gameData) => {
+                    if (!gameData || gameData.phase !== "waiting") return;
+                    const players = { ...(gameData.players || {}) };
+                    const player = players[playerId];
+                    if (!player) return;
+                    delete players[playerId];
+
+                    const teams = Object.fromEntries(
+                        Object.entries(gameData.teams || {}).filter(([teamId]) =>
+                            Object.values(players).some((remainingPlayer) => remainingPlayer?.teamId === teamId)
+                        )
+                    );
+                    return { ...gameData, players, teams };
+                }, { applyLocally: false });
+                if (!result.committed && currentPhase === "waiting") {
+                    alert("The player could not be removed. The lobby may have changed; please try again.");
+                }
+            } catch (error) {
+                console.error("Could not remove the player from the lobby.", error);
+                alert("Could not remove the player. Please try again.");
+            }
         };
         onValue(playersRef, (snapshot) => {
             hostPlayers = snapshot.val() || {};
             renderHostPlayerLists(hostPlayers);
         });
 
+        let demoSimulationKey = "";
+        let demoBombPassKey = "";
+        let demoBonusTapInterval = null;
+        function scheduleDemoAction(key, callback, delay) {
+            if (demoSimulationKey === key) return;
+            demoSimulationKey = key;
+            window.setTimeout(() => {
+                try {
+                    callback();
+                } catch (error) {
+                    console.error("Could not run a simulated player action.", error);
+                }
+            }, delay);
+        }
+
+        function simulateDemoPlayers(gameData) {
+            if (!demoMode) return;
+
+            if (gameData.phase === "bomb") {
+                const roundKey = `bomb-round-${gameData.round}`;
+                const passKey = `${roundKey}-${gameData.activePlayerId}`;
+                if (gameData.activePlayerId && gameData.bombLocked === false && demoBombPassKey !== passKey) {
+                    demoBombPassKey = passKey;
+                    window.setTimeout(() => {
+                        if (
+                            currentPhase === "bomb"
+                            && currentBombRound === Number(gameData.round)
+                            && activePlayerId === gameData.activePlayerId
+                            && !bombLocked
+                        ) {
+                            void passBombToPlayer("passed");
+                        }
+                    }, 1800);
+                }
+                return;
+            }
+
+            if (gameData.phase === "quiz") {
+                const key = `quiz-${gameData.quizQuestionIndex}-${gameData.quizStartedAt}`;
+                scheduleDemoAction(key, () => {
+                    const players = Object.entries(gameData.players || {});
+                    const answers = {};
+                    players.forEach(([id], index) => {
+                        const answer = { answeredAt: Date.now() };
+                        if (currentQuizQuestion?.choices) {
+                            answer.choiceIndex = index % 2 === 0
+                                ? currentQuizQuestion.answerIndex
+                                : (currentQuizQuestion.answerIndex + 1) % currentQuizQuestion.choices.length;
+                        } else {
+                            answer.answerText = index % 2 === 0 ? currentQuizQuestion?.answer : "Demo answer";
+                        }
+                        answers[id] = answer;
+                    });
+                    void update(gameRef, { quizAnswers: answers })
+                        .catch((error) => console.error("Could not submit simulated quiz answers.", error));
+                }, 1200);
+                return;
+            }
+
+            if (gameData.phase === "spyfall-vote") {
+                if (gameData.spyfallVotingStarted && !gameData.spyfallVotingEnded) {
+                    scheduleDemoAction(`spyfall-submit-votes-${gameData.spyfallVoteEndsAt}`, () => {
+                        const spyId = Array.from(spyfallSpyIds)[0];
+                        const votes = Object.fromEntries(
+                            Object.keys(gameData.players || {}).map((id) => [id, spyId ? [spyId] : []])
+                        );
+                        void update(gameRef, { spyfallVotes: votes }).then(() => {
+                            document.getElementById("spyfall-host-status").innerText = "Demo teams have voted. Reveal results when you are ready.";
+                        }).catch((error) => console.error("Could not submit simulated Spyfall votes.", error));
+                    }, 1200);
+                }
+                return;
+            }
+
+            if (gameData.phase === "bonus-round") {
+                const key = `bonus-taps-${gameData.bonusRoundId}`;
+                if (demoSimulationKey === key) return;
+                demoSimulationKey = key;
+                clearInterval(demoBonusTapInterval);
+                demoBonusTapInterval = window.setInterval(async () => {
+                    if (currentPhase !== "bonus-round") {
+                        clearInterval(demoBonusTapInterval);
+                        demoBonusTapInterval = null;
+                        return;
+                    }
+                    try {
+                        const latest = (await get(gameRef)).val() || {};
+                        const tapCounts = { ...(latest.bonusTapCounts || {}) };
+                        const teamIds = [...new Set(Object.values(latest.players || {}).map((player) => player?.teamId).filter(Boolean))];
+                        teamIds.forEach((teamId) => {
+                            tapCounts[teamId] = (Number(tapCounts[teamId]) || 0) + 4;
+                        });
+                        await update(gameRef, {
+                            bonusTapCounts: tapCounts,
+                            bonusTapFlushes: Object.fromEntries(teamIds.map((teamId) => [teamId, true]))
+                        });
+                    } catch (error) {
+                        console.error("Could not record simulated Bonus Round taps.", error);
+                    }
+                }, 1400);
+            }
+        }
+
         onValue(gameRef, (snapshot) => {
             const gameData = snapshot.val();
             if (!gameData) return;
+            if (demoMode && gameData.bonusButtonStyle !== "image-sequence") {
+                gameData.bonusButtonStyle = "image-sequence";
+                update(gameRef, { bonusButtonStyle: "image-sequence" }).catch((error) => {
+                    console.error("Could not set the demo Bonus button style.", error);
+                });
+            }
+            syncDemoPlayerView(gameData);
+            simulateDemoPlayers(gameData);
             syncBackgroundMusic(gameData.phase);
-            bonusButtonStyle = gameData.bonusButtonStyle === "classic" ? "classic" : "image-sequence";
+            bonusButtonStyle = demoMode ? "image-sequence" : gameData.bonusButtonStyle === "classic" ? "classic" : "image-sequence";
             syncBonusButtonStyleToggle(gameData.phase);
             const enteringBombPhase = gameData.phase === "bomb" && currentPhase !== "bomb";
             if (gameData.phase === "bomb") {
@@ -3259,7 +3735,7 @@
                 document.getElementById("bonus-round-screen").classList.remove("active");
                 document.getElementById("bonus-intro-screen").classList.add("active");
                 const startedAt = Number(gameData.bonusRoundIntroStartedAt || Date.now());
-                showBonusRoundIntro(startedAt, gameData.bonusButtonStyle);
+                showBonusRoundIntro(startedAt, demoMode ? "image-sequence" : gameData.bonusButtonStyle);
                 clearTimeout(bonusIntroTransitionTimeout);
                 const remaining = Math.max(0, startedAt + BONUS_INTRO_DURATION_MS - Date.now());
                 bonusIntroTransitionTimeout = setTimeout(() => finishBonusRoundIntro(startedAt), remaining);
@@ -3282,7 +3758,7 @@
                     document.getElementById("bonus-round-status").innerText = "The round is live.";
                 }
                 updateBonusRoundTimer(gameData);
-                if (Number(gameData.bonusRoundEndsAt || 0) <= Date.now()) {
+                if (!demoMode && Number(gameData.bonusRoundEndsAt || 0) <= Date.now()) {
                     endBonusRound();
                     return;
                 }
@@ -3322,7 +3798,7 @@
                     .map(([id]) => id);
                 const answers = gameData.quizAnswers || {};
                 document.getElementById("quiz-answer-count").innerText = `${Object.keys(answers).length} of ${playerIds.length} teams answered`;
-                if (playerIds.length && playerIds.every((id) => answers[id])) finishPopQuiz();
+                if (!demoMode && playerIds.length && playerIds.every((id) => answers[id])) finishPopQuiz();
             }
             if (gameData.phase === "spyfall-vote" && currentPhase === "spyfall-vote") {
                 hostPlayers = gameData.players || hostPlayers;
@@ -3336,7 +3812,7 @@
                 renderSpyfallVotes(gameData);
                 const teamCount = Object.values(gameData.players || {}).filter((player) => player?.teamId).length;
                 const voteCount = Object.keys(gameData.spyfallVotes || {}).length;
-                if (spyfallVotingStarted && !spyfallVotingEnded && teamCount > 0 && voteCount >= teamCount) {
+                if (!demoMode && spyfallVotingStarted && !spyfallVotingEnded && teamCount > 0 && voteCount >= teamCount) {
                     endSpyfallVoting("All teams have voted. Reveal results when ready.");
                 }
             }
@@ -3400,7 +3876,9 @@
                 startFuseBeepLoop();
             } else if (currentPhase === "quiz") {
                 const quizEndsAt = Number(currentGameData.quizEndsAt || 0);
-                if (quizEndsAt) {
+                if (demoMode) {
+                    document.getElementById("quiz-timer").innerText = "30 seconds";
+                } else if (quizEndsAt) {
                     clearInterval(quizCountdownInterval);
                     quizCountdownInterval = setInterval(() => {
                         const secondsLeft = Math.max(0, Math.ceil((quizEndsAt - Date.now()) / 1000));
@@ -3537,6 +4015,7 @@
                 if (gameData.phase !== "game-instructions" || !gameInstructionContent[gameData.gameInstructionsGame]) return;
                 document.getElementById("game-instructions-screen").classList.remove("active");
                 if (gameData.gameInstructionsGame === "bomb") {
+                    playSplashAudio("start.mp3", START_SOUND_GAIN);
                     currentPhase = "waiting";
                     await startBombRound();
                 } else if (gameData.gameInstructionsGame === "spyfall") {
@@ -3930,13 +4409,15 @@
             }
             bombFuseLastTickAt = now;
             const roundElapsedSeconds = getBombRoundElapsedSeconds();
-            const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
+            const timeLeft = demoMode ? BOMB_ROUND_SECONDS : Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
             const holdTimeEl = document.getElementById("bomb-hold-time");
             const forcePassButton = document.getElementById("force-pass-btn");
             const holderElapsedSeconds = getBombUnlockedSeconds(fuseStartedAt);
             const hasNextTeam = Object.entries(hostPlayers).some(([id, player]) => id !== activePlayerId && player?.teamId);
             const unlockedAt = !bombLocked ? Number(bombUnlockedAt || 0) : 0;
-            if (unlockedAt) {
+            if (demoMode) {
+                holdTimeEl.innerText = "Demo teams are passing the bomb";
+            } else if (unlockedAt) {
                 const unlockedSeconds = getBombUnlockedSeconds(unlockedAt);
                 const pointsAvailable = getBombPassPoints(fuseStartedAt);
                 const secondsRemaining = Math.max(0, BOMB_PASS_AUTO_SECONDS - unlockedSeconds);
@@ -4081,6 +4562,10 @@
             });
             if (currentPhase !== "quiz") return;
             clearInterval(quizCountdownInterval);
+            if (demoMode) {
+                document.getElementById("quiz-timer").innerText = "30 seconds";
+                return;
+            }
             quizCountdownInterval = setInterval(() => {
                 const secondsLeft = Math.max(0, Math.ceil((quizEndsAt - Date.now()) / 1000));
                 document.getElementById("quiz-timer").innerText = `${secondsLeft} seconds`;
@@ -4216,7 +4701,11 @@
             const timer = document.getElementById("bonus-round-timer");
             timer.innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
             if (secondsLeft === 0) {
-                document.getElementById("bonus-round-status").innerText = "Time is up. Final standings are being calculated.";
+                document.getElementById("bonus-round-status").innerText = demoMode
+                    ? "Time is up. End the round when you are ready."
+                    : "Time is up. Final standings are being calculated.";
+            } else if (demoMode) {
+                document.getElementById("bonus-round-status").innerText = "Demo teams are tapping. End the round when you are ready.";
             }
         }
 
@@ -4713,6 +5202,7 @@
             if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
             const secondsLeft = Math.max(0, Math.ceil((spyfallRevealEndsAt - Date.now()) / 1000));
             document.getElementById("spyfall-host-timer").innerText = `Role reveal · 0:${String(secondsLeft).padStart(2, "0")}`;
+            if (demoMode) return;
             if (!secondsLeft) {
                 clearInterval(spyfallTimerInterval);
                 document.getElementById("spyfall-host-status").innerText = "The role reveal ended. Start Spyfall or reveal roles again.";
@@ -4721,6 +5211,7 @@
 
         async function startSpyfallGame() {
             if (currentPhase !== "spyfall-reveal" || isGamePaused) return;
+            playSplashAudio("start.mp3", START_SOUND_GAIN);
             clearInterval(spyfallTimerInterval);
             document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-role-reveal");
             document.getElementById("round-two-placeholder-screen").classList.remove("spyfall-splash");
@@ -4763,6 +5254,7 @@
             action.onclick = advanceSpyfallTeam;
             document.getElementById("spyfall-start-voting").hidden = true;
             clearInterval(spyfallTimerInterval);
+            updateSpyfallTimer();
             spyfallTimerInterval = window.setInterval(updateSpyfallTimer, 200);
         }
 
@@ -4770,6 +5262,7 @@
             if (currentPhase !== "spyfall-active") return;
             const secondsLeft = Math.max(0, Math.ceil((spyfallTurnEndsAt - Date.now()) / 1000));
             document.getElementById("spyfall-host-timer").innerText = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+            if (demoMode) return;
             if (!secondsLeft) advanceSpyfallTeam();
         }
 
@@ -4874,7 +5367,9 @@
             });
             if (currentPhase !== "spyfall-vote") return;
             document.getElementById("spyfall-host-title").innerText = "Choose the spies";
-            document.getElementById("spyfall-host-status").innerText = "Teams have 30 seconds to vote.";
+            document.getElementById("spyfall-host-status").innerText = demoMode
+                ? "Demo teams will vote automatically. End voting whenever you are ready."
+                : "Teams have 30 seconds to vote.";
             document.getElementById("spyfall-start-voting").hidden = true;
             const action = document.getElementById("spyfall-host-action");
             action.hidden = false;
@@ -4883,10 +5378,28 @@
             document.getElementById("spyfall-host-vote-count").hidden = false;
             document.getElementById("spyfall-host-votes").hidden = false;
             updateSpyfallVoteTimer();
+            clearInterval(spyfallTimerInterval);
+            spyfallTimerInterval = window.setInterval(updateSpyfallVoteTimer, 200);
         };
 
         function updateSpyfallVoteTimer() {
             if (currentPhase !== "spyfall-vote" || isGamePaused) return;
+            if (demoMode) {
+                const timer = document.getElementById("spyfall-host-timer");
+                if (spyfallVotingEnded) {
+                    timer.innerText = "Voting ended";
+                } else if (!spyfallDiscussionStarted) {
+                    timer.innerText = "Discussion not started";
+                } else {
+                    const deadline = spyfallVotingStarted ? spyfallVoteEndsAt : spyfallVoteOpensAt;
+                    const secondsLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+                    const phaseLabel = spyfallVotingStarted ? "Voting" : "Discussion";
+                    timer.innerText = secondsLeft
+                        ? `${phaseLabel} · 0:${String(secondsLeft).padStart(2, "0")}`
+                        : `${phaseLabel} ended`;
+                }
+                return;
+            }
             if (spyfallVotingEnded) {
                 document.getElementById("spyfall-host-timer").innerText = "Voting ended";
                 return;
