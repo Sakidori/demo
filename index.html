@@ -2152,8 +2152,57 @@
 
         @media (max-width: 600px) {
             .quiz-splash-title { font-size: 2.5rem; }
-            #bonus-podium-standings { gap: 3px; }
-            #bonus-podium-standings .leaderboard-item { min-height: 28px; font-size: 0.74rem; }
+            #bonus-podium-screen.active {
+                max-height: calc(100dvh - 76px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+            #bonus-podium {
+                grid-template-columns: minmax(0, 1fr);
+                align-items: stretch;
+                gap: 8px;
+                margin: 12px auto;
+            }
+            #bonus-podium .rank-1,
+            #bonus-podium .rank-2,
+            #bonus-podium .rank-3 {
+                grid-column: 1;
+                grid-row: auto;
+            }
+            #bonus-podium .podium-item.rank-1,
+            #bonus-podium .podium-item.rank-2,
+            #bonus-podium .podium-item.rank-3 {
+                display: grid;
+                grid-template-columns: 2rem 2.2rem minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 8px;
+                height: auto;
+                min-height: 0;
+                padding: 8px 10px;
+            }
+            #bonus-podium .podium-rank,
+            #bonus-podium .podium-avatar { margin: 0; }
+            #bonus-podium .podium-name {
+                min-width: 0;
+                margin: 0;
+                text-align: left;
+            }
+            #bonus-podium .podium-score { white-space: nowrap; }
+            #bonus-podium-standings {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: none;
+                grid-auto-flow: row;
+                gap: 6px;
+            }
+            #bonus-podium-standings .leaderboard-item {
+                justify-content: flex-start;
+                min-height: 38px;
+                padding: 8px 10px;
+                font-size: 0.9rem;
+                line-height: 1.3;
+                overflow-wrap: normal;
+                text-align: left;
+            }
         }
 
         @keyframes surpriseReveal {
@@ -2370,6 +2419,10 @@
             .spyfall-revealed-avatar { width: 76px; height: 76px; font-size: 2.55rem; }
             .spyfall-vote-chart { height: 150px; }
             body.spyfall-host-active { padding: 0; }
+            body.spyfall-host-active #spyfall-round-score-list,
+            body.spyfall-host-active #spyfall-final-standings-list {
+                grid-template-columns: minmax(0, 1fr);
+            }
             #round-two-placeholder-screen { padding: 12px; }
             .spyfall-host-team-card {
                 gap: 14px;
@@ -2863,7 +2916,6 @@
         let currentTask = "";
         let fuseStartedAt = 0;
         let bombRoundStartedAt = 0;
-        let bombFuseLastTickAt = 0;
         let bombUnlockedAt = 0;
         let bombPassInProgress = false;
         let currentPhase = "waiting";
@@ -3627,7 +3679,6 @@
                     hostPlayers = gameData.players || {};
                     fuseStartedAt = fuseStartedAt || Date.now();
                     bombRoundStartedAt = bombRoundStartedAt || fuseStartedAt;
-                    bombFuseLastTickAt = 0;
                     document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
                     document.getElementById("task-screen").classList.add("active");
                     document.body.classList.add("bomb-round-active");
@@ -3869,7 +3920,6 @@
             if (currentPhase === "quiz-intro") {
                 ensureQuizIntroTimer(quizIntroEndsAt);
             } else if (currentPhase === "bomb") {
-                bombFuseLastTickAt = Date.now();
                 updateHostFuse();
                 clearInterval(countdownInterval);
                 countdownInterval = setInterval(updateHostFuse, 250);
@@ -4206,7 +4256,6 @@
             bombLocked = true;
             fuseStartedAt = Date.now();
             bombRoundStartedAt = fuseStartedAt;
-            bombFuseLastTickAt = fuseStartedAt;
             bombUnlockedAt = 0;
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("round-one-intro-screen").classList.remove("active");
@@ -4402,14 +4451,8 @@
 
         function updateHostFuse() {
             if (currentPhase !== "bomb") return;
-            const now = Date.now();
-            if (bombFuseLastTickAt) {
-                const delta = Math.max(0, now - bombFuseLastTickAt);
-                if (bombLocked) bombRoundStartedAt += delta / 2;
-            }
-            bombFuseLastTickAt = now;
             const roundElapsedSeconds = getBombRoundElapsedSeconds();
-            const timeLeft = demoMode ? BOMB_ROUND_SECONDS : Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
+            const timeLeft = Math.max(0, BOMB_ROUND_SECONDS - roundElapsedSeconds);
             const holdTimeEl = document.getElementById("bomb-hold-time");
             const forcePassButton = document.getElementById("force-pass-btn");
             const holderElapsedSeconds = getBombUnlockedSeconds(fuseStartedAt);

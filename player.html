@@ -67,7 +67,7 @@
         }
 
         .demo-preview #spyfall-results-screen.active {
-            overflow: hidden;
+            overflow-y: auto;
             padding: 14px 12px;
         }
 
@@ -81,7 +81,12 @@
             margin: 6px auto;
         }
 
-        .demo-preview #bonus-podium-screen.active { overflow: hidden; }
+        .demo-preview #bonus-podium-screen.active {
+            max-height: 100dvh;
+            margin: 0 auto;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
 
         body.bomb-spectator {
             align-items: center;
@@ -411,7 +416,7 @@
 
         .team-color-options {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 5px;
             width: 100%;
         }
@@ -429,15 +434,15 @@
         .team-color-card {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
+            justify-content: flex-start;
+            gap: 6px;
             min-width: 0;
             min-height: 40px;
-            padding: 5px 3px;
+            padding: 5px 7px;
             border: 1px solid var(--line);
             border-radius: 8px;
             background: rgba(255,255,255,0.035);
-            text-align: center;
+            text-align: left;
         }
 
         .team-color-swatch {
@@ -449,7 +454,7 @@
             box-shadow: 0 0 12px color-mix(in srgb, var(--team-color) 55%, transparent);
         }
 
-        .team-color-name { font-size: 0.72rem; font-weight: 700; }
+        .team-color-name { font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
 
         .team-color-option input:checked + .team-color-card {
             border-color: var(--team-color);
@@ -1680,8 +1685,66 @@
 
         @media (max-width: 600px) {
             .quiz-splash-title { font-size: 2.5rem; }
-            #bonus-podium-standings { gap: 5px; }
-            #bonus-podium-standings .leaderboard-item { min-height: 36px; font-size: 0.82rem; }
+            .demo-preview #spyfall-results-screen.active {
+                max-height: calc(100dvh - 68px);
+                overscroll-behavior: contain;
+            }
+            #spyfall-player-tally,
+            #spyfall-player-scores,
+            #spyfall-player-overall-scores {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            #bonus-podium-screen.active {
+                max-height: calc(100dvh - 68px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+            #bonus-podium {
+                grid-template-columns: minmax(0, 1fr);
+                align-items: stretch;
+                gap: 8px;
+                margin: 12px auto;
+            }
+            #bonus-podium .rank-1,
+            #bonus-podium .rank-2,
+            #bonus-podium .rank-3 {
+                grid-column: 1;
+                grid-row: auto;
+            }
+            #bonus-podium .podium-item.rank-1,
+            #bonus-podium .podium-item.rank-2,
+            #bonus-podium .podium-item.rank-3 {
+                display: grid;
+                grid-template-columns: 2rem 2.2rem minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 8px;
+                height: auto;
+                min-height: 0;
+                padding: 8px 10px;
+            }
+            #bonus-podium .podium-rank,
+            #bonus-podium .podium-avatar { margin: 0; }
+            #bonus-podium .podium-name {
+                min-width: 0;
+                margin: 0;
+                text-align: left;
+            }
+            #bonus-podium .podium-score { white-space: nowrap; }
+            #bonus-podium-standings {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: none;
+                grid-auto-flow: row;
+                gap: 6px;
+            }
+            #bonus-podium-standings .leaderboard-item {
+                justify-content: flex-start;
+                min-height: 38px;
+                padding: 8px 10px;
+                font-size: 0.9rem;
+                line-height: 1.3;
+                overflow-wrap: normal;
+                text-align: left;
+            }
             #waiting-screen.bomb-spectator { gap: 20px; padding: 32px 18px; }
             .safe-indicator { font-size: 4.5rem; }
         }
@@ -1712,7 +1775,7 @@
             #join-screen h2 { margin-bottom: 5px; }
             .team-picker { margin: 6px auto; }
             .team-color-options { gap: 4px; }
-            .team-color-card { min-height: 36px; gap: 3px; }
+            .team-color-card { min-height: 36px; gap: 5px; padding-inline: 5px; }
             .team-color-name { font-size: 0.68rem; }
             .avatar-picker { margin: 10px auto 4px; }
             .avatar-picker legend { margin-bottom: 8px; }
@@ -1964,7 +2027,7 @@
         <div class="status-chip">Bonus Round</div>
         <h1 id="bonus-round-instruction">Tap your device as many times as you can!</h1>
         <p id="bonus-round-player-timer">0:30</p>
-        <p id="bonus-round-player-score" hidden>0 team points · 0 pushes</p>
+        <p id="bonus-round-player-score" hidden></p>
         <button id="bonus-round-button" class="bonus-round-button" type="button" aria-label="Push for bonus points" onclick="addBonusPoint()"><span>Push!</span><img id="bonus-round-button-image" class="bonus-round-button-image" src="1.webp" alt=""><img id="bonus-round-hammer" class="bonus-round-hammer" src="hammer.webp" alt=""><span id="bonus-button-speech" class="bonus-button-speech" aria-hidden="true"></span></button>
     </div>
 
@@ -3695,8 +3758,7 @@
             if (demoPreview) {
                 document.getElementById("bonus-round-player-timer").innerText = `0:${String(secondsLeft).padStart(2, "0")}`;
                 const score = document.getElementById("bonus-round-player-score");
-                score.hidden = false;
-                score.innerText = `${Math.floor(tapCount / BONUS_TAPS_PER_POINT)} team points · ${tapCount} pushes`;
+                score.hidden = true;
                 if (tapCount > demoPreviewBonusTapCount) {
                     if (!bonusButtonImageSequenceStarted) {
                         bonusButtonImageSequenceStarted = true;
@@ -3716,7 +3778,7 @@
             const revealed = Boolean(gameData.bonusRoundRevealed);
             score.hidden = !revealed;
             score.setAttribute("aria-hidden", String(!revealed));
-            if (revealed) score.innerText = `${bonusPoints} team points · ${tapCount} pushes`;
+            if (revealed) score.innerText = `${bonusPoints} team points`;
             button.disabled = secondsLeft === 0;
             button.classList.toggle("is-expired", secondsLeft === 0);
         }
