@@ -97,6 +97,15 @@
             padding: 12px;
         }
 
+        body.spyfall-host-active #spyfall-standings-screen.active {
+            width: min(1180px, calc(100vw - 32px));
+        }
+
+        body.spyfall-host-active #spyfall-final-standings-list {
+            width: 100%;
+            max-width: none;
+        }
+
         body.spyfall-host-active #round-two-placeholder-screen.active:not(.spyfall-splash):not(.spyfall-role-reveal) {
             justify-content: flex-start;
         }
@@ -1697,9 +1706,20 @@
             justify-self: center;
         }
 
+        #spyfall-final-standings-list .player-name {
+            min-width: 0;
+            overflow-wrap: normal;
+        }
+
         #spyfall-final-standings-list strong {
             justify-self: end;
             white-space: nowrap;
+        }
+
+        @media (min-width: 601px) {
+            #spyfall-final-standings-list .player-name {
+                white-space: nowrap;
+            }
         }
 
         .spyfall-drumroll-icon {
@@ -3960,7 +3980,7 @@
             currentPhase = "game-splash";
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("round-one-intro-screen").classList.add("active");
-            playRoundSound("round1.mp3");
+            playRoundSound("Round1.mp3");
             update(gameRef, {
                 status: "bomb-game-splash",
                 phase: "game-splash",
@@ -4896,7 +4916,7 @@
                 };
                 currentPhase = "bonus-intro";
                 document.getElementById("bonus-intro-screen").classList.add("active");
-                playRoundSound("bonusround.mp3");
+                playRoundSound("BonusRound.mp3");
                 await update(gameRef, startData);
             } catch (error) {
                 console.error("Could not start Bonus Round", error);
@@ -5119,7 +5139,7 @@
             action.hidden = false;
             action.disabled = false;
             action.onclick = startSpyfall;
-            playRoundSound("round2.mp3");
+            playRoundSound("Round2.mp3");
             await update(gameRef, {
                 status: "round-2-placeholder",
                 phase: "round-2-placeholder",
