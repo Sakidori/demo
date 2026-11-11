@@ -134,8 +134,52 @@
         }
 
         #lobby-screen {
-            width: min(980px, 100%);
-            padding: 32px;
+            position: fixed;
+            top: 12px;
+            bottom: 12px;
+            left: calc(50% - 32px);
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            gap: clamp(8px, 1.5vh, 16px);
+            width: min(1100px, calc(100vw - 76px));
+            max-width: none;
+            min-height: 0;
+            padding: clamp(12px, 2vw, 28px);
+            transform: translateX(-50%);
+            overflow: hidden;
+        }
+
+        @media (min-width: 761px) and (max-width: 1417px) and (min-height: 500px) {
+            #lobby-screen {
+                top: 56px;
+                bottom: 8px;
+            }
+        }
+
+        @media (min-width: 761px) and (max-width: 1417px) and (max-height: 500px) {
+            #lobby-screen {
+                top: 56px;
+                bottom: 8px;
+            }
+
+            .lobby-layout { grid-template-rows: minmax(0, 1fr); }
+            .lobby-join {
+                min-height: 0;
+                overflow: hidden;
+                padding: 4px 12px 4px 4px;
+            }
+            .lobby-join h1 { margin-bottom: 4px; font-size: 1.35rem; }
+            .lobby-join #qrcode { margin: 4px auto 0; padding: 6px; }
+            .lobby-join #qrcode canvas,
+            .lobby-join #qrcode img {
+                width: min(22vh, 110px);
+                height: min(22vh, 110px);
+            }
+            .lobby-join #demo-mode-notice {
+                margin: 2px 0 0;
+                font-size: 0.65rem;
+                line-height: 1.15;
+            }
         }
 
         .round-one-intro-screen {
@@ -345,14 +389,14 @@
         }
 
         .host-lobby-instructions {
-            margin: 0 0 24px;
-            padding: 14px 18px;
+            margin: 0;
+            padding: clamp(8px, 1.2vh, 14px) clamp(10px, 1.5vw, 18px);
             border: 2px solid var(--danger);
             border-radius: 12px;
             background: linear-gradient(135deg, rgba(255,92,122,0.2), rgba(255,92,122,0.08));
             color: var(--text);
-            font-size: 1.15rem;
-            line-height: 1.5;
+            font-size: clamp(0.82rem, 1.5vw, 1.05rem);
+            line-height: 1.35;
             box-shadow: 0 0 0 3px rgba(255,92,122,0.08), 0 12px 28px rgba(255,92,122,0.12);
         }
 
@@ -360,7 +404,7 @@
 
         .host-lobby-final-warning {
             display: block;
-            margin-top: 8px;
+            margin-top: 4px;
             color: #ffd166;
             font-weight: 800;
         }
@@ -368,7 +412,8 @@
         .lobby-layout {
             display: grid;
             grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
-            gap: 30px;
+            min-height: 0;
+            gap: clamp(12px, 2vw, 30px);
             align-items: stretch;
         }
 
@@ -390,8 +435,11 @@
         }
 
         .lobby-roster {
+            display: flex;
+            flex-direction: column;
             min-width: 0;
-            padding: 12px 4px;
+            min-height: 0;
+            padding: 8px 4px;
             text-align: left;
         }
 
@@ -416,14 +464,16 @@
         #team-count { color: var(--muted); font-size: 0.85rem; }
 
         .lobby-roster ul {
-            max-height: min(50vh, 360px);
+            flex: 1 1 auto;
+            min-height: 0;
             overflow-y: auto;
             padding-right: 6px;
         }
 
         .lobby-roster li {
             width: 100%;
-            margin: 8px 0;
+            margin: 5px 0;
+            padding: 8px 12px;
         }
 
         #empty-player-state {
@@ -438,8 +488,52 @@
             justify-content: center;
             flex-wrap: wrap;
             gap: 12px;
-            margin-top: 22px;
+            margin-top: 0;
         }
+
+        .presentation-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #dcdee0;
+        }
+
+        .presentation-screen[hidden] { display: none; }
+
+        body.presentation-active .host-top-controls,
+        body.presentation-active .host-player-controls {
+            display: none;
+        }
+
+        .presentation-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #dcdee0;
+            pointer-events: none;
+        }
+
+        .presentation-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1;
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            margin: 0;
+            padding: 0;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            background: rgba(18,26,42,0.78);
+            color: white;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .presentation-close-btn::after { display: none; }
 
         ul {
             list-style: none;
@@ -2262,7 +2356,7 @@
             z-index: 21;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
             max-width: calc(100vw - 32px);
         }
 
@@ -2286,6 +2380,18 @@
         .music-control[aria-pressed="true"] {
             border-color: rgba(43,212,168,0.55);
             color: var(--success-2);
+        }
+
+        .music-track-control {
+            display: grid;
+            place-items: center;
+            width: 34px;
+            min-width: 34px;
+            height: 34px;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 1;
+            text-align: center;
         }
 
         .host-player-controls {
@@ -2485,20 +2591,49 @@
             }
             #unlock-bomb-btn { grid-column: 1; grid-row: 1 / 4; min-height: 106px; }
             .task-actions button { min-width: 0; padding: 8px 6px; font-size: 0.65rem; }
-            .host-top-controls { top: 8px; right: 8px; gap: 6px; }
+            .host-top-controls { top: 8px; right: 8px; gap: 4px; }
             .host-top-controls .music-control { padding: 8px 10px; font-size: 0.8rem; }
+            .host-top-controls .music-track-control { width: 32px; min-width: 32px; height: 32px; padding: 0; }
             .screen { padding: 22px 14px 24px; border-radius: 18px; }
-            #lobby-screen { padding: 22px 16px; }
+            #lobby-screen.active {
+                top: 56px;
+                right: auto;
+                bottom: 8px;
+                left: 8px;
+                width: calc(100vw - 76px);
+                gap: 6px;
+                padding: 10px;
+                transform: none;
+            }
             .lobby-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-            .lobby-join { padding: 0 0 18px; border-right: 0; border-bottom: 1px solid var(--line); }
-            .lobby-join h1 { width: 100%; font-size: clamp(1.6rem, 7vw, 2rem); margin-bottom: 8px; }
-            .lobby-join #qrcode { margin-top: 8px; }
+            .lobby-join {
+                min-height: 0;
+                padding: 0 0 6px;
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+            .lobby-join h1 { width: 100%; font-size: clamp(1.15rem, 5vw, 1.65rem); margin-bottom: 4px; }
+            .lobby-join #qrcode { margin-top: 4px; padding: 8px; border-radius: 14px; }
             .lobby-join #qrcode canvas,
-            .lobby-join #qrcode img { width: min(48vw, 180px); height: min(48vw, 180px); }
-            .lobby-roster { padding: 8px 0 0; }
-            .lobby-roster ul { max-height: 220px; }
-            .lobby-roster #empty-player-state { margin: 8px 0; padding: 14px 10px; }
-            .lobby-actions { margin-top: 14px; }
+            .lobby-join #qrcode img { width: min(32vw, 145px); height: min(32vw, 145px); }
+            .lobby-join #demo-mode-notice { margin: 4px 0 0; font-size: 0.75rem; }
+            .lobby-roster { padding: 4px 0 0; }
+            .roster-heading { gap: 4px; }
+            .roster-heading h2 { font-size: 1.05rem; }
+            #player-count, #team-count { font-size: 0.75rem; }
+            .lobby-roster li { margin: 3px 0; padding: 5px 8px; font-size: 0.9rem; }
+            .lobby-roster .avatar-chip { flex-basis: 28px; width: 28px; height: 28px; font-size: 1rem; }
+            .lobby-roster .remove-player-btn { padding: 6px 8px; font-size: 0.65rem; }
+            .lobby-roster #empty-player-state { margin: 4px 0; padding: 8px; font-size: 0.8rem; }
+            .lobby-actions { gap: 8px; }
+            #lobby-screen .lobby-actions button {
+                width: auto;
+                flex: 1 1 0;
+                min-width: 0;
+                margin: 0;
+                padding: 10px 6px;
+                font-size: 0.9rem;
+            }
             .question-image-wrap { padding: 5px; margin: 8px auto 12px; }
             .question-image { max-height: 34vh; }
             li { width: 92%; }
@@ -2516,11 +2651,14 @@
         <button id="music-toggle" class="music-control" type="button" aria-pressed="false" aria-label="Turn music on" disabled>
             <span aria-hidden="true">♫</span><span id="music-label">Music off</span>
         </button>
+        <button id="music-previous-track" class="music-control music-track-control" type="button" aria-label="Previous music track" title="Previous music track" disabled>&#9664;</button>
+        <button id="music-next-track" class="music-control music-track-control" type="button" aria-label="Next music track" title="Next music track" disabled>&#9654;</button>
     </div>
     <div class="host-player-controls" role="group" aria-label="Game controls">
         <button id="host-attention-btn" type="button" title="Play alert sound and toggle pause" aria-label="Play alert sound and toggle pause">📣</button>
         <button id="bonus-button-style-toggle" type="button" aria-label="Use classic Bonus button" title="Use classic Bonus button" aria-pressed="false">🔘</button>
         <a id="offline-demo-toggle" href="?demo=1" title="Start offline demo mode" aria-label="Start offline demo mode">🎭</a>
+        <button id="presentation-toggle-btn" type="button" title="Open presentation" aria-label="Open presentation" aria-pressed="false">🖥️</button>
         <button id="pause-game-btn" type="button" onclick="togglePauseGame()" aria-label="Pause game" title="Pause game" aria-pressed="false" hidden>
             <span id="pause-game-icon" aria-hidden="true">&#9208;</span>
         </button>
@@ -2549,6 +2687,11 @@
             <button id="reset-lobby-btn" type="button" onclick="resetGame()">Reset Lobby</button>
         </div>
     </div>
+
+    <section id="presentation-screen" class="presentation-screen" aria-label="Presentation" hidden>
+        <iframe id="host-presentation-frame" class="presentation-frame" title="Presentation slides" tabindex="-1"></iframe>
+        <button id="presentation-close-btn" class="presentation-close-btn" type="button" aria-label="Close presentation" title="Close presentation">&times;</button>
+    </section>
 
     <div id="round-one-intro-screen" class="screen round-one-intro-screen" aria-labelledby="round-one-intro-title">
         <div class="round-one-intro-content">
@@ -3011,6 +3154,109 @@
 
         // Global game database reference
         const gameRef = ref(db, `game`);
+        const presentationRef = ref(db, "game/presentation");
+        const presentationScreen = document.getElementById("presentation-screen");
+        const hostPresentationFrame = document.getElementById("host-presentation-frame");
+        const presentationToggleButton = document.getElementById("presentation-toggle-btn");
+        const presentationSlideThreePosition = 3;
+        const presentationSlideThreeBuildStepCount = 4;
+        const presentationSlideFivePosition = 7;
+        const presentationSlideFiveBuildStepCount = 5;
+        let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
+        function syncPresentationSlide(frame) {
+            if (!presentationState.active || frame.dataset.ready !== "true") return;
+            let appliedSlide = Number(frame.dataset.appliedSlide || 0);
+            const targetSlide = Math.max(0, Number(presentationState.slideIndex) || 0);
+            const stateBuildStep = Number(presentationState.buildStep);
+            const targetBuildStep = Number.isInteger(stateBuildStep)
+                ? stateBuildStep
+                : targetSlide === presentationSlideThreePosition || targetSlide === presentationSlideFivePosition ? 0 : -1;
+            while (appliedSlide < targetSlide) {
+                frame.contentWindow.postMessage({ type: "host-presentation-step", direction: "next" }, "*");
+                appliedSlide += 1;
+            }
+            while (appliedSlide > targetSlide) {
+                frame.contentWindow.postMessage({ type: "host-presentation-step", direction: "previous" }, "*");
+                appliedSlide -= 1;
+            }
+            frame.dataset.appliedSlide = String(appliedSlide);
+            frame.contentWindow.postMessage({
+                type: "host-presentation-state",
+                slideIndex: targetSlide,
+                buildStep: targetBuildStep
+            }, "*");
+        }
+        function syncPresentationView(state) {
+            presentationState = state || { active: false, slideIndex: 0, buildStep: -1 };
+            const isActive = presentationState.active === true;
+            presentationScreen.hidden = !isActive;
+            document.body.classList.toggle("presentation-active", isActive);
+            presentationToggleButton.setAttribute("aria-pressed", String(isActive));
+            presentationToggleButton.setAttribute("aria-label", isActive ? "Close presentation" : "Open presentation");
+            presentationToggleButton.title = isActive ? "Close presentation" : "Open presentation";
+            if (isActive && !hostPresentationFrame.src) {
+                hostPresentationFrame.src = new URL("index2.html?controlled=1", window.location.href).href;
+            }
+            hostPresentationFrame.dataset.active = String(isActive);
+            syncPresentationSlide(hostPresentationFrame);
+        }
+        hostPresentationFrame.addEventListener("load", () => {
+            hostPresentationFrame.dataset.ready = "true";
+            hostPresentationFrame.dataset.appliedSlide = "0";
+            syncPresentationSlide(hostPresentationFrame);
+        });
+        presentationToggleButton.addEventListener("click", () => {
+            if (presentationState.active) {
+                update(presentationRef, { active: false }).catch((error) => {
+                    console.error("Could not close the presentation.", error);
+                });
+                return;
+            }
+            set(presentationRef, { active: true, slideIndex: 0, buildStep: -1 }).catch((error) => {
+                console.error("Could not open the presentation.", error);
+            });
+        });
+        document.getElementById("presentation-close-btn").addEventListener("click", () => {
+            update(presentationRef, { active: false }).catch((error) => {
+                console.error("Could not close the presentation.", error);
+            });
+        });
+        document.addEventListener("keydown", (event) => {
+            if (!presentationState.active || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            runTransaction(presentationRef, (state) => {
+                if (!state?.active) return;
+                const slideIndex = Number(state.slideIndex) || 0;
+                const buildStep = Number.isInteger(Number(state.buildStep)) ? Number(state.buildStep) : -1;
+                const buildStepCount = slideIndex === presentationSlideThreePosition
+                    ? presentationSlideThreeBuildStepCount
+                    : slideIndex === presentationSlideFivePosition ? presentationSlideFiveBuildStepCount : 0;
+                if (buildStepCount && buildStep >= 0 && event.key === "ArrowRight" && buildStep < buildStepCount - 1) {
+                    return { ...state, buildStep: buildStep + 1 };
+                }
+                if (buildStepCount && buildStep > 0 && event.key === "ArrowLeft") {
+                    return { ...state, buildStep: buildStep - 1 };
+                }
+                const nextSlideIndex = event.key === "ArrowRight"
+                    ? slideIndex + (slideIndex === presentationSlideFivePosition && buildStep === presentationSlideFiveBuildStepCount - 1 ? 2 : 1)
+                    : slideIndex === presentationSlideFivePosition + 2
+                        ? presentationSlideFivePosition
+                        : Math.max(0, slideIndex - 1);
+                const nextSlideBuildStepCount = nextSlideIndex === presentationSlideThreePosition
+                    ? presentationSlideThreeBuildStepCount
+                    : nextSlideIndex === presentationSlideFivePosition ? presentationSlideFiveBuildStepCount : 0;
+                return {
+                    ...state,
+                    slideIndex: nextSlideIndex,
+                    buildStep: nextSlideBuildStepCount
+                        ? (event.key === "ArrowLeft" ? nextSlideBuildStepCount - 1 : 0)
+                        : -1
+                };
+            }).catch((error) => {
+                console.error("Could not change the presentation slide.", error);
+            });
+        }, true);
         if (demoMode) {
             const players = Object.fromEntries(TEAM_COLORS.slice(0, 16).map((team, index) => {
                 const animal = TEAM_ANIMALS[index];
@@ -3123,6 +3369,8 @@
         const funkyMusic = createFunkyMusic();
         const musicToggle = document.getElementById("music-toggle");
         const musicLabel = document.getElementById("music-label");
+        const musicPreviousTrack = document.getElementById("music-previous-track");
+        const musicNextTrack = document.getElementById("music-next-track");
         const hostAttentionButton = document.getElementById("host-attention-btn");
         const lobbyMusicPhases = new Set(["waiting"]);
         const gameplayMusicPhases = new Set([
@@ -3159,8 +3407,11 @@
 
         function syncBackgroundMusic(phase) {
             currentMusicPhase = phase;
-            const forcedMuted = spyfallDrumrollActive || bonusFanfareActive;
+            const forcedMuted = spyfallDrumrollActive || bonusFanfareActive || presentationState.active === true;
             musicToggle.disabled = forcedMuted;
+            const trackControlsDisabled = lobbyMusicPhases.has(phase) || !phase || forcedMuted;
+            musicPreviousTrack.disabled = trackControlsDisabled;
+            musicNextTrack.disabled = trackControlsDisabled;
             const shouldPlay = !forcedMuted && (manualMusicOverride ?? true);
             const trackName = lobbyMusicPhases.has(phase) || !phase ? "lobby" : "game";
             if (shouldPlay) {
@@ -3195,8 +3446,18 @@
             syncBackgroundMusic(currentMusicPhase);
         });
 
+        musicPreviousTrack.addEventListener("click", () => {
+            funkyMusic.previousTrack().catch((error) => console.error("Could not switch to the previous music track.", error));
+        });
+
+        musicNextTrack.addEventListener("click", () => {
+            funkyMusic.nextTrack().catch((error) => console.error("Could not switch to the next music track.", error));
+        });
+
         const buttonsWithOwnSound = new Set([
             "music-toggle",
+            "music-previous-track",
+            "music-next-track",
             "host-attention-btn",
             "game-instructions-start",
             "unlock-bomb-btn",
@@ -3675,6 +3936,7 @@
                     console.error("Could not set the demo Bonus button style.", error);
                 });
             }
+            syncPresentationView(gameData.presentation);
             syncDemoPlayerView(gameData);
             simulateDemoPlayers(gameData);
             syncBackgroundMusic(gameData.phase);

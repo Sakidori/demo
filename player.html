@@ -126,6 +126,30 @@
             z-index: 1;
         }
 
+        body.presentation-active {
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: none;
+        }
+
+        .player-presentation-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            padding: 8px;
+            background: #dcdee0;
+        }
+
+        .player-presentation-screen[hidden] { display: none; }
+
+        .player-presentation-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #dcdee0;
+            pointer-events: none;
+        }
+
         .active { display: block; }
 
         .game-instructions-screen {
@@ -1864,6 +1888,9 @@
     <button id="sound-toggle" class="sound-control" type="button" aria-pressed="true" aria-label="Turn game sounds off">
         <span id="sound-icon" aria-hidden="true">🔊</span><span id="sound-label">Sound on</span>
     </button>
+    <section id="player-presentation-screen" class="player-presentation-screen" aria-label="Presentation" hidden>
+        <iframe id="player-presentation-frame" class="player-presentation-frame" title="Presentation slides" tabindex="-1"></iframe>
+    </section>
     <div id="player-team-reminder" class="player-team-reminder" role="group" aria-label="Your team" hidden>
         <span class="player-team-reminder-label">Your team:</span>
         <span id="player-team-reminder-avatar" class="player-team-reminder-avatar" aria-hidden="true"></span>
@@ -2092,6 +2119,54 @@
         const app = demoPreview ? null : initializeApp(firebaseConfig);
         const db = demoPreview ? getDatabase() : getDatabase(app);
         const gameRef = ref(db, "game");
+        const playerPresentationScreen = document.getElementById("player-presentation-screen");
+        const playerPresentationFrame = document.getElementById("player-presentation-frame");
+        const presentationSlideThreePosition = 3;
+        const presentationSlideFivePosition = 7;
+        let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
+        function syncPlayerPresentationSlide() {
+            if (!presentationState.active || playerPresentationFrame.dataset.ready !== "true") return;
+            let appliedSlide = Number(playerPresentationFrame.dataset.appliedSlide || 0);
+            const targetSlide = Math.max(0, Number(presentationState.slideIndex) || 0);
+            const stateBuildStep = Number(presentationState.buildStep);
+            const targetBuildStep = Number.isInteger(stateBuildStep)
+                ? stateBuildStep
+                : targetSlide === presentationSlideThreePosition || targetSlide === presentationSlideFivePosition ? 0 : -1;
+            while (appliedSlide < targetSlide) {
+                playerPresentationFrame.contentWindow.postMessage({ type: "host-presentation-step", direction: "next" }, "*");
+                appliedSlide += 1;
+            }
+            while (appliedSlide > targetSlide) {
+                playerPresentationFrame.contentWindow.postMessage({ type: "host-presentation-step", direction: "previous" }, "*");
+                appliedSlide -= 1;
+            }
+            playerPresentationFrame.dataset.appliedSlide = String(appliedSlide);
+            playerPresentationFrame.contentWindow.postMessage({
+                type: "host-presentation-state",
+                slideIndex: targetSlide,
+                buildStep: targetBuildStep
+            }, "*");
+        }
+        function syncPlayerPresentation(state) {
+            presentationState = state || { active: false, slideIndex: 0, buildStep: -1 };
+            const isActive = presentationState.active === true;
+            playerPresentationScreen.hidden = !isActive;
+            document.body.classList.toggle("presentation-active", isActive);
+            if (isActive && !playerPresentationFrame.src) {
+                playerPresentationFrame.src = new URL("index2.html?controlled=1&readonly=1", window.location.href).href;
+            }
+            syncPlayerPresentationSlide();
+        }
+        playerPresentationFrame.addEventListener("load", () => {
+            playerPresentationFrame.dataset.ready = "true";
+            playerPresentationFrame.dataset.appliedSlide = "0";
+            syncPlayerPresentationSlide();
+        });
+        window.addEventListener("keydown", (event) => {
+            if (!presentationState.active || !["ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }, true);
         if (demoPreview) {
             document.body.classList.add("demo-preview");
             document.getElementById("sound-toggle").hidden = true;
@@ -2483,6 +2558,7 @@
                 window.location.reload();
                 return;
             }
+            syncPlayerPresentation(currentGameData.presentation);
             renderTeamColorOptions(currentGameData);
             if (demoPreview) {
                 if (!playerId) restorePlayerSession(currentGameData, previewPlayerId);
