@@ -2121,26 +2121,16 @@
         const gameRef = ref(db, "game");
         const playerPresentationScreen = document.getElementById("player-presentation-screen");
         const playerPresentationFrame = document.getElementById("player-presentation-frame");
-        const presentationSlideThreePosition = 3;
-        const presentationSlideFivePosition = 7;
+        const presentationSlideThreePosition = 2;
+        const presentationSlideFivePosition = 4;
         let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
         function syncPlayerPresentationSlide() {
             if (!presentationState.active || playerPresentationFrame.dataset.ready !== "true") return;
-            let appliedSlide = Number(playerPresentationFrame.dataset.appliedSlide || 0);
             const targetSlide = Math.max(0, Number(presentationState.slideIndex) || 0);
             const stateBuildStep = Number(presentationState.buildStep);
             const targetBuildStep = Number.isInteger(stateBuildStep)
                 ? stateBuildStep
                 : targetSlide === presentationSlideThreePosition || targetSlide === presentationSlideFivePosition ? 0 : -1;
-            while (appliedSlide < targetSlide) {
-                playerPresentationFrame.contentWindow.postMessage({ type: "host-presentation-step", direction: "next" }, "*");
-                appliedSlide += 1;
-            }
-            while (appliedSlide > targetSlide) {
-                playerPresentationFrame.contentWindow.postMessage({ type: "host-presentation-step", direction: "previous" }, "*");
-                appliedSlide -= 1;
-            }
-            playerPresentationFrame.dataset.appliedSlide = String(appliedSlide);
             playerPresentationFrame.contentWindow.postMessage({
                 type: "host-presentation-state",
                 slideIndex: targetSlide,
@@ -2159,7 +2149,6 @@
         }
         playerPresentationFrame.addEventListener("load", () => {
             playerPresentationFrame.dataset.ready = "true";
-            playerPresentationFrame.dataset.appliedSlide = "0";
             syncPlayerPresentationSlide();
         });
         window.addEventListener("keydown", (event) => {

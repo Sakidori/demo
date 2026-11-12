@@ -3158,28 +3158,20 @@
         const presentationScreen = document.getElementById("presentation-screen");
         const hostPresentationFrame = document.getElementById("host-presentation-frame");
         const presentationToggleButton = document.getElementById("presentation-toggle-btn");
-        const presentationSlideThreePosition = 3;
-        const presentationSlideThreeBuildStepCount = 4;
-        const presentationSlideFivePosition = 7;
-        const presentationSlideFiveBuildStepCount = 5;
+        const presentationSlideThreePosition = 2;
+        const presentationSlideFivePosition = 4;
         let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
+        let pendingHostPresentationPosition = null;
         function syncPresentationSlide(frame) {
             if (!presentationState.active || frame.dataset.ready !== "true") return;
-            let appliedSlide = Number(frame.dataset.appliedSlide || 0);
             const targetSlide = Math.max(0, Number(presentationState.slideIndex) || 0);
             const stateBuildStep = Number(presentationState.buildStep);
             const targetBuildStep = Number.isInteger(stateBuildStep)
                 ? stateBuildStep
                 : targetSlide === presentationSlideThreePosition || targetSlide === presentationSlideFivePosition ? 0 : -1;
-            while (appliedSlide < targetSlide) {
-                frame.contentWindow.postMessage({ type: "host-presentation-step", direction: "next" }, "*");
-                appliedSlide += 1;
-            }
-            while (appliedSlide > targetSlide) {
-                frame.contentWindow.postMessage({ type: "host-presentation-step", direction: "previous" }, "*");
-                appliedSlide -= 1;
-            }
-            frame.dataset.appliedSlide = String(appliedSlide);
+            const stateKey = `${targetSlide}:${targetBuildStep}`;
+            if (frame.dataset.appliedPresentationState === stateKey) return;
+            frame.dataset.appliedPresentationState = stateKey;
             frame.contentWindow.postMessage({
                 type: "host-presentation-state",
                 slideIndex: targetSlide,
@@ -3187,7 +3179,16 @@
             }, "*");
         }
         function syncPresentationView(state) {
-            presentationState = state || { active: false, slideIndex: 0, buildStep: -1 };
+            const nextState = { ...(state || { active: false, slideIndex: 0, buildStep: -1 }) };
+            if (pendingHostPresentationPosition && nextState.active === true) {
+                if (Number(nextState.slideIndex) === pendingHostPresentationPosition.slideIndex
+                    && Number(nextState.buildStep) === pendingHostPresentationPosition.buildStep) {
+                    pendingHostPresentationPosition = null;
+                } else {
+                    Object.assign(nextState, pendingHostPresentationPosition);
+                }
+            }
+            presentationState = nextState;
             const isActive = presentationState.active === true;
             presentationScreen.hidden = !isActive;
             document.body.classList.toggle("presentation-active", isActive);
@@ -3202,8 +3203,23 @@
         }
         hostPresentationFrame.addEventListener("load", () => {
             hostPresentationFrame.dataset.ready = "true";
-            hostPresentationFrame.dataset.appliedSlide = "0";
+            delete hostPresentationFrame.dataset.appliedPresentationState;
             syncPresentationSlide(hostPresentationFrame);
+        });
+        window.addEventListener("message", (event) => {
+            if (event.source !== hostPresentationFrame.contentWindow || event.data?.type !== "host-presentation-position") return;
+            const slideIndex = Number(event.data.slideIndex);
+            const buildStep = Number(event.data.buildStep);
+            if (!Number.isInteger(slideIndex) || !Number.isInteger(buildStep)) return;
+            const targetPosition = { slideIndex: Math.max(0, slideIndex), buildStep };
+            pendingHostPresentationPosition = targetPosition;
+            presentationState = { ...presentationState, ...targetPosition };
+            hostPresentationFrame.dataset.appliedPresentationState = `${targetPosition.slideIndex}:${targetPosition.buildStep}`;
+            syncPresentationSlide(hostPresentationFrame);
+            update(presentationRef, targetPosition).catch((error) => {
+                if (pendingHostPresentationPosition === targetPosition) pendingHostPresentationPosition = null;
+                console.error("Could not sync the presentation position.", error);
+            });
         });
         presentationToggleButton.addEventListener("click", () => {
             if (presentationState.active) {
@@ -3225,37 +3241,10 @@
             if (!presentationState.active || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            runTransaction(presentationRef, (state) => {
-                if (!state?.active) return;
-                const slideIndex = Number(state.slideIndex) || 0;
-                const buildStep = Number.isInteger(Number(state.buildStep)) ? Number(state.buildStep) : -1;
-                const buildStepCount = slideIndex === presentationSlideThreePosition
-                    ? presentationSlideThreeBuildStepCount
-                    : slideIndex === presentationSlideFivePosition ? presentationSlideFiveBuildStepCount : 0;
-                if (buildStepCount && buildStep >= 0 && event.key === "ArrowRight" && buildStep < buildStepCount - 1) {
-                    return { ...state, buildStep: buildStep + 1 };
-                }
-                if (buildStepCount && buildStep > 0 && event.key === "ArrowLeft") {
-                    return { ...state, buildStep: buildStep - 1 };
-                }
-                const nextSlideIndex = event.key === "ArrowRight"
-                    ? slideIndex + (slideIndex === presentationSlideFivePosition && buildStep === presentationSlideFiveBuildStepCount - 1 ? 2 : 1)
-                    : slideIndex === presentationSlideFivePosition + 2
-                        ? presentationSlideFivePosition
-                        : Math.max(0, slideIndex - 1);
-                const nextSlideBuildStepCount = nextSlideIndex === presentationSlideThreePosition
-                    ? presentationSlideThreeBuildStepCount
-                    : nextSlideIndex === presentationSlideFivePosition ? presentationSlideFiveBuildStepCount : 0;
-                return {
-                    ...state,
-                    slideIndex: nextSlideIndex,
-                    buildStep: nextSlideBuildStepCount
-                        ? (event.key === "ArrowLeft" ? nextSlideBuildStepCount - 1 : 0)
-                        : -1
-                };
-            }).catch((error) => {
-                console.error("Could not change the presentation slide.", error);
-            });
+            hostPresentationFrame.contentWindow.postMessage({
+                type: "host-presentation-step",
+                direction: event.key === "ArrowRight" ? "next" : "previous"
+            }, "*");
         }, true);
         if (demoMode) {
             const players = Object.fromEntries(TEAM_COLORS.slice(0, 16).map((team, index) => {
