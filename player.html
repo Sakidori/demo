@@ -132,12 +132,17 @@
             touch-action: none;
         }
 
+        body.presentation-active #sound-toggle,
+        body.presentation-active #player-team-reminder {
+            display: none !important;
+        }
+
         .player-presentation-screen {
             position: fixed;
             inset: 0;
             z-index: 1000;
             padding: 8px;
-            background: #dcdee0;
+            background: #000;
         }
 
         .player-presentation-screen[hidden] { display: none; }
@@ -146,7 +151,7 @@
             width: 100%;
             height: 100%;
             border: 0;
-            background: #dcdee0;
+            background: #000;
             pointer-events: none;
         }
 
