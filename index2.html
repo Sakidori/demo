@@ -85,6 +85,13 @@
 			border-radius: 0 !important;
 		}
 
+		html.fullscreen-presentation #content > .universal_mini {
+			position: fixed !important;
+			inset: 0 !important;
+			width: 100vw !important;
+			height: 100vh !important;
+		}
+
 		html.fullscreen-presentation #content .top-panel,
 		html.fullscreen-presentation #content .universal-control-panel,
 		html.fullscreen-presentation #content .vertical-scrollbar,
@@ -140,6 +147,9 @@
     <div id="presentation-end-screen" role="img" aria-label="Black end slide: Thank You" hidden style="position:fixed;inset:0;background:#000;color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 48px Arial,sans-serif;">Thank You</div>
     <script>
         const presentationReadOnly = new URLSearchParams(window.location.search).get("readonly") === "1";
+        if (presentationReadOnly) {
+            document.documentElement.classList.add("player-presentation");
+        }
         const presentationNavigationKeys = ["ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", " "];
         if (presentationReadOnly) {
             window.addEventListener("keydown", (event) => {
@@ -503,8 +513,6 @@
 					window.controlledPresentationPlayer = player;
 					applyControlledPresentationState();
 					document.documentElement.classList.add("fullscreen-presentation");
-					if (presentationReadOnly)
-						document.documentElement.classList.add("player-presentation");
 
 					var preloader = document.getElementById("preloader");
 					preloader.parentNode.removeChild(preloader);
@@ -520,7 +528,10 @@
 
 						var width = playerView.offsetWidth;
 						var height = playerView.offsetHeight;
-						var scale = Math.min(window.innerWidth / width, window.innerHeight / height);
+						var viewport = window.visualViewport;
+						var viewportWidth = viewport ? viewport.width : document.documentElement.clientWidth;
+						var viewportHeight = viewport ? viewport.height : document.documentElement.clientHeight;
+						var scale = Math.min(viewportWidth / width, viewportHeight / height);
 						var fitStyle = document.getElementById("presentation-fit-style");
 						if (!fitStyle)
 						{
@@ -531,12 +542,14 @@
 						fitStyle.textContent = "html.fullscreen-presentation #content #playerView {" +
 							"transform-origin: 0 0 !important;" +
 							"transform: scale(" + scale + ") !important;" +
-							"left: " + (window.innerWidth - width * scale) / 2 + "px !important;" +
-							"top: " + (window.innerHeight - height * scale) / 2 + "px !important;}";
+							"left: " + (viewportWidth - width * scale) / 2 + "px !important;" +
+							"top: " + (viewportHeight - height * scale) / 2 + "px !important;}";
 					}
 
 					window.setTimeout(fitPresentationToViewport, 0);
 					window.addEventListener("resize", fitPresentationToViewport);
+					if (window.visualViewport)
+						window.visualViewport.addEventListener("resize", fitPresentationToViewport);
 				}
 			}
 
