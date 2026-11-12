@@ -498,7 +498,7 @@
 
 						var width = playerView.offsetWidth;
 						var height = playerView.offsetHeight;
-						var scale = Math.max(window.innerWidth / width, window.innerHeight / height);
+						var scale = Math.min(window.innerWidth / width, window.innerHeight / height);
 						var fitStyle = document.getElementById("presentation-fit-style");
 						if (!fitStyle)
 						{
