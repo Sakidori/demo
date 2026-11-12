@@ -535,6 +535,43 @@
 
         .presentation-close-btn::after { display: none; }
 
+        .presentation-step-controls {
+            position: absolute;
+            right: 0;
+            bottom: max(16px, env(safe-area-inset-bottom));
+            left: 0;
+            z-index: 1;
+            display: none;
+            justify-content: center;
+            gap: 16px;
+            pointer-events: none;
+        }
+
+        .presentation-step-controls button {
+            display: grid;
+            place-items: center;
+            width: 56px;
+            height: 56px;
+            margin: 0;
+            padding: 0;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            background: rgba(18,26,42,0.85);
+            color: white;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+            font-size: 2rem;
+            line-height: 1;
+            pointer-events: auto;
+            touch-action: manipulation;
+        }
+
+        .presentation-step-controls button::after { display: none; }
+        .presentation-step-controls button:disabled { opacity: 0.5; }
+
+        @media (max-width: 700px), (pointer: coarse) {
+            .presentation-step-controls { display: flex; }
+        }
+
         ul {
             list-style: none;
             padding: 0;
@@ -2690,6 +2727,10 @@
 
     <section id="presentation-screen" class="presentation-screen" aria-label="Presentation" hidden>
         <iframe id="host-presentation-frame" class="presentation-frame" title="Presentation slides" tabindex="-1"></iframe>
+        <div class="presentation-step-controls" role="group" aria-label="Presentation navigation">
+            <button id="presentation-previous-step-btn" type="button" aria-label="Previous slide or animation" title="Previous slide or animation" disabled>&lsaquo;</button>
+            <button id="presentation-next-step-btn" type="button" aria-label="Next slide or animation" title="Next slide or animation" disabled>&rsaquo;</button>
+        </div>
         <button id="presentation-close-btn" class="presentation-close-btn" type="button" aria-label="Close presentation" title="Close presentation">&times;</button>
     </section>
 
@@ -3158,6 +3199,10 @@
         const presentationScreen = document.getElementById("presentation-screen");
         const hostPresentationFrame = document.getElementById("host-presentation-frame");
         const presentationToggleButton = document.getElementById("presentation-toggle-btn");
+        const presentationStepButtons = [
+            document.getElementById("presentation-previous-step-btn"),
+            document.getElementById("presentation-next-step-btn")
+        ];
         const presentationSlideThreePosition = 2;
         const presentationSlideFivePosition = 4;
         let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
@@ -3195,6 +3240,9 @@
             presentationToggleButton.setAttribute("aria-pressed", String(isActive));
             presentationToggleButton.setAttribute("aria-label", isActive ? "Close presentation" : "Open presentation");
             presentationToggleButton.title = isActive ? "Close presentation" : "Open presentation";
+            presentationStepButtons.forEach((button) => {
+                button.disabled = !isActive || hostPresentationFrame.dataset.ready !== "true";
+            });
             if (isActive && !hostPresentationFrame.src) {
                 hostPresentationFrame.src = new URL("index2.html?controlled=1", window.location.href).href;
             }
@@ -3204,6 +3252,9 @@
         hostPresentationFrame.addEventListener("load", () => {
             hostPresentationFrame.dataset.ready = "true";
             delete hostPresentationFrame.dataset.appliedPresentationState;
+            presentationStepButtons.forEach((button) => {
+                button.disabled = !presentationState.active;
+            });
             syncPresentationSlide(hostPresentationFrame);
         });
         window.addEventListener("message", (event) => {
@@ -3237,14 +3288,24 @@
                 console.error("Could not close the presentation.", error);
             });
         });
+        function sendHostPresentationStep(direction) {
+            if (!presentationState.active || hostPresentationFrame.dataset.ready !== "true") return;
+            hostPresentationFrame.contentWindow.postMessage({
+                type: "host-presentation-step",
+                direction
+            }, "*");
+        }
+        document.getElementById("presentation-previous-step-btn").addEventListener("click", () => {
+            sendHostPresentationStep("previous");
+        });
+        document.getElementById("presentation-next-step-btn").addEventListener("click", () => {
+            sendHostPresentationStep("next");
+        });
         document.addEventListener("keydown", (event) => {
             if (!presentationState.active || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            hostPresentationFrame.contentWindow.postMessage({
-                type: "host-presentation-step",
-                direction: event.key === "ArrowRight" ? "next" : "previous"
-            }, "*");
+            sendHostPresentationStep(event.key === "ArrowRight" ? "next" : "previous");
         }, true);
         if (demoMode) {
             const players = Object.fromEntries(TEAM_COLORS.slice(0, 16).map((team, index) => {

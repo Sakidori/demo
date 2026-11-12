@@ -17,6 +17,15 @@
 		#playerView * {
 			position:absolute;
 		}
+		.presentation-filter-definitions {
+			position: fixed;
+			top: -1px;
+			left: -1px;
+			width: 0;
+			height: 0;
+			overflow: hidden;
+			pointer-events: none;
+		}
 		#preloader {
 			width: 50px;
 			height: 50px;
@@ -109,6 +118,15 @@
 			background: #000 !important;
 		}
 
+		html.fullscreen-presentation.player-presentation #content .playerView,
+		html.fullscreen-presentation.player-presentation #content #slidesBackground {
+			background: #000 !important;
+		}
+
+		html.fullscreen-presentation.player-presentation #content [id^="spr1_"] > img {
+			filter: url(#player-white-to-transparent) !important;
+		}
+
 		html.fullscreen-presentation.player-presentation #content .bottom-panel,
 		html.fullscreen-presentation.player-presentation #content .landscape-bottom-panel,
 		html.fullscreen-presentation.player-presentation #content .menu-button,
@@ -133,6 +151,16 @@
     </style>
 </head>
 <body>
+	<svg class="presentation-filter-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+		<filter id="player-white-to-transparent" color-interpolation-filters="sRGB">
+			<feColorMatrix type="matrix" values="
+				1 0 0 0 0
+				0 1 0 0 0
+				0 0 1 0 0
+				-1 -1 -1 0 3
+			"/>
+		</filter>
+	</svg>
 	<div id="preloader"></div>
 	<script src="data/browsersupport.js?D79A6C65"></script>
 	<script src="data/player.js?D79A6C65"></script>
