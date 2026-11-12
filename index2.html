@@ -55,7 +55,7 @@
 			overflow: hidden !important;
 			overscroll-behavior: none;
 			scrollbar-width: none;
-			background: #000 !important;
+			background: #000;
 		}
 
 		html.fullscreen-presentation::-webkit-scrollbar,
@@ -83,13 +83,32 @@
 			width: 100vw !important;
 			height: 100vh !important;
 			border-radius: 0 !important;
-			background: #000 !important;
 		}
 
 		html.fullscreen-presentation #content .top-panel,
 		html.fullscreen-presentation #content .universal-control-panel,
 		html.fullscreen-presentation #content .vertical-scrollbar,
 		html.fullscreen-presentation #content .mobile-vertical-scrollbar {
+			display: none !important;
+		}
+
+		html.fullscreen-presentation.player-presentation,
+		html.fullscreen-presentation.player-presentation body {
+			background: #000 !important;
+		}
+
+		html.fullscreen-presentation.player-presentation #content > .universal,
+		html.fullscreen-presentation.player-presentation #content > .universal_mini {
+			background: #000 !important;
+		}
+
+		html.fullscreen-presentation.player-presentation #content .bottom-panel,
+		html.fullscreen-presentation.player-presentation #content .landscape-bottom-panel,
+		html.fullscreen-presentation.player-presentation #content .menu-button,
+		html.fullscreen-presentation.player-presentation #content .menu-layer-top-panel,
+		html.fullscreen-presentation.player-presentation #content .controls,
+		html.fullscreen-presentation.player-presentation #content .change-layout-button,
+		html.fullscreen-presentation.player-presentation #content .subtitles-panel {
 			display: none !important;
 		}
 
@@ -484,6 +503,8 @@
 					window.controlledPresentationPlayer = player;
 					applyControlledPresentationState();
 					document.documentElement.classList.add("fullscreen-presentation");
+					if (presentationReadOnly)
+						document.documentElement.classList.add("player-presentation");
 
 					var preloader = document.getElementById("preloader");
 					preloader.parentNode.removeChild(preloader);
