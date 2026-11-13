@@ -17,15 +17,6 @@
 		#playerView * {
 			position:absolute;
 		}
-		.presentation-filter-definitions {
-			position: fixed;
-			top: -1px;
-			left: -1px;
-			width: 0;
-			height: 0;
-			overflow: hidden;
-			pointer-events: none;
-		}
 		#preloader {
 			width: 50px;
 			height: 50px;
@@ -84,6 +75,7 @@
 			inset: 0;
 			width: 100vw;
 			height: 100vh;
+			height: 100dvh;
 		}
 
 		html.fullscreen-presentation #content > .universal {
@@ -91,6 +83,7 @@
 			inset: 0 !important;
 			width: 100vw !important;
 			height: 100vh !important;
+			height: 100dvh !important;
 			border-radius: 0 !important;
 		}
 
@@ -99,6 +92,7 @@
 			inset: 0 !important;
 			width: 100vw !important;
 			height: 100vh !important;
+			height: 100dvh !important;
 		}
 
 		html.fullscreen-presentation #content .top-panel,
@@ -119,12 +113,9 @@
 		}
 
 		html.fullscreen-presentation.player-presentation #content .playerView,
+		html.fullscreen-presentation.player-presentation #content #playerView,
 		html.fullscreen-presentation.player-presentation #content #slidesBackground {
-			background: #000 !important;
-		}
-
-		html.fullscreen-presentation.player-presentation #content [id^="spr1_"] > img {
-			filter: url(#player-white-to-transparent) !important;
+			background: #fff !important;
 		}
 
 		html.fullscreen-presentation.player-presentation #content .bottom-panel,
@@ -137,10 +128,21 @@
 			display: none !important;
 		}
 
+		@media (max-width: 700px), (pointer: coarse) {
+			html.fullscreen-presentation.host-presentation #content .bottom-panel,
+			html.fullscreen-presentation.host-presentation #content .landscape-bottom-panel,
+			html.fullscreen-presentation.host-presentation #content .menu-button,
+			html.fullscreen-presentation.host-presentation #content .menu-layer-top-panel,
+			html.fullscreen-presentation.host-presentation #content .controls,
+			html.fullscreen-presentation.host-presentation #content .change-layout-button,
+			html.fullscreen-presentation.host-presentation #content .subtitles-panel {
+				display: none !important;
+			}
+		}
+
 		html.fullscreen-presentation #content .main-container,
 		html.fullscreen-presentation #content .presentation-container,
-		html.fullscreen-presentation #content .content-area,
-		html.fullscreen-presentation #content .playerView {
+		html.fullscreen-presentation #content .content-area {
 			position: absolute !important;
 			inset: 0 !important;
 			width: 100% !important;
@@ -151,16 +153,6 @@
     </style>
 </head>
 <body>
-	<svg class="presentation-filter-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-		<filter id="player-white-to-transparent" color-interpolation-filters="sRGB">
-			<feColorMatrix type="matrix" values="
-				1 0 0 0 0
-				0 1 0 0 0
-				0 0 1 0 0
-				-1 -1 -1 0 3
-			"/>
-		</filter>
-	</svg>
 	<div id="preloader"></div>
 	<script src="data/browsersupport.js?D79A6C65"></script>
 	<script src="data/player.js?D79A6C65"></script>
@@ -175,8 +167,11 @@
     <div id="presentation-end-screen" role="img" aria-label="Black end slide: Thank You" hidden style="position:fixed;inset:0;background:#000;color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 48px Arial,sans-serif;">Thank You</div>
     <script>
         const presentationReadOnly = new URLSearchParams(window.location.search).get("readonly") === "1";
+        const presentationControlled = new URLSearchParams(window.location.search).get("controlled") === "1";
         if (presentationReadOnly) {
             document.documentElement.classList.add("player-presentation");
+        } else if (presentationControlled) {
+            document.documentElement.classList.add("host-presentation");
         }
         const presentationNavigationKeys = ["ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", " "];
         if (presentationReadOnly) {
@@ -507,7 +502,7 @@
             await waitForPlayerPositionChange(slideIndex, playerStep);
             setControlledPresentationPosition(targetSlide, targetBuildStep);
         }
-        if (!presentationReadOnly && new URLSearchParams(window.location.search).get("controlled") === "1") {
+        if (!presentationReadOnly && presentationControlled) {
             window.addEventListener("keydown", (event) => {
                 if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
                 event.preventDefault();
@@ -576,6 +571,7 @@
 
 					window.setTimeout(fitPresentationToViewport, 0);
 					window.addEventListener("resize", fitPresentationToViewport);
+					window.addEventListener("orientationchange", fitPresentationToViewport);
 					if (window.visualViewport)
 						window.visualViewport.addEventListener("resize", fitPresentationToViewport);
 				}
