@@ -55,7 +55,7 @@
 			overflow: hidden !important;
 			overscroll-behavior: none;
 			scrollbar-width: none;
-			background: #000;
+			background: #000 !important;
 		}
 
 		html.fullscreen-presentation::-webkit-scrollbar,
@@ -76,6 +76,7 @@
 			width: 100vw;
 			height: 100vh;
 			height: 100dvh;
+			background: #000 !important;
 		}
 
 		html.fullscreen-presentation #content > .universal {
@@ -85,6 +86,7 @@
 			height: 100vh !important;
 			height: 100dvh !important;
 			border-radius: 0 !important;
+			background: #000 !important;
 		}
 
 		html.fullscreen-presentation #content > .universal_mini {
@@ -93,6 +95,7 @@
 			width: 100vw !important;
 			height: 100vh !important;
 			height: 100dvh !important;
+			background: #000 !important;
 		}
 
 		html.fullscreen-presentation #content .top-panel,
@@ -102,26 +105,13 @@
 			display: none !important;
 		}
 
-		html.fullscreen-presentation.player-presentation,
-		html.fullscreen-presentation.player-presentation body {
-			background: #000 !important;
-		}
-
-		html.fullscreen-presentation.player-presentation #content > .universal,
-		html.fullscreen-presentation.player-presentation #content > .universal_mini {
-			background: #000 !important;
-		}
-
-		html.fullscreen-presentation.player-presentation #content,
-		html.fullscreen-presentation.player-presentation #content .main-container,
-		html.fullscreen-presentation.player-presentation #content .presentation-container,
-		html.fullscreen-presentation.player-presentation #content .content-area,
-		html.fullscreen-presentation.player-presentation #content .playerView {
-			background: #000 !important;
-		}
-
-		html.fullscreen-presentation.player-presentation #content #playerView,
-		html.fullscreen-presentation.player-presentation #content #slidesBackground {
+		html.fullscreen-presentation #content,
+		html.fullscreen-presentation #content .main-container,
+		html.fullscreen-presentation #content .presentation-container,
+		html.fullscreen-presentation #content .content-area,
+		html.fullscreen-presentation #content .playerView,
+		html.fullscreen-presentation #content #playerView,
+		html.fullscreen-presentation #content #slidesBackground {
 			background: #000 !important;
 		}
 
