@@ -3234,7 +3234,7 @@
                 }
             }
             presentationState = nextState;
-            const isActive = presentationState.active === true;
+            const isActive = presentationState.active === true && hostWindowActive;
             presentationScreen.hidden = !isActive;
             document.body.classList.toggle("presentation-active", isActive);
             presentationToggleButton.setAttribute("aria-pressed", String(isActive));
@@ -3447,6 +3447,7 @@
         let bonusFanfareActive = false;
         let currentMusicPhase = null;
         let backgroundMusicDesired = null;
+        let hostWindowActive = document.visibilityState === "visible";
 
         function updateMusicControl(label = "") {
             const isPlaying = funkyMusic.isPlaying;
@@ -3457,7 +3458,10 @@
 
         function syncBackgroundMusic(phase) {
             currentMusicPhase = phase;
-            const forcedMuted = spyfallDrumrollActive || bonusFanfareActive || presentationState.active === true;
+            const forcedMuted = spyfallDrumrollActive
+                || bonusFanfareActive
+                || presentationState.active === true
+                || !hostWindowActive;
             musicToggle.disabled = forcedMuted;
             const trackControlsDisabled = lobbyMusicPhases.has(phase) || !phase || forcedMuted;
             musicPreviousTrack.disabled = trackControlsDisabled;
@@ -3485,6 +3489,36 @@
             }
             funkyMusic.start(trackName).then(() => updateMusicControl()).catch(() => updateMusicControl("Audio unavailable"));
         }
+
+        function setHostWindowActive(isActive) {
+            const nextActive = isActive && document.visibilityState === "visible";
+            if (hostWindowActive === nextActive) return;
+            hostWindowActive = nextActive;
+
+            if (!hostWindowActive) {
+                funkyMusic.stopImmediately();
+                backgroundMusicDesired = false;
+                updateMusicControl();
+                if (presentationState.active) {
+                    presentationState = { ...presentationState, active: false };
+                    pendingHostPresentationPosition = null;
+                    syncPresentationView(presentationState);
+                    update(presentationRef, { active: false }).catch((error) => {
+                        console.error("Could not close the presentation after host deactivation.", error);
+                    });
+                }
+                syncBackgroundMusic(currentMusicPhase);
+                return;
+            }
+
+            syncBackgroundMusic(currentMusicPhase);
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            setHostWindowActive(document.visibilityState === "visible");
+        });
+        window.addEventListener("blur", () => setHostWindowActive(false));
+        window.addEventListener("focus", () => setHostWindowActive(true));
 
         hostAttentionButton.addEventListener("click", () => {
             playAttentionSound();

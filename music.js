@@ -113,6 +113,16 @@ export function createFunkyMusic() {
         fadeTo(null);
     }
 
+    function stopImmediately() {
+        cancelFade();
+        desiredTrack = null;
+        activeTrack = null;
+        tracks.forEach((track) => {
+            track.pause();
+            track.volume = 0;
+        });
+    }
+
     function setVolume(level) {
         const nextVolume = Math.max(0, Math.min(1, Number(level) || 0));
         if (nextVolume === volume) return;
@@ -123,6 +133,7 @@ export function createFunkyMusic() {
     return {
         start,
         stop,
+        stopImmediately,
         setVolume,
         nextTrack: () => changeGameTrack(1),
         previousTrack: () => changeGameTrack(-1),
