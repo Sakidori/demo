@@ -2124,6 +2124,12 @@
         const presentationSlideThreePosition = 2;
         const presentationSlideFivePosition = 4;
         let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
+        function syncPlayerAudioForPresentation() {
+            if (presentationState.active !== true || !audioCtx || audioCtx.state === "suspended") return;
+            audioCtx.suspend().catch((error) => {
+                console.error("Could not mute player audio for the presentation.", error);
+            });
+        }
         function syncPlayerPresentationSlide() {
             if (!presentationState.active || playerPresentationFrame.dataset.ready !== "true") return;
             const targetSlide = Math.max(0, Number(presentationState.slideIndex) || 0);
@@ -2140,6 +2146,7 @@
         function syncPlayerPresentation(state) {
             presentationState = state || { active: false, slideIndex: 0, buildStep: -1 };
             const isActive = presentationState.active === true;
+            syncPlayerAudioForPresentation();
             playerPresentationScreen.hidden = !isActive;
             document.body.classList.toggle("presentation-active", isActive);
             if (isActive && !playerPresentationFrame.src) {
@@ -2217,8 +2224,14 @@
             const AudioCtor = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtor) return null;
             if (!audioCtx) audioCtx = new AudioCtor();
-            if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+            if (playerSoundEnabled && presentationState.active !== true && audioCtx.state === "suspended") {
+                audioCtx.resume().catch(() => {});
+            }
             return audioCtx;
+        }
+
+        function isPlayerSoundAllowed() {
+            return playerSoundEnabled && presentationState.active !== true;
         }
 
         function updateSoundToggle() {
@@ -2243,7 +2256,7 @@
         const buttonSoundBuffers = new Map();
 
         function playButtonSound() {
-            if (!playerSoundEnabled) return;
+            if (!isPlayerSoundAllowed()) return;
             const context = unlockPlayerAudio();
             if (!context) return;
             const sourceName = "beep.mp3";
@@ -2258,7 +2271,7 @@
                 buttonSoundBuffers.set(sourceName, bufferPromise);
             }
             bufferPromise.then((buffer) => {
-                if (!playerSoundEnabled) return;
+                if (!isPlayerSoundAllowed()) return;
                 const gainNode = context.createGain();
                 const audioSource = context.createBufferSource();
                 gainNode.gain.value = 2;
@@ -2299,7 +2312,7 @@
         }, true);
 
         function playUiTone(frequency, duration, type = "sine", volume = 0.04) {
-            if (!playerSoundEnabled) return;
+            if (!isPlayerSoundAllowed()) return;
             const context = unlockPlayerAudio();
             if (!context) return;
             const oscillator = context.createOscillator();
@@ -2316,7 +2329,7 @@
         }
 
         function playMechanicalButtonSound() {
-            if (!playerSoundEnabled) return;
+            if (!isPlayerSoundAllowed()) return;
             const context = unlockPlayerAudio();
             if (!context) return;
             const now = context.currentTime;

@@ -182,6 +182,15 @@
         }
         const presentationNavigationKeys = ["ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", " "];
         if (presentationReadOnly) {
+            const mutePresentationMedia = (media) => {
+                media.muted = true;
+                media.volume = 0;
+                media.pause();
+            };
+            document.querySelectorAll("audio, video").forEach(mutePresentationMedia);
+            document.addEventListener("play", (event) => {
+                if (event.target instanceof HTMLMediaElement) mutePresentationMedia(event.target);
+            }, true);
             window.addEventListener("keydown", (event) => {
                 if (!event.isTrusted || !presentationNavigationKeys.includes(event.key)) return;
                 event.preventDefault();

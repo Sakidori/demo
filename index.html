@@ -3517,6 +3517,11 @@
         document.addEventListener("visibilitychange", () => {
             setHostWindowActive(document.visibilityState === "visible");
         });
+        document.addEventListener("freeze", () => setHostWindowActive(false));
+        window.addEventListener("pagehide", () => setHostWindowActive(false));
+        window.addEventListener("pageshow", () => {
+            setHostWindowActive(document.visibilityState === "visible");
+        });
         window.addEventListener("blur", () => setHostWindowActive(false));
         window.addEventListener("focus", () => setHostWindowActive(true));
 
