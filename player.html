@@ -3684,24 +3684,35 @@
             document.querySelectorAll("#player-quiz-choices button").forEach((button) => { button.disabled = true; });
             document.getElementById("player-quiz-answer-input").disabled = true;
             document.getElementById("player-quiz-answer-submit").disabled = true;
-            const result = await runTransaction(gameRef, (gameData) => {
-                if (gameData?.phase !== "quiz" || gameData.paused || !gameData.players?.[playerId]) return;
-                if (gameData.quizAnswers?.[playerId] || Date.now() >= Number(gameData.quizEndsAt)) return;
-                if (gameData.quizQuestion?.responseType === "text") {
-                    if (typeof answer !== "string" || !answer.trim()) return;
-                } else if (!Number.isInteger(answer) || answer < 0 || answer >= gameData.quizQuestion?.choices?.length) {
-                    return;
-                }
-                return {
-                    ...gameData,
-                    quizAnswers: {
-                        ...(gameData.quizAnswers || {}),
-                        [playerId]: gameData.quizQuestion.responseType === "text"
-                            ? { answerText: answer, answeredAt: Date.now() }
-                            : { choiceIndex: answer, answeredAt: Date.now() }
+            document.getElementById("player-quiz-status").innerText = "Submitting your answer...";
+            let result;
+            try {
+                result = await runTransaction(gameRef, (gameData) => {
+                    if (gameData?.phase !== "quiz" || gameData.paused || !gameData.players?.[playerId]) return;
+                    if (gameData.quizAnswers?.[playerId] || Date.now() >= Number(gameData.quizEndsAt)) return;
+                    if (gameData.quizQuestion?.responseType === "text") {
+                        if (typeof answer !== "string" || !answer.trim()) return;
+                    } else if (!Number.isInteger(answer) || answer < 0 || answer >= gameData.quizQuestion?.choices?.length) {
+                        return;
                     }
-                };
-            }, { applyLocally: false });
+                    return {
+                        ...gameData,
+                        quizAnswers: {
+                            ...(gameData.quizAnswers || {}),
+                            [playerId]: gameData.quizQuestion.responseType === "text"
+                                ? { answerText: answer, answeredAt: Date.now() }
+                                : { choiceIndex: answer, answeredAt: Date.now() }
+                        }
+                    };
+                }, { applyLocally: false });
+            } catch (error) {
+                console.error("Could not submit the quiz answer.", error);
+                if (activePhase === "quiz") {
+                    renderPlayerQuiz(currentGameData);
+                    document.getElementById("player-quiz-status").innerText = "Connection issue. Your answer was not confirmed. Please try again.";
+                }
+                return;
+            }
 
             if (result.committed) {
                 currentGameData = result.snapshot.val() || currentGameData;
