@@ -140,7 +140,11 @@
             background: #000;
         }
 
-        .player-presentation-screen[hidden] { display: none; }
+        .player-presentation-screen[hidden] {
+            display: block;
+            visibility: hidden;
+            pointer-events: none;
+        }
 
         .player-presentation-frame {
             width: 100%;
@@ -2123,7 +2127,14 @@
         const playerPresentationFrame = document.getElementById("player-presentation-frame");
         const presentationSlideThreePosition = 2;
         const presentationSlideFivePosition = 4;
+        const presentationWarmupPhases = new Set([
+            "round-results", "quiz-results", "spyfall-results", "bonus-standings", "bonus-podium", "results", "finished"
+        ]);
         let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
+        function preloadPlayerPresentation() {
+            if (playerPresentationFrame.hasAttribute("src")) return;
+            playerPresentationFrame.src = new URL("index2.html?controlled=1&readonly=1", window.location.href).href;
+        }
         function syncPlayerAudioForPresentation() {
             if (presentationState.active !== true || !audioCtx || audioCtx.state === "suspended") return;
             audioCtx.suspend().catch((error) => {
@@ -2149,9 +2160,7 @@
             syncPlayerAudioForPresentation();
             playerPresentationScreen.hidden = !isActive;
             document.body.classList.toggle("presentation-active", isActive);
-            if (isActive && !playerPresentationFrame.src) {
-                playerPresentationFrame.src = new URL("index2.html?controlled=1&readonly=1", window.location.href).href;
-            }
+            if (isActive) preloadPlayerPresentation();
             syncPlayerPresentationSlide();
         }
         playerPresentationFrame.addEventListener("load", () => {
@@ -2560,6 +2569,7 @@
                 window.location.reload();
                 return;
             }
+            if (presentationWarmupPhases.has(currentGameData.phase)) preloadPlayerPresentation();
             syncPlayerPresentation(currentGameData.presentation);
             renderTeamColorOptions(currentGameData);
             if (demoPreview) {

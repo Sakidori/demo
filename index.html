@@ -498,7 +498,11 @@
             background: #000;
         }
 
-        .presentation-screen[hidden] { display: none; }
+        .presentation-screen[hidden] {
+            display: block;
+            visibility: hidden;
+            pointer-events: none;
+        }
 
         body.presentation-active .host-top-controls,
         body.presentation-active .host-player-controls {
@@ -3205,8 +3209,15 @@
         ];
         const presentationSlideThreePosition = 2;
         const presentationSlideFivePosition = 4;
+        const presentationWarmupPhases = new Set([
+            "round-results", "quiz-results", "spyfall-results", "bonus-standings", "bonus-podium", "results", "finished"
+        ]);
         let presentationState = { active: false, slideIndex: 0, buildStep: -1 };
         let pendingHostPresentationPosition = null;
+        function preloadHostPresentation() {
+            if (hostPresentationFrame.hasAttribute("src")) return;
+            hostPresentationFrame.src = new URL("index2.html?controlled=1", window.location.href).href;
+        }
         function syncPresentationSlide(frame) {
             if (!presentationState.active || frame.dataset.ready !== "true") return;
             const targetSlide = Math.max(0, Number(presentationState.slideIndex) || 0);
@@ -3243,9 +3254,7 @@
             presentationStepButtons.forEach((button) => {
                 button.disabled = !isActive || hostPresentationFrame.dataset.ready !== "true";
             });
-            if (isActive && !hostPresentationFrame.src) {
-                hostPresentationFrame.src = new URL("index2.html?controlled=1", window.location.href).href;
-            }
+            if (isActive) preloadHostPresentation();
             hostPresentationFrame.dataset.active = String(isActive);
             syncPresentationSlide(hostPresentationFrame);
         }
@@ -4025,6 +4034,7 @@
                     console.error("Could not set the demo Bonus button style.", error);
                 });
             }
+            if (presentationWarmupPhases.has(gameData.phase)) preloadHostPresentation();
             syncPresentationView(gameData.presentation);
             syncDemoPlayerView(gameData);
             simulateDemoPlayers(gameData);
