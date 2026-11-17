@@ -2184,6 +2184,7 @@
         let playerTeamName = "";
 
         let activePhase = "waiting";
+        let stopLobbyGameListener;
         let stopGameListener;
         let stopSpyfallRoleListener;
         let playerQuizCountdownInterval;
@@ -2223,6 +2224,30 @@
             if (playerCount <= 4) return 1;
             if (playerCount <= 6) return 2;
             return 3;
+        };
+        const getQuizAnswers = (gameData) => {
+            const questionKey = String(Number(gameData?.quizStartedAt) || "");
+            const storedAnswers = questionKey
+                ? gameData?.quizAnswers?.[questionKey] || gameData?.quizAnswers || {}
+                : {};
+            return Object.fromEntries(Object.entries(storedAnswers).flatMap(([id, value]) => {
+                const answer = value && typeof value === "object" && ("open" in value || "answer" in value)
+                    ? value.answer
+                    : value;
+                return answer ? [[id, answer]] : [];
+            }));
+        };
+        const getSpyfallVotes = (gameData) => {
+            const voteKey = String(Number(gameData?.spyfallVotingStartedAt || gameData?.spyfallVoteEndsAt) || "");
+            const storedVotes = voteKey
+                ? gameData?.spyfallVotes?.[voteKey] || gameData?.spyfallVotes || {}
+                : {};
+            return Object.fromEntries(Object.entries(storedVotes).flatMap(([id, value]) => {
+                const vote = value && typeof value === "object" && ("open" in value || "vote" in value)
+                    ? value.vote
+                    : value;
+                return Array.isArray(vote) ? [[id, vote]] : [];
+            }));
         };
         let audioCtx;
         const soundToggle = document.getElementById("sound-toggle");
@@ -2560,7 +2585,7 @@
             return true;
         }
 
-        onValue(gameRef, (snapshot) => {
+        stopLobbyGameListener = onValue(gameRef, (snapshot) => {
             currentGameData = snapshot.val() || {};
             const resetAt = Number(currentGameData.resetAt || 0);
             if (observedResetAt === undefined) {
@@ -2740,6 +2765,20 @@
                 const gameData = snapshot.val();
                 if (!gameData) return;
                 currentGameData = gameData;
+                const resetAt = Number(gameData.resetAt || 0);
+                if (observedResetAt === undefined) {
+                    observedResetAt = resetAt;
+                } else if (resetAt !== observedResetAt) {
+                    window.location.reload();
+                    return;
+                }
+                if (presentationWarmupPhases.has(gameData.phase)) preloadPlayerPresentation();
+                syncPlayerPresentation(gameData.presentation);
+                renderTeamColorOptions(gameData);
+                if (stopLobbyGameListener) {
+                    stopLobbyGameListener();
+                    stopLobbyGameListener = undefined;
+                }
                 if (gameData.phase !== "spyfall-active") {
                     clearTimeout(spyfallTurnSplashTimeout);
                     spyfallTurnSplashTimeout = null;
@@ -2923,7 +2962,7 @@
                     document.getElementById("quiz-results-waiting").innerText = Number(gameData.quizQuestionIndex) === 0
                         ? "Waiting for the host to start Spyfall."
                         : "Waiting for the host to start the final round.";
-                    const submittedAnswer = gameData.quizAnswers?.[playerId];
+                    const submittedAnswer = getQuizAnswers(gameData)[playerId];
                     const playerAnswer = typeof submittedAnswer?.answerText === "string"
                         ? submittedAnswer.answerText
                         : Number.isInteger(submittedAnswer?.choiceIndex)
@@ -3407,7 +3446,7 @@
         function renderSpyfallVote(gameData) {
             const list = document.getElementById("spyfall-player-choices");
             list.innerHTML = "";
-            const existingVote = gameData.spyfallVotes?.[playerId];
+            const existingVote = getSpyfallVotes(gameData)[playerId];
             if (Array.isArray(existingVote) && !spyfallVoteDirty) spyfallSelectedVotes = new Set(existingVote);
             const hasVoted = Array.isArray(existingVote);
             const discussionStarted = Boolean(gameData.spyfallDiscussionStarted);
@@ -3505,7 +3544,7 @@
             if (spyfallSelectedVotes.has(targetPlayerId)) {
                 spyfallSelectedVotes.delete(targetPlayerId);
             } else if (spyfallSelectedVotes.size >= requiredSelections) {
-                if (!Array.isArray(currentGameData.spyfallVotes?.[playerId])) return;
+                if (!Array.isArray(getSpyfallVotes(currentGameData)[playerId])) return;
                 spyfallSelectedVotes.delete(spyfallSelectedVotes.values().next().value);
                 spyfallSelectedVotes.add(targetPlayerId);
             } else {
@@ -3519,7 +3558,8 @@
         window.submitSpyfallVote = async function() {
             if (activePhase !== "spyfall-vote" || currentGameData.paused || !currentGameData.spyfallVotingStarted || currentGameData.spyfallVotingEnded || !playerId || spyfallVoteSubmitting) return;
             const requiredSelections = Math.max(1, getSpyfallSpyCount(Object.values(currentGameData.players || {}).filter((player) => player?.teamId).length));
-            if (Date.now() >= Number(currentGameData.spyfallVoteEndsAt)) {
+            const voteDeadline = Number(currentGameData.spyfallVoteEndsAt);
+            if (!Number.isFinite(voteDeadline) || voteDeadline <= 0 || Date.now() >= voteDeadline) {
                 document.getElementById("spyfall-player-status").innerText = "Voting has ended.";
                 return;
             }
@@ -3528,19 +3568,21 @@
                 return;
             }
             const selectedPlayerIds = Array.from(spyfallSelectedVotes);
+            const voteKey = String(Number(currentGameData.spyfallVotingStartedAt || voteDeadline));
+            const submittedAt = Date.now();
             spyfallVoteSubmitting = true;
             document.querySelectorAll("#spyfall-player-choices button").forEach((button) => { button.disabled = true; });
             let result;
             try {
-                result = await runTransaction(gameRef, (gameData) => {
+                result = await runTransaction(ref(db, `game/spyfallVotes/${voteKey}/${playerId}`), (existingVote) => {
+                    if (!existingVote || existingVote.open !== true || existingVote.paused) return;
+                    const gameData = currentGameData;
                     if (gameData?.phase !== "spyfall-vote" || gameData.paused || !gameData.spyfallVotingStarted || gameData.spyfallVotingEnded || !gameData.players?.[playerId]) return;
-                    if (Date.now() >= Number(gameData.spyfallVoteEndsAt)) return;
+                    if (Number(gameData.spyfallVotingStartedAt || gameData.spyfallVoteEndsAt) !== Number(voteKey)
+                        || submittedAt >= Number(gameData.spyfallVoteEndsAt)) return;
                     if (selectedPlayerIds.length !== requiredSelections || new Set(selectedPlayerIds).size !== requiredSelections) return;
                     if (selectedPlayerIds.some((id) => id === playerId || !gameData.players?.[id])) return;
-                    return {
-                        ...gameData,
-                        spyfallVotes: { ...(gameData.spyfallVotes || {}), [playerId]: selectedPlayerIds }
-                    };
+                    return { ...existingVote, vote: selectedPlayerIds };
                 }, { applyLocally: false });
             } catch {
                 spyfallVoteSubmitting = false;
@@ -3549,8 +3591,21 @@
                 return;
             }
             if (result.committed) {
-                currentGameData = result.snapshot.val() || currentGameData;
-                spyfallSelectedVotes = new Set(currentGameData.spyfallVotes?.[playerId] || selectedPlayerIds);
+                const savedVoteSlot = result.snapshot.val();
+                const savedVote = savedVoteSlot?.vote || selectedPlayerIds;
+                if (String(Number(currentGameData.spyfallVotingStartedAt || currentGameData.spyfallVoteEndsAt)) === voteKey) {
+                    currentGameData = {
+                        ...currentGameData,
+                        spyfallVotes: {
+                            ...(currentGameData.spyfallVotes || {}),
+                            [voteKey]: {
+                                ...(currentGameData.spyfallVotes?.[voteKey] || {}),
+                                [playerId]: savedVoteSlot
+                            }
+                        }
+                    };
+                }
+                spyfallSelectedVotes = new Set(savedVote);
                 spyfallVoteDirty = false;
                 spyfallVoteSubmitting = false;
                 renderSpyfallVote(currentGameData);
@@ -3608,8 +3663,9 @@
             image.src = question.image || "";
             image.alt = question.imageAlt || question.text || "";
 
-            const hasAnswered = Boolean(gameData.quizAnswers?.[playerId]);
-            const selectedAnswerIndex = Number(gameData.quizAnswers?.[playerId]?.choiceIndex);
+            const answers = getQuizAnswers(gameData);
+            const hasAnswered = Boolean(answers[playerId]);
+            const selectedAnswerIndex = Number(answers[playerId]?.choiceIndex);
             const choices = document.getElementById("player-quiz-choices");
             const textAnswer = document.getElementById("player-quiz-text-answer");
             const answerInput = document.getElementById("player-quiz-answer-input");
@@ -3632,7 +3688,7 @@
                 button.addEventListener("click", () => submitQuizAnswer(index));
                 choices.appendChild(button);
             });
-            const savedAnswer = gameData.quizAnswers?.[playerId]?.answerText;
+            const savedAnswer = answers[playerId]?.answerText;
             if (currentPlayerQuizQuestionIndex !== gameData.quizQuestionIndex) {
                 answerInput.value = typeof savedAnswer === "string" ? savedAnswer : "";
                 currentPlayerQuizQuestionIndex = gameData.quizQuestionIndex;
@@ -3676,6 +3732,13 @@
 
         window.submitQuizAnswer = async function(answer) {
             if (!playerId || activePhase !== "quiz" || currentGameData.paused) return;
+            const questionStartedAt = Number(currentGameData.quizStartedAt);
+            const quizEndsAt = Number(currentGameData.quizEndsAt);
+            if (!Number.isFinite(questionStartedAt) || questionStartedAt <= 0) return;
+            if (!Number.isFinite(quizEndsAt) || Date.now() >= quizEndsAt) {
+                document.getElementById("player-quiz-status").innerText = "Time is up.";
+                return;
+            }
             const isTextAnswer = typeof answer === "string";
             if (isTextAnswer && !answer.trim()) {
                 document.getElementById("player-quiz-status").innerText = "Enter an answer first.";
@@ -3685,25 +3748,24 @@
             document.getElementById("player-quiz-answer-input").disabled = true;
             document.getElementById("player-quiz-answer-submit").disabled = true;
             document.getElementById("player-quiz-status").innerText = "Submitting your answer...";
+            const questionKey = String(questionStartedAt);
+            const submittedAt = Date.now();
             let result;
             try {
-                result = await runTransaction(gameRef, (gameData) => {
+                result = await runTransaction(ref(db, `game/quizAnswers/${questionKey}/${playerId}`), (slot) => {
+                    if (!slot || slot.open !== true || slot.paused || slot.answer) return;
+                    const gameData = currentGameData;
                     if (gameData?.phase !== "quiz" || gameData.paused || !gameData.players?.[playerId]) return;
-                    if (gameData.quizAnswers?.[playerId] || Date.now() >= Number(gameData.quizEndsAt)) return;
+                    if (Number(gameData.quizStartedAt) !== Number(questionKey) || submittedAt >= Number(gameData.quizEndsAt)) return;
                     if (gameData.quizQuestion?.responseType === "text") {
                         if (typeof answer !== "string" || !answer.trim()) return;
                     } else if (!Number.isInteger(answer) || answer < 0 || answer >= gameData.quizQuestion?.choices?.length) {
                         return;
                     }
-                    return {
-                        ...gameData,
-                        quizAnswers: {
-                            ...(gameData.quizAnswers || {}),
-                            [playerId]: gameData.quizQuestion.responseType === "text"
-                                ? { answerText: answer, answeredAt: Date.now() }
-                                : { choiceIndex: answer, answeredAt: Date.now() }
-                        }
-                    };
+                    const savedAnswer = gameData.quizQuestion.responseType === "text"
+                        ? { answerText: answer, answeredAt: submittedAt }
+                        : { choiceIndex: answer, answeredAt: submittedAt };
+                    return { ...slot, answer: savedAnswer };
                 }, { applyLocally: false });
             } catch (error) {
                 console.error("Could not submit the quiz answer.", error);
@@ -3715,7 +3777,18 @@
             }
 
             if (result.committed) {
-                currentGameData = result.snapshot.val() || currentGameData;
+                if (String(Number(currentGameData.quizStartedAt)) === questionKey) {
+                    currentGameData = {
+                        ...currentGameData,
+                        quizAnswers: {
+                            ...(currentGameData.quizAnswers || {}),
+                            [questionKey]: {
+                                ...(currentGameData.quizAnswers?.[questionKey] || {}),
+                                [playerId]: result.snapshot.val()
+                            }
+                        }
+                    };
+                }
                 if (isTextAnswer) {
                     document.getElementById("player-quiz-text-answer").hidden = true;
                     document.getElementById("player-quiz-answer-confirmation").hidden = false;

@@ -3138,6 +3138,7 @@
         let spyfallRevealEndsAt = 0;
         let spyfallVoteOpensAt = 0;
         let spyfallVoteEndsAt = 0;
+        let spyfallVotingStartedAt = 0;
         let spyfallDiscussionStarted = false;
         let spyfallVotingStarted = false;
         let spyfallVotingEnded = false;
@@ -3181,6 +3182,30 @@
             if (playerCount <= 4) return 1;
             if (playerCount <= 6) return 2;
             return 3;
+        };
+        const getQuizAnswers = (gameData) => {
+            const questionKey = String(Number(gameData?.quizStartedAt) || "");
+            const storedAnswers = questionKey
+                ? gameData?.quizAnswers?.[questionKey] || gameData?.quizAnswers || {}
+                : {};
+            return Object.fromEntries(Object.entries(storedAnswers).flatMap(([id, value]) => {
+                const answer = value && typeof value === "object" && ("open" in value || "answer" in value)
+                    ? value.answer
+                    : value;
+                return answer ? [[id, answer]] : [];
+            }));
+        };
+        const getSpyfallVotes = (gameData) => {
+            const voteKey = String(Number(gameData?.spyfallVotingStartedAt || gameData?.spyfallVoteEndsAt) || "");
+            const storedVotes = voteKey
+                ? gameData?.spyfallVotes?.[voteKey] || gameData?.spyfallVotes || {}
+                : {};
+            return Object.fromEntries(Object.entries(storedVotes).flatMap(([id, value]) => {
+                const vote = value && typeof value === "object" && ("open" in value || "vote" in value)
+                    ? value.vote
+                    : value;
+                return Array.isArray(vote) ? [[id, vote]] : [];
+            }));
         };
         const renderSpyfallHostCurrentTeam = (teamId, labelText = "Current team") => {
             const card = document.getElementById("spyfall-host-current-team");
@@ -3973,9 +3998,11 @@
                         } else {
                             answer.answerText = index % 2 === 0 ? currentQuizQuestion?.answer : "Demo answer";
                         }
-                        answers[id] = answer;
+                        answers[id] = { open: true, paused: false, answer };
                     });
-                    void update(gameRef, { quizAnswers: answers })
+                    void update(gameRef, {
+                        quizAnswers: { [String(Number(gameData.quizStartedAt))]: answers }
+                    })
                         .catch((error) => console.error("Could not submit simulated quiz answers.", error));
                 }, 1200);
                 return;
@@ -3986,9 +4013,15 @@
                     scheduleDemoAction(`spyfall-submit-votes-${gameData.spyfallVoteEndsAt}`, () => {
                         const spyId = Array.from(spyfallSpyIds)[0];
                         const votes = Object.fromEntries(
-                            Object.keys(gameData.players || {}).map((id) => [id, spyId ? [spyId] : []])
+                            Object.keys(gameData.players || {}).map((id) => [id, {
+                                open: true,
+                                paused: false,
+                                vote: spyId ? [spyId] : []
+                            }])
                         );
-                        void update(gameRef, { spyfallVotes: votes }).then(() => {
+                        void update(gameRef, {
+                            spyfallVotes: { [String(Number(gameData.spyfallVotingStartedAt))]: votes }
+                        }).then(() => {
                             document.getElementById("spyfall-host-status").innerText = "Demo teams have voted. Reveal results when you are ready.";
                         }).catch((error) => console.error("Could not submit simulated Spyfall votes.", error));
                     }, 1200);
@@ -4228,7 +4261,7 @@
                 const playerIds = Object.entries(hostPlayers)
                     .filter(([, player]) => player?.teamId)
                     .map(([id]) => id);
-                const answers = gameData.quizAnswers || {};
+                const answers = getQuizAnswers(gameData);
                 document.getElementById("quiz-answer-count").innerText = `${Object.keys(answers).length} of ${playerIds.length} teams answered`;
                 if (!demoMode && playerIds.length && playerIds.every((id) => answers[id])) finishPopQuiz();
             }
@@ -4239,11 +4272,12 @@
                 spyfallVotingEnded = Boolean(gameData.spyfallVotingEnded);
                 spyfallVoteOpensAt = Number(gameData.spyfallDiscussionEndsAt || 0);
                 spyfallVoteEndsAt = Number(gameData.spyfallVoteEndsAt || 0);
+                spyfallVotingStartedAt = Number(gameData.spyfallVotingStartedAt || 0);
                 document.getElementById("spyfall-start-discussion").hidden = spyfallDiscussionStarted || spyfallVotingStarted;
                 document.getElementById("spyfall-start-voting").hidden = !spyfallDiscussionStarted || spyfallVotingStarted;
                 renderSpyfallVotes(gameData);
                 const teamCount = Object.values(gameData.players || {}).filter((player) => player?.teamId).length;
-                const voteCount = Object.keys(gameData.spyfallVotes || {}).length;
+                const voteCount = Object.keys(getSpyfallVotes(gameData)).length;
                 if (!demoMode && spyfallVotingStarted && !spyfallVotingEnded && teamCount > 0 && voteCount >= teamCount) {
                     endSpyfallVoting("All teams have voted. Reveal results when ready.");
                 }
@@ -4258,6 +4292,18 @@
             if (paused) {
                 const pauseUpdates = { paused: true, pausedAt: Date.now() };
                 if (currentPhase === "bomb") pauseUpdates.bombRoundStartedAt = bombRoundStartedAt;
+                if (currentGameData.phase === "quiz") {
+                    const questionKey = String(Number(currentGameData.quizStartedAt) || "");
+                    Object.keys(currentGameData.quizAnswers?.[questionKey] || {}).forEach((id) => {
+                        pauseUpdates[`quizAnswers/${questionKey}/${id}/paused`] = true;
+                    });
+                }
+                if (currentGameData.phase === "spyfall-vote" && currentGameData.spyfallVotingStarted) {
+                    const voteKey = String(Number(currentGameData.spyfallVotingStartedAt || currentGameData.spyfallVoteEndsAt) || "");
+                    Object.keys(currentGameData.spyfallVotes?.[voteKey] || {}).forEach((id) => {
+                        pauseUpdates[`spyfallVotes/${voteKey}/${id}/paused`] = true;
+                    });
+                }
                 await update(gameRef, pauseUpdates);
                 setPauseButtonState(true);
                 clearInterval(countdownInterval);
@@ -4272,6 +4318,18 @@
 
             const pauseDuration = Math.max(0, Date.now() - Number(currentGameData.pausedAt || Date.now()));
             const resumeUpdates = { paused: false, pausedAt: null };
+            if (currentGameData.phase === "quiz") {
+                const questionKey = String(Number(currentGameData.quizStartedAt) || "");
+                Object.keys(currentGameData.quizAnswers?.[questionKey] || {}).forEach((id) => {
+                    resumeUpdates[`quizAnswers/${questionKey}/${id}/paused`] = false;
+                });
+            }
+            if (currentGameData.phase === "spyfall-vote" && currentGameData.spyfallVotingStarted) {
+                const voteKey = String(Number(currentGameData.spyfallVotingStartedAt || currentGameData.spyfallVoteEndsAt) || "");
+                Object.keys(currentGameData.spyfallVotes?.[voteKey] || {}).forEach((id) => {
+                    resumeUpdates[`spyfallVotes/${voteKey}/${id}/paused`] = false;
+                });
+            }
             ["quizEndsAt", "spyfallRevealEndsAt", "spyfallTurnEndsAt", "spyfallVoteEndsAt", "spyfallDiscussionEndsAt", "bonusRoundIntroStartedAt", "bonusRoundIntroEndsAt", "bonusRoundStartedAt", "bonusRoundEndsAt"]
                 .forEach((key) => {
                     const deadline = Number(currentGameData[key] || 0);
@@ -4951,6 +5009,12 @@
             quizIntroTimeout = null;
             const quizStartedAt = Date.now();
             const quizEndsAt = quizStartedAt + 30000;
+            const quizQuestionKey = String(quizStartedAt);
+            const quizAnswerSlots = Object.fromEntries(
+                Object.entries(hostPlayers || {})
+                    .filter(([, player]) => player?.teamId)
+                    .map(([id]) => [id, { open: true, paused: false }])
+            );
             currentPhase = "quiz";
             document.getElementById("quiz-splash").hidden = true;
             document.getElementById("quiz-screen").classList.add("active");
@@ -4981,7 +5045,7 @@
                 },
                 quizStartedAt,
                 quizEndsAt,
-                quizAnswers: {},
+                quizAnswers: { [quizQuestionKey]: quizAnswerSlots },
                 quizResults: null
             });
             if (currentPhase !== "quiz") return;
@@ -5042,7 +5106,20 @@
                 if (gameData?.phase !== "quiz") return;
                 const players = { ...(gameData.players || {}) };
                 const quizResults = {};
-                Object.entries(gameData.quizAnswers || {}).forEach(([id, answer]) => {
+                const questionKey = String(Number(gameData.quizStartedAt) || "");
+                const quizAnswers = { ...(gameData.quizAnswers || {}) };
+                const questionSlots = questionKey ? gameData.quizAnswers?.[questionKey] : null;
+                if (questionSlots) {
+                    quizAnswers[questionKey] = Object.fromEntries(
+                        Object.entries(questionSlots).map(([id, slot]) => [
+                            id,
+                            slot && typeof slot === "object"
+                                ? { ...slot, open: false, paused: false }
+                                : slot
+                        ])
+                    );
+                }
+                Object.entries(getQuizAnswers(gameData)).forEach(([id, answer]) => {
                     const player = players[id];
                     if (!player) return;
                     const elapsedSeconds = Math.max(0, Math.floor((Number(answer.answeredAt) - Number(gameData.quizStartedAt)) / 1000));
@@ -5073,7 +5150,15 @@
                 const quizCorrectAnswer = typeof currentQuizQuestion.answer === "string"
                     ? currentQuizQuestion.answer
                     : currentQuizQuestion.choices[currentQuizQuestion.answerIndex];
-                return { ...gameData, players, quizResults, quizCorrectAnswer, phase: "quiz-results", status: "quiz-results" };
+                return {
+                    ...gameData,
+                    players,
+                    quizAnswers,
+                    quizResults,
+                    quizCorrectAnswer,
+                    phase: "quiz-results",
+                    status: "quiz-results"
+                };
             }, { applyLocally: false });
             if (!result.committed) {
                 currentPhase = "quiz";
@@ -5728,6 +5813,7 @@
             spyfallVotingEnded = false;
             spyfallVoteOpensAt = 0;
             spyfallVoteEndsAt = 0;
+            spyfallVotingStartedAt = 0;
             await update(gameRef, {
                 status: "spyfall-vote",
                 phase: "spyfall-vote",
@@ -5735,6 +5821,7 @@
                 spyfallDiscussionStarted: false,
                 spyfallVotingStarted: false,
                 spyfallVotingEnded: false,
+                spyfallVotingStartedAt: 0,
                 spyfallVoteEndsAt: 0,
                 spyfallDiscussionEndsAt: 0,
                 paused: false
@@ -5779,14 +5866,22 @@
             }
             spyfallVotingStarted = true;
             spyfallVotingEnded = false;
-            spyfallVoteEndsAt = Date.now() + 30000;
+            spyfallVotingStartedAt = Date.now();
+            spyfallVoteEndsAt = spyfallVotingStartedAt + 30000;
+            const voteKey = String(spyfallVotingStartedAt);
+            const voteSlots = Object.fromEntries(
+                Object.entries(hostPlayers || {})
+                    .filter(([, player]) => player?.teamId)
+                    .map(([id]) => [id, { open: true, paused: false }])
+            );
             await update(gameRef, {
                 spyfallDiscussionStarted: true,
                 spyfallDiscussionEndsAt: spyfallVoteOpensAt,
                 spyfallVotingStarted: true,
                 spyfallVotingEnded: false,
+                spyfallVotingStartedAt,
                 spyfallVoteEndsAt,
-                spyfallVotes: {},
+                spyfallVotes: { [voteKey]: voteSlots },
                 paused: false
             });
             if (currentPhase !== "spyfall-vote") return;
@@ -5856,7 +5951,14 @@
             if (currentPhase !== "spyfall-vote" || !spyfallVotingStarted || spyfallVotingEnded) return;
             spyfallVotingEnded = true;
             clearInterval(spyfallTimerInterval);
-            await update(gameRef, { spyfallVotingEnded: true });
+            const voteKey = String(Number(spyfallVotingStartedAt || spyfallVoteEndsAt) || "");
+            const updates = { spyfallVotingEnded: true };
+            Object.entries(hostPlayers || {})
+                .filter(([, player]) => player?.teamId)
+                .forEach(([id]) => {
+                    updates[`spyfallVotes/${voteKey}/${id}/open`] = false;
+                });
+            await update(gameRef, updates);
             if (currentPhase !== "spyfall-vote") return;
             document.getElementById("spyfall-host-timer").innerText = "Voting ended";
             document.getElementById("spyfall-host-status").innerText = statusText;
@@ -5866,7 +5968,7 @@
         }
 
         function renderSpyfallVotes(gameData) {
-            const votes = gameData.spyfallVotes || {};
+            const votes = getSpyfallVotes(gameData);
             const voteCounts = Object.values(votes).flat().reduce((counts, playerId) => {
                 counts[playerId] = (counts[playerId] || 0) + 1;
                 return counts;
@@ -5906,7 +6008,7 @@
                 if (gameData?.phase !== "spyfall-vote" || !gameData.spyfallVotingEnded) return;
                 const players = { ...(gameData.players || {}) };
                 const spyIds = Array.from(spyfallSpyIds);
-                Object.entries(gameData.spyfallVotes || {}).forEach(([voterId, selectedPlayerIds]) => {
+                Object.entries(getSpyfallVotes(gameData)).forEach(([voterId, selectedPlayerIds]) => {
                     const player = players[voterId];
                     if (!player) return;
                     const points = Array.isArray(selectedPlayerIds)
@@ -5918,7 +6020,7 @@
                         spyfallPoints: points
                     };
                 });
-                const voteCounts = Object.values(gameData.spyfallVotes || {}).flat().reduce((counts, playerId) => {
+                const voteCounts = Object.values(getSpyfallVotes(gameData)).flat().reduce((counts, playerId) => {
                     counts[playerId] = (counts[playerId] || 0) + 1;
                     return counts;
                 }, {});
