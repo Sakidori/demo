@@ -353,7 +353,7 @@
 
         .safe-indicator[hidden] { display: none; }
 
-        body.bomb-prestart-active {
+        body.game-prestart-active {
             height: 100dvh;
             min-height: 0;
             align-items: center;
@@ -361,7 +361,7 @@
             overflow: hidden;
         }
 
-        #waiting-screen.bomb-prestart.active {
+        #waiting-screen.game-prestart.active {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -380,14 +380,14 @@
             text-align: center;
         }
 
-        #waiting-screen.bomb-prestart > * { margin: 0; }
+        #waiting-screen.game-prestart > * { margin: 0; }
 
-        #waiting-screen.bomb-prestart #waiting-avatar,
-        #waiting-screen.bomb-prestart #safe-indicator,
-        #waiting-screen.bomb-prestart #waiting-copy,
-        #waiting-screen.bomb-prestart #get-ready-player { display: none !important; }
+        #waiting-screen.game-prestart #waiting-avatar,
+        #waiting-screen.game-prestart #safe-indicator,
+        #waiting-screen.game-prestart #waiting-copy,
+        #waiting-screen.game-prestart #get-ready-player { display: none !important; }
 
-        #waiting-screen.bomb-prestart h2 {
+        #waiting-screen.game-prestart h2 {
             width: min(100%, 760px);
             max-width: 18ch;
             padding: clamp(22px, 6vw, 48px);
@@ -399,14 +399,19 @@
             overflow-wrap: anywhere;
         }
 
-        #waiting-screen.bomb-prestart--first h2 {
+        #waiting-screen.game-prestart--first h2 {
             border-color: rgba(43,212,168,0.82);
             box-shadow: 0 0 32px rgba(43,212,168,0.22);
         }
 
-        #waiting-screen.bomb-prestart--not-first h2 {
+        #waiting-screen.game-prestart--not-first h2 {
             border-color: rgba(255,92,122,0.88);
             box-shadow: 0 0 32px rgba(255,92,122,0.22);
+        }
+
+        #waiting-screen.game-prestart--spyfall h2 {
+            border-color: rgba(124,92,255,0.85);
+            box-shadow: 0 0 32px rgba(124,92,255,0.24);
         }
 
         #waiting-screen.bomb-spectator.active {
@@ -1854,7 +1859,7 @@
             body::after { inset: 4px; border-width: 5px; border-radius: 14px; }
             .sound-control { top: 15px; right: 16px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 18px 12px 20px; border-radius: 18px; }
-            body.bomb-prestart-active {
+            body.game-prestart-active {
                 padding: 56px 8px 12px;
             }
             input, button { width: 100%; font-size: 16px; padding: 12px 14px; margin: 8px auto; }
@@ -2858,10 +2863,10 @@
                 }
                 if (gameData.phase !== "bomb") {
                     document.body.classList.remove("bomb-spectator");
-                    document.body.classList.remove("bomb-prestart-active");
+                    document.body.classList.remove("game-prestart-active");
                     document.getElementById("waiting-screen").classList.remove("bomb-spectator");
                     document.getElementById("safe-indicator").hidden = true;
-                    document.getElementById("waiting-screen").classList.remove("bomb-prestart", "bomb-prestart--first", "bomb-prestart--not-first");
+                    document.getElementById("waiting-screen").classList.remove("game-prestart", "game-prestart--first", "game-prestart--not-first", "game-prestart--spyfall");
                 }
 
                 if (gameData.phase === "game-splash" || gameData.phase === "round-2-placeholder") {
@@ -2919,8 +2924,9 @@
                     if (gameData.bonusRoundFinalizing) flushBonusRoundTapBuffer();
                 }
 
-                if (gameData.phase === "bomb-ready") {
-                    activePhase = "bomb-ready";
+                if (gameData.phase === "bomb-ready" || gameData.phase === "spyfall-ready") {
+                    const isBombReady = gameData.phase === "bomb-ready";
+                    activePhase = gameData.phase;
                     clearInterval(playerQuizCountdownInterval);
                     clearInterval(playerSpyfallTimerInterval);
                     clearInterval(playerBonusRoundInterval);
@@ -2930,17 +2936,22 @@
                     document.getElementById("waiting-avatar").hidden = false;
                     document.getElementById("safe-indicator").hidden = true;
                     document.body.classList.remove("has-bomb", "safe", "bomb-spectator");
-                    const hasBomb = playerId === gameData.activePlayerId;
-                    document.getElementById("waiting-title").innerText = hasBomb
-                        ? "You're up first. Get ready!"
-                        : "You are not first. Be ready for when the bomb comes.";
+                    const hasBomb = isBombReady && playerId === gameData.activePlayerId;
+                    document.getElementById("waiting-title").innerText = isBombReady
+                        ? hasBomb
+                            ? "You're up first. Get ready!"
+                            : "You are not first. Be ready for when the bomb comes."
+                        : "Get ready for Spyfall!";
                     document.getElementById("waiting-copy").innerText = "";
                     document.getElementById("waiting-avatar").hidden = true;
                     document.getElementById("get-ready-player").hidden = true;
-                    document.body.classList.add("bomb-prestart-active");
+                    document.body.classList.add("game-prestart-active");
                     const waitingScreen = document.getElementById("waiting-screen");
-                    waitingScreen.classList.remove("bomb-prestart--first", "bomb-prestart--not-first");
-                    waitingScreen.classList.add("bomb-prestart", hasBomb ? "bomb-prestart--first" : "bomb-prestart--not-first", "active");
+                    const prestartStyle = isBombReady
+                        ? hasBomb ? "game-prestart--first" : "game-prestart--not-first"
+                        : "game-prestart--spyfall";
+                    waitingScreen.classList.remove("game-prestart--first", "game-prestart--not-first", "game-prestart--spyfall");
+                    waitingScreen.classList.add("game-prestart", prestartStyle, "active");
                     return;
                 }
 
@@ -2948,8 +2959,8 @@
                     activePhase = "bomb";
                     clearInterval(playerQuizCountdownInterval);
                     document.getElementById("quiz-splash").hidden = true;
-                    document.body.classList.remove("bomb-prestart-active");
-                    document.getElementById("waiting-screen").classList.remove("bomb-prestart", "bomb-prestart--first", "bomb-prestart--not-first");
+                    document.body.classList.remove("game-prestart-active");
+                    document.getElementById("waiting-screen").classList.remove("game-prestart", "game-prestart--first", "game-prestart--not-first", "game-prestart--spyfall");
                     const hasBomb = playerId === gameData.activePlayerId;
                     document.getElementById("safe-indicator").hidden = hasBomb;
                     document.getElementById("waiting-screen").classList.toggle("bomb-spectator", !hasBomb);

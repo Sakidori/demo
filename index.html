@@ -204,7 +204,7 @@
 
         .round-one-intro-screen.active { display: grid; }
 
-        .bomb-ready-screen {
+        .game-ready-screen {
             display: grid;
             justify-items: center;
             gap: 12px;
@@ -212,15 +212,15 @@
             margin: auto;
         }
 
-        .bomb-ready-screen h1 { margin: 0; }
+        .game-ready-screen h1 { margin: 0; }
 
-        .bomb-ready-player {
+        .game-ready-detail {
             color: var(--muted);
             font-size: 1.1rem;
             font-weight: 700;
         }
 
-        #start-bomb-round-btn { width: min(320px, 100%); }
+        #prepared-game-start-btn { width: min(320px, 100%); }
 
         .game-instructions-screen {
             position: fixed;
@@ -2792,12 +2792,12 @@
         <button type="button" onclick="devLaunchSelectedGame()">Launch</button>
     </details>
 
-    <div id="bomb-ready-screen" class="screen bomb-ready-screen" aria-labelledby="bomb-ready-title">
-        <p class="game-instructions-kicker">Round 1 · Pass the Bomb</p>
-        <h1 id="bomb-ready-title">Ready to begin?</h1>
-        <p id="bomb-ready-player" class="bomb-ready-player"></p>
-        <p>The first player is ready. Start the round when everyone is set.</p>
-        <button id="start-bomb-round-btn" type="button" onclick="startPreparedBombRound()">Start Bomb Round</button>
+    <div id="game-ready-screen" class="screen game-ready-screen" aria-labelledby="game-ready-title">
+        <p id="game-ready-kicker" class="game-instructions-kicker">Round 1 · Pass the Bomb</p>
+        <h1 id="game-ready-title">Ready to begin?</h1>
+        <p id="game-ready-detail" class="game-ready-detail"></p>
+        <p id="game-ready-copy">Start the round when everyone is ready.</p>
+        <button id="prepared-game-start-btn" type="button" onclick="startPreparedGame()">Start Bomb Round</button>
         <button type="button" onclick="returnToLobby()">Back to Lobby</button>
     </div>
 
@@ -3414,7 +3414,7 @@
             spyfallLocationSelect.value = validLocation;
         };
         const updateSpyfallLocationControls = (phase) => {
-            const canChangeLocation = ["waiting", "spyfall-setup"].includes(phase);
+            const canChangeLocation = ["waiting", "spyfall-ready", "spyfall-setup"].includes(phase);
             spyfallLocationControl.hidden = !canChangeLocation;
             spyfallLocationSelect.disabled = !canChangeLocation;
             spyfallLocationSelect.hidden = !canChangeLocation;
@@ -3442,9 +3442,9 @@
             });
         });
 
-        const restartableIntroPhases = new Set(["game-splash", "game-instructions-splash", "game-instructions", "bomb-ready"]);
+        const restartableIntroPhases = new Set(["game-splash", "game-instructions-splash", "game-instructions", "bomb-ready", "spyfall-ready"]);
         const resumableGamePhases = new Set([
-            "waiting", "bomb", "bomb-ready", "quiz-intro", "quiz", "bonus-intro", "final-round-placeholder",
+            "waiting", "bomb", "bomb-ready", "spyfall-ready", "quiz-intro", "quiz", "bonus-intro", "final-round-placeholder",
             "bonus-round", "bonus-standings", "bonus-podium", "spyfall-vote"
         ]);
         get(gameRef).then(async (snapshot) => {
@@ -4139,7 +4139,7 @@
             updateSpyfallLocationControls(gameData.phase);
             const skipButton = document.getElementById("skip-round-btn");
             skipButton.disabled = !gameData.phase || [
-                "waiting", "exploding", "game-splash", "game-instructions-splash", "final-round-placeholder", "game-instructions", "bomb-ready", "bonus-intro", "spyfall-setup",
+                "waiting", "exploding", "game-splash", "game-instructions-splash", "final-round-placeholder", "game-instructions", "bomb-ready", "spyfall-ready", "bonus-intro", "spyfall-setup",
                 "bonus-round", "bonus-standings", "bonus-podium"
             ].includes(gameData.phase);
             const pauseButton = document.getElementById("pause-game-btn");
@@ -4164,17 +4164,28 @@
                 return;
             }
             isGamePaused = false;
-            if (gameData.phase === "bomb-ready") {
-                currentPhase = "bomb-ready";
+            if (gameData.phase === "bomb-ready" || gameData.phase === "spyfall-ready") {
+                const isSpyfallReady = gameData.phase === "spyfall-ready";
+                currentPhase = gameData.phase;
                 clearInterval(countdownInterval);
                 clearTimeout(fuseBeepTimeout);
                 document.body.classList.remove("bomb-round-active");
                 document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                document.getElementById("game-ready-kicker").innerText = isSpyfallReady
+                    ? "Round 2 · Spyfall"
+                    : "Round 1 · Pass the Bomb";
+                document.getElementById("game-ready-title").innerText = isSpyfallReady ? "Ready for Spyfall?" : "Ready to begin?";
                 const firstPlayer = gameData.players?.[gameData.activePlayerId];
-                document.getElementById("bomb-ready-player").innerText = firstPlayer
-                    ? `${getPlayerAvatar(firstPlayer)} ${firstPlayer.name || "First player"} is up first`
-                    : "Choosing the first player...";
-                document.getElementById("bomb-ready-screen").classList.add("active");
+                document.getElementById("game-ready-detail").innerText = isSpyfallReady
+                    ? "Role assignments will begin when you start."
+                    : firstPlayer
+                        ? `${getPlayerAvatar(firstPlayer)} ${firstPlayer.name || "First player"} is up first`
+                        : "Choosing the first player...";
+                document.getElementById("game-ready-copy").innerText = isSpyfallReady
+                    ? "Start when everyone is ready."
+                    : "The first player is ready. Start the round when everyone is set.";
+                document.getElementById("prepared-game-start-btn").innerText = isSpyfallReady ? "Assign Roles" : "Start Bomb Round";
+                document.getElementById("game-ready-screen").classList.add("active");
                 return;
             }
             if (gameData.phase !== "game-instructions-splash") {
@@ -4221,7 +4232,7 @@
                 const startButton = document.getElementById("game-instructions-start");
                 startButton.hidden = !instructionsReady;
                 if (!instructionsReady) return;
-                startButton.innerText = gameData.gameInstructionsGame === "spyfall" ? "Assign Roles" : "Start Game";
+                startButton.innerText = gameData.gameInstructionsGame === "spyfall" ? "Get Ready" : "Start Game";
                 document.getElementById("game-instructions-screen").classList.add("active");
                 return;
             }
@@ -4495,7 +4506,7 @@
             currentPhase = "game-instructions";
             document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
             renderGameInstructions(gameKey);
-            document.getElementById("game-instructions-start").innerText = gameKey === "spyfall" ? "Assign Roles" : "Start Game";
+            document.getElementById("game-instructions-start").innerText = gameKey === "spyfall" ? "Get Ready" : "Start Game";
             document.getElementById("game-instructions-screen").classList.add("active");
             await update(gameRef, {
                 status: "game-instructions",
@@ -4546,7 +4557,7 @@
                 } else if (gameData.gameInstructionsGame === "spyfall") {
                     document.getElementById("game-instructions-screen").classList.remove("active");
                     currentPhase = "round-2-placeholder";
-                    await beginSpyfallRoleSetup();
+                    await prepareSpyfallStart();
                 }
             } finally {
                 button.disabled = false;
@@ -4565,7 +4576,8 @@
             gameInstructionsSplashTimeout = null;
             document.getElementById("round-one-intro-screen").classList.remove("active");
             document.getElementById("game-instructions-screen").classList.remove("active");
-            document.getElementById("bomb-ready-screen").classList.remove("active");
+            document.getElementById("game-ready-screen").classList.remove("active");
+            document.body.classList.remove("spyfall-host-active");
             document.getElementById("game-instructions-splash").hidden = true;
             document.getElementById("lobby-screen").classList.add("active");
             syncBackgroundMusic("waiting");
@@ -4761,11 +4773,23 @@
             });
         };
 
-        window.startPreparedBombRound = async function() {
-            if (currentPhase !== "bomb-ready") return;
-            const button = document.getElementById("start-bomb-round-btn");
+        window.startPreparedGame = async function() {
+            if (currentPhase !== "bomb-ready" && currentPhase !== "spyfall-ready") return;
+            const button = document.getElementById("prepared-game-start-btn");
             button.disabled = true;
+            const startingSpyfall = currentPhase === "spyfall-ready";
             try {
+                if (startingSpyfall) {
+                    const snapshot = await get(gameRef);
+                    if (snapshot.val()?.phase !== "spyfall-ready") {
+                        alert("Spyfall is no longer waiting to start.");
+                        return;
+                    }
+                    currentPhase = "round-2-placeholder";
+                    document.getElementById("game-ready-screen").classList.remove("active");
+                    await beginSpyfallRoleSetup();
+                    return;
+                }
                 const startedAt = Date.now();
                 const result = await runTransaction(gameRef, (gameData) => {
                     if (gameData?.phase !== "bomb-ready") return;
@@ -4788,8 +4812,8 @@
                 playSplashAudio("start.mp3", START_SOUND_GAIN);
                 playUiTone(440, 0.12, "triangle", 0.03);
             } catch (error) {
-                console.error("Could not start the bomb round.", error);
-                alert("Could not start the bomb round. Please try again.");
+                console.error(startingSpyfall ? "Could not start Spyfall." : "Could not start the bomb round.", error);
+                alert(startingSpyfall ? "Could not start Spyfall. Please try again." : "Could not start the bomb round. Please try again.");
             } finally {
                 button.disabled = false;
             }
@@ -5658,7 +5682,7 @@
         }
 
         window.selectSpyfallBackupLocation = async function(imageName) {
-            if (!["waiting", "spyfall-setup"].includes(currentPhase)) return;
+            if (!["waiting", "spyfall-ready", "spyfall-setup"].includes(currentPhase)) return;
             const selectedLocation = ["location.webp", "location2.webp", "location3.webp"].includes(imageName)
                 ? imageName
                 : "location.webp";
@@ -5670,6 +5694,19 @@
             if (currentPhase !== "round-2-placeholder") return;
             await showGameInstructionsSplash("spyfall");
         };
+
+        async function prepareSpyfallStart() {
+            if (currentPhase !== "round-2-placeholder") return;
+            currentPhase = "spyfall-ready";
+            await update(gameRef, {
+                status: "spyfall-ready",
+                phase: "spyfall-ready",
+                round: 2,
+                gameInstructionsGame: "spyfall",
+                paused: false,
+                pausedAt: null
+            });
+        }
 
         async function beginSpyfallRoleSetup() {
             if (currentPhase !== "round-2-placeholder") return;
