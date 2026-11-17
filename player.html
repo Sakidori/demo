@@ -353,20 +353,32 @@
 
         .safe-indicator[hidden] { display: none; }
 
-        .first-player-notice {
-            width: min(100%, 420px);
-            margin: 0;
-            padding: 14px 18px;
-            border: 2px solid rgba(43,212,168,0.72);
-            border-radius: 16px;
-            background: rgba(43,212,168,0.14);
-            color: #d5fff3;
-            font-weight: 800;
-            line-height: 1.4;
-            box-shadow: 0 10px 28px rgba(43,212,168,0.16);
+        #waiting-screen.bomb-prestart.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            width: min(920px, 100%);
+            min-height: calc(100dvh - 80px);
+            margin: auto;
+            padding: clamp(24px, 7vw, 72px);
+            text-align: center;
         }
 
-        .first-player-notice[hidden] { display: none; }
+        #waiting-screen.bomb-prestart > * { margin: 0; }
+
+        #waiting-screen.bomb-prestart #waiting-avatar,
+        #waiting-screen.bomb-prestart #safe-indicator,
+        #waiting-screen.bomb-prestart #waiting-copy,
+        #waiting-screen.bomb-prestart #get-ready-player { display: none !important; }
+
+        #waiting-screen.bomb-prestart h2 {
+            max-width: 18ch;
+            font-size: clamp(2.4rem, 9vw, 6rem);
+            line-height: 1.08;
+            overflow-wrap: anywhere;
+        }
 
         #waiting-screen.bomb-spectator.active {
             display: flex;
@@ -1813,6 +1825,10 @@
             body::after { inset: 4px; border-width: 5px; border-radius: 14px; }
             .sound-control { top: 15px; right: 16px; padding: 8px 10px; font-size: 0.8rem; }
             .screen { padding: 18px 12px 20px; border-radius: 18px; }
+            #waiting-screen.bomb-prestart.active {
+                min-height: calc(100dvh - 68px);
+                padding: 16px;
+            }
             input, button { width: 100%; font-size: 16px; padding: 12px 14px; margin: 8px auto; }
             #join-screen { padding: 14px 10px 16px; }
             #join-screen h2 { margin-bottom: 5px; }
@@ -1960,11 +1976,8 @@
     <div id="waiting-screen" class="screen">
         <span id="waiting-avatar" class="lobby-avatar" aria-hidden="true">🦊</span>
         <div id="safe-indicator" class="safe-indicator" aria-hidden="true" hidden>SAFE</div>
-        <h2 id="waiting-title">You're in!</h2>
+        <h2 id="waiting-title" aria-live="polite">You're in!</h2>
         <p id="waiting-copy">Waiting for the host to start the game...</p>
-        <p id="first-player-notice" class="first-player-notice" role="status" aria-live="polite" hidden>
-            You're first! The host will start the round when everyone is ready.
-        </p>
         <div id="get-ready-player" role="status" aria-live="polite" hidden>
             <span id="bomb-holder-avatar" class="bomb-holder-team-avatar" aria-hidden="true"></span>
             <span class="bomb-holder-team-line">
@@ -2819,7 +2832,7 @@
                     document.body.classList.remove("bomb-spectator");
                     document.getElementById("waiting-screen").classList.remove("bomb-spectator");
                     document.getElementById("safe-indicator").hidden = true;
-                    document.getElementById("first-player-notice").hidden = true;
+                    document.getElementById("waiting-screen").classList.remove("bomb-prestart");
                 }
 
                 if (gameData.phase === "game-splash" || gameData.phase === "round-2-placeholder") {
@@ -2889,16 +2902,13 @@
                     document.getElementById("safe-indicator").hidden = true;
                     document.body.classList.remove("has-bomb", "safe", "bomb-spectator");
                     const hasBomb = playerId === gameData.activePlayerId;
-                    const activePlayer = gameData.players?.[gameData.activePlayerId];
-                    const activeTeam = getGameTeams(gameData)[activePlayer?.teamId];
-                    const activeTeamName = activePlayer?.teamName || activeTeam?.name;
-                    document.getElementById("waiting-title").innerText = hasBomb ? "You're up first!" : "Get ready!";
-                    document.getElementById("waiting-copy").innerText = "The host is getting the bomb round ready.";
-                    document.getElementById("first-player-notice").hidden = !hasBomb;
-                    document.getElementById("get-ready-player").hidden = false;
-                    document.getElementById("bomb-holder-avatar").innerText = activePlayer?.avatar || activeTeam?.avatar || "🎮";
-                    document.getElementById("bomb-holder-team-name").innerText = activeTeamName || activePlayer?.name || "A player";
-                    document.getElementById("bomb-holder-action").innerText = "is up first";
+                    document.getElementById("waiting-title").innerText = hasBomb
+                        ? "You're up first. Get ready!"
+                        : "You are not first. Be ready for when the bomb comes.";
+                    document.getElementById("waiting-copy").innerText = "";
+                    document.getElementById("waiting-avatar").hidden = true;
+                    document.getElementById("get-ready-player").hidden = true;
+                    document.getElementById("waiting-screen").classList.add("bomb-prestart");
                     document.getElementById("waiting-screen").classList.add("active");
                     return;
                 }
@@ -2907,6 +2917,7 @@
                     activePhase = "bomb";
                     clearInterval(playerQuizCountdownInterval);
                     document.getElementById("quiz-splash").hidden = true;
+                    document.getElementById("waiting-screen").classList.remove("bomb-prestart");
                     const hasBomb = playerId === gameData.activePlayerId;
                     document.getElementById("safe-indicator").hidden = hasBomb;
                     document.getElementById("waiting-screen").classList.toggle("bomb-spectator", !hasBomb);
