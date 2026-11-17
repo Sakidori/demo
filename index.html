@@ -4176,8 +4176,11 @@
                     : "Round 1 · Pass the Bomb";
                 document.getElementById("game-ready-title").innerText = isSpyfallReady ? "Ready for Spyfall?" : "Ready to begin?";
                 const firstPlayer = gameData.players?.[gameData.activePlayerId];
+                const spyfallFirstPlayer = gameData.players?.[gameData.spyfallFirstPlayerId];
                 document.getElementById("game-ready-detail").innerText = isSpyfallReady
-                    ? "Role assignments will begin when you start."
+                    ? spyfallFirstPlayer
+                        ? `${getPlayerAvatar(spyfallFirstPlayer)} ${spyfallFirstPlayer.name || "First player"} goes first`
+                        : "Choosing the first player..."
                     : firstPlayer
                         ? `${getPlayerAvatar(firstPlayer)} ${firstPlayer.name || "First player"} is up first`
                         : "Choosing the first player...";
@@ -4185,6 +4188,9 @@
                     ? "Start when everyone is ready."
                     : "The first player is ready. Start the round when everyone is set.";
                 document.getElementById("prepared-game-start-btn").innerText = isSpyfallReady ? "Assign Roles" : "Start Bomb Round";
+                if (isSpyfallReady) {
+                    spyfallPlayerOrder = Array.isArray(gameData.spyfallPlayerOrder) ? gameData.spyfallPlayerOrder : [];
+                }
                 document.getElementById("game-ready-screen").classList.add("active");
                 return;
             }
@@ -5697,12 +5703,19 @@
 
         async function prepareSpyfallStart() {
             if (currentPhase !== "round-2-placeholder") return;
+            const snapshot = await get(playersRef);
+            hostPlayers = snapshot.val() || {};
+            spyfallPlayerOrder = shuffle(Object.entries(hostPlayers)
+                .filter(([, player]) => player?.teamId)
+                .map(([id]) => id));
             currentPhase = "spyfall-ready";
             await update(gameRef, {
                 status: "spyfall-ready",
                 phase: "spyfall-ready",
                 round: 2,
                 gameInstructionsGame: "spyfall",
+                spyfallPlayerOrder,
+                spyfallFirstPlayerId: spyfallPlayerOrder[0] || null,
                 paused: false,
                 pausedAt: null
             });
@@ -5733,10 +5746,12 @@
             try {
                 const snapshot = await get(playersRef);
                 hostPlayers = snapshot.val() || {};
-                spyfallPlayerOrder = Object.entries(hostPlayers)
+                const currentPlayerIds = Object.entries(hostPlayers)
                     .filter(([, player]) => player?.teamId)
                     .map(([id]) => id);
-                spyfallPlayerOrder = shuffle(spyfallPlayerOrder);
+                const preparedOrder = spyfallPlayerOrder.filter((id) => currentPlayerIds.includes(id));
+                const unpreparedPlayers = currentPlayerIds.filter((id) => !preparedOrder.includes(id));
+                spyfallPlayerOrder = [...preparedOrder, ...shuffle(unpreparedPlayers)];
                 if (spyfallPlayerOrder.length < 2) {
                     document.getElementById("spyfall-host-status").innerText = "Spyfall needs at least two players to make the rounds work.";
                     action.innerText = "Retry";
@@ -5756,6 +5771,7 @@
                     round: 2,
                     spyfallLocation: document.getElementById("spyfall-location-select").value,
                     spyfallPlayerOrder,
+                    spyfallFirstPlayerId: spyfallPlayerOrder[0],
                     spyfallRevealIndex: -1,
                     spyfallVotes: null,
                     spyfallVoteCounts: null,

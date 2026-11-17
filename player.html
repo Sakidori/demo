@@ -409,11 +409,6 @@
             box-shadow: 0 0 32px rgba(255,92,122,0.22);
         }
 
-        #waiting-screen.game-prestart--spyfall h2 {
-            border-color: rgba(124,92,255,0.85);
-            box-shadow: 0 0 32px rgba(124,92,255,0.24);
-        }
-
         #waiting-screen.bomb-spectator.active {
             display: flex;
             flex-direction: column;
@@ -2866,7 +2861,7 @@
                     document.body.classList.remove("game-prestart-active");
                     document.getElementById("waiting-screen").classList.remove("bomb-spectator");
                     document.getElementById("safe-indicator").hidden = true;
-                    document.getElementById("waiting-screen").classList.remove("game-prestart", "game-prestart--first", "game-prestart--not-first", "game-prestart--spyfall");
+                    document.getElementById("waiting-screen").classList.remove("game-prestart", "game-prestart--first", "game-prestart--not-first");
                 }
 
                 if (gameData.phase === "game-splash" || gameData.phase === "round-2-placeholder") {
@@ -2936,21 +2931,21 @@
                     document.getElementById("waiting-avatar").hidden = false;
                     document.getElementById("safe-indicator").hidden = true;
                     document.body.classList.remove("has-bomb", "safe", "bomb-spectator");
-                    const hasBomb = isBombReady && playerId === gameData.activePlayerId;
-                    document.getElementById("waiting-title").innerText = isBombReady
-                        ? hasBomb
-                            ? "You're up first. Get ready!"
-                            : "You are not first. Be ready for when the bomb comes."
-                        : "Get ready for Spyfall!";
+                    const isFirstPlayer = isBombReady
+                        ? playerId === gameData.activePlayerId
+                        : playerId === gameData.spyfallFirstPlayerId;
+                    document.getElementById("waiting-title").innerText = isFirstPlayer
+                        ? "You're up first. Get ready!"
+                        : isBombReady
+                            ? "You are not first. Be ready for when the bomb comes."
+                            : "You are not first. Be ready for your turn.";
                     document.getElementById("waiting-copy").innerText = "";
                     document.getElementById("waiting-avatar").hidden = true;
                     document.getElementById("get-ready-player").hidden = true;
                     document.body.classList.add("game-prestart-active");
                     const waitingScreen = document.getElementById("waiting-screen");
-                    const prestartStyle = isBombReady
-                        ? hasBomb ? "game-prestart--first" : "game-prestart--not-first"
-                        : "game-prestart--spyfall";
-                    waitingScreen.classList.remove("game-prestart--first", "game-prestart--not-first", "game-prestart--spyfall");
+                    const prestartStyle = isFirstPlayer ? "game-prestart--first" : "game-prestart--not-first";
+                    waitingScreen.classList.remove("game-prestart--first", "game-prestart--not-first");
                     waitingScreen.classList.add("game-prestart", prestartStyle, "active");
                     return;
                 }
@@ -2960,7 +2955,7 @@
                     clearInterval(playerQuizCountdownInterval);
                     document.getElementById("quiz-splash").hidden = true;
                     document.body.classList.remove("game-prestart-active");
-                    document.getElementById("waiting-screen").classList.remove("game-prestart", "game-prestart--first", "game-prestart--not-first", "game-prestart--spyfall");
+                    document.getElementById("waiting-screen").classList.remove("game-prestart", "game-prestart--first", "game-prestart--not-first");
                     const hasBomb = playerId === gameData.activePlayerId;
                     document.getElementById("safe-indicator").hidden = hasBomb;
                     document.getElementById("waiting-screen").classList.toggle("bomb-spectator", !hasBomb);
