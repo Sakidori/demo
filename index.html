@@ -2898,7 +2898,6 @@
         <h1>Overall Standings</h1>
         <ul id="spyfall-final-standings-list"></ul>
         <button id="spyfall-next-round-action">Next</button>
-        <button id="spyfall-play-again-action" type="button">Play Again</button>
     </div>
 
     <div id="bonus-intro-screen" class="screen bonus-intro-screen" aria-label="Push the button">
@@ -3588,8 +3587,7 @@
             "skip-round-btn",
             "round-result-action",
             "spyfall-host-action",
-            "spyfall-next-round-action",
-            "spyfall-play-again-action"
+            "spyfall-next-round-action"
         ]);
 
         function isBackButton(button) {
@@ -6097,7 +6095,6 @@
             renderSpyfallRoundScores(gameData.players);
             renderScoreList("spyfall-final-standings-list", gameData.players);
             document.getElementById("spyfall-next-round-action").onclick = () => startPopQuiz(1);
-            document.getElementById("spyfall-play-again-action").onclick = playAgainSpyfall;
             document.getElementById("spyfall-host-vote-count").hidden = true;
             await drumrollFinished;
             spyfallDrumrollActive = false;
@@ -6105,41 +6102,6 @@
             if (currentPhase !== "spyfall-results") return;
             await update(gameRef, { spyfallResultsStage: "spies" });
             showSpyfallResultScreen("spyfall-spy-results-screen");
-        }
-
-        async function playAgainSpyfall() {
-            if (currentPhase !== "spyfall-results") return;
-            const [playersSnapshot, gameSnapshot] = await Promise.all([get(playersRef), get(gameRef)]);
-            const players = playersSnapshot.val() || {};
-            const currentGameData = gameSnapshot.val() || {};
-            const resetPlayers = Object.fromEntries(Object.entries(players).map(([id, player]) => [
-                id,
-                player?.teamId ? { ...player, spyfallPoints: 0 } : player
-            ]));
-            currentPhase = "quiz-results";
-            spyfallPlayerOrder = [];
-            spyfallSpyIds = new Set();
-            spyfallRevealIndex = -1;
-            spyfallTurnIndex = -1;
-            spyfallVotingStarted = false;
-            spyfallVotingEnded = false;
-            spyfallDiscussionStarted = false;
-            await update(gameRef, {
-                status: "round-2-placeholder",
-                phase: "round-2-placeholder",
-                round: 2,
-                players: resetPlayers,
-                spyfallLocation: currentGameData.spyfallLocation,
-                spyfallRoles: {},
-                spyfallVotes: {},
-                spyfallVoteCounts: {},
-                spyfallSpyIds: [],
-                spyfallDiscussionStarted: false,
-                spyfallDiscussionEndsAt: 0,
-                spyfallResultsStage: null
-            });
-            showSpyfallResultScreen("round-two-placeholder-screen");
-            await showRoundTwoPlaceholder();
         }
 
         function renderSpyfallVoteChart(gameData) {
