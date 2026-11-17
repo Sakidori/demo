@@ -204,6 +204,24 @@
 
         .round-one-intro-screen.active { display: grid; }
 
+        .bomb-ready-screen {
+            display: grid;
+            justify-items: center;
+            gap: 12px;
+            max-width: 560px;
+            margin: auto;
+        }
+
+        .bomb-ready-screen h1 { margin: 0; }
+
+        .bomb-ready-player {
+            color: var(--muted);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        #start-bomb-round-btn { width: min(320px, 100%); }
+
         .game-instructions-screen {
             position: fixed;
             inset: 0;
@@ -2774,6 +2792,15 @@
         <button type="button" onclick="devLaunchSelectedGame()">Launch</button>
     </details>
 
+    <div id="bomb-ready-screen" class="screen bomb-ready-screen" aria-labelledby="bomb-ready-title">
+        <p class="game-instructions-kicker">Round 1 · Pass the Bomb</p>
+        <h1 id="bomb-ready-title">Ready to begin?</h1>
+        <p id="bomb-ready-player" class="bomb-ready-player"></p>
+        <p>The first player is ready. Start the round when everyone is set.</p>
+        <button id="start-bomb-round-btn" type="button" onclick="startPreparedBombRound()">Start Bomb Round</button>
+        <button type="button" onclick="returnToLobby()">Back to Lobby</button>
+    </div>
+
     <!-- TASK PASSING SCREEN -->
     <div id="task-screen" class="screen">
         <div class="task-title-row">
@@ -3415,9 +3442,9 @@
             });
         });
 
-        const restartableIntroPhases = new Set(["game-splash", "game-instructions-splash", "game-instructions"]);
+        const restartableIntroPhases = new Set(["game-splash", "game-instructions-splash", "game-instructions", "bomb-ready"]);
         const resumableGamePhases = new Set([
-            "waiting", "bomb", "quiz-intro", "quiz", "bonus-intro", "final-round-placeholder",
+            "waiting", "bomb", "bomb-ready", "quiz-intro", "quiz", "bonus-intro", "final-round-placeholder",
             "bonus-round", "bonus-standings", "bonus-podium", "spyfall-vote"
         ]);
         get(gameRef).then(async (snapshot) => {
@@ -4112,7 +4139,7 @@
             updateSpyfallLocationControls(gameData.phase);
             const skipButton = document.getElementById("skip-round-btn");
             skipButton.disabled = !gameData.phase || [
-                "waiting", "exploding", "game-splash", "game-instructions-splash", "final-round-placeholder", "game-instructions", "bonus-intro", "spyfall-setup",
+                "waiting", "exploding", "game-splash", "game-instructions-splash", "final-round-placeholder", "game-instructions", "bomb-ready", "bonus-intro", "spyfall-setup",
                 "bonus-round", "bonus-standings", "bonus-podium"
             ].includes(gameData.phase);
             const pauseButton = document.getElementById("pause-game-btn");
@@ -4137,6 +4164,19 @@
                 return;
             }
             isGamePaused = false;
+            if (gameData.phase === "bomb-ready") {
+                currentPhase = "bomb-ready";
+                clearInterval(countdownInterval);
+                clearTimeout(fuseBeepTimeout);
+                document.body.classList.remove("bomb-round-active");
+                document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                const firstPlayer = gameData.players?.[gameData.activePlayerId];
+                document.getElementById("bomb-ready-player").innerText = firstPlayer
+                    ? `${getPlayerAvatar(firstPlayer)} ${firstPlayer.name || "First player"} is up first`
+                    : "Choosing the first player...";
+                document.getElementById("bomb-ready-screen").classList.add("active");
+                return;
+            }
             if (gameData.phase !== "game-instructions-splash") {
                 clearTimeout(gameInstructionsSplashTimeout);
                 gameInstructionsSplashTimeout = null;
@@ -4500,12 +4540,11 @@
                 const snapshot = await get(gameRef);
                 const gameData = snapshot.val() || {};
                 if (gameData.phase !== "game-instructions" || !gameInstructionContent[gameData.gameInstructionsGame]) return;
-                document.getElementById("game-instructions-screen").classList.remove("active");
                 if (gameData.gameInstructionsGame === "bomb") {
-                    playSplashAudio("start.mp3", START_SOUND_GAIN);
                     currentPhase = "waiting";
                     await startBombRound();
                 } else if (gameData.gameInstructionsGame === "spyfall") {
+                    document.getElementById("game-instructions-screen").classList.remove("active");
                     currentPhase = "round-2-placeholder";
                     await beginSpyfallRoleSetup();
                 }
@@ -4526,6 +4565,7 @@
             gameInstructionsSplashTimeout = null;
             document.getElementById("round-one-intro-screen").classList.remove("active");
             document.getElementById("game-instructions-screen").classList.remove("active");
+            document.getElementById("bomb-ready-screen").classList.remove("active");
             document.getElementById("game-instructions-splash").hidden = true;
             document.getElementById("lobby-screen").classList.add("active");
             syncBackgroundMusic("waiting");
@@ -4688,46 +4728,71 @@
             const taskQueue = shuffle(TONGUE_TWISTERS);
             currentTask = taskQueue.pop();
             currentBombRound = 1;
-            currentPhase = "bomb";
+            currentPhase = "bomb-ready";
             bombPassInProgress = false;
             bombLocked = true;
-            fuseStartedAt = Date.now();
-            bombRoundStartedAt = fuseStartedAt;
+            fuseStartedAt = 0;
+            bombRoundStartedAt = 0;
             bombUnlockedAt = 0;
             document.getElementById("lobby-screen").classList.remove("active");
             document.getElementById("round-one-intro-screen").classList.remove("active");
             document.getElementById("bomb-result-screen").classList.remove("active");
             document.getElementById("quiz-screen").classList.remove("active");
-            document.getElementById("task-screen").classList.add("active");
-            document.body.classList.add("bomb-round-active");
-            renderActivePlayer();
-            renderHostPlayerLists(hostPlayers);
-            renderBombLockState();
-            playUiTone(440, 0.12, "triangle", 0.03);
+            document.getElementById("game-instructions-screen").classList.remove("active");
             preloadExplosionSound();
 
             await update(gameRef, {
-                status: "bomb-round",
-                phase: "bomb",
+                status: "bomb-ready",
+                phase: "bomb-ready",
                 round: currentBombRound,
                 task: currentTask,
                 taskQueue,
                 activePlayerId,
                 bombCyclePlayerIds: [activePlayerId],
                 bombLocked,
-                bombRoundStartedAt,
-                bombHolderStartedAt: fuseStartedAt,
+                bombRoundStartedAt: null,
+                bombHolderStartedAt: null,
                 bombUnlockedAt: null,
-                handoffTime: Date.now(),
+                handoffTime: null,
                 players: hostPlayers,
                 quizQuestion: null,
                 quizAnswers: null,
                 quizResults: null
             });
-            updateHostFuse();
-            clearInterval(countdownInterval);
-            countdownInterval = setInterval(updateHostFuse, 250);
-            startFuseBeepLoop();
+        };
+
+        window.startPreparedBombRound = async function() {
+            if (currentPhase !== "bomb-ready") return;
+            const button = document.getElementById("start-bomb-round-btn");
+            button.disabled = true;
+            try {
+                const startedAt = Date.now();
+                const result = await runTransaction(gameRef, (gameData) => {
+                    if (gameData?.phase !== "bomb-ready") return;
+                    return {
+                        ...gameData,
+                        status: "bomb-round",
+                        phase: "bomb",
+                        bombRoundStartedAt: startedAt,
+                        bombHolderStartedAt: startedAt,
+                        bombUnlockedAt: null,
+                        handoffTime: startedAt,
+                        paused: false,
+                        pausedAt: null
+                    };
+                }, { applyLocally: false });
+                if (!result.committed) {
+                    alert("The bomb round is no longer waiting to start.");
+                    return;
+                }
+                playSplashAudio("start.mp3", START_SOUND_GAIN);
+                playUiTone(440, 0.12, "triangle", 0.03);
+            } catch (error) {
+                console.error("Could not start the bomb round.", error);
+                alert("Could not start the bomb round. Please try again.");
+            } finally {
+                button.disabled = false;
+            }
         };
 
         window.unlockBomb = async function() {

@@ -2858,6 +2858,33 @@
                     if (gameData.bonusRoundFinalizing) flushBonusRoundTapBuffer();
                 }
 
+                if (gameData.phase === "bomb-ready") {
+                    activePhase = "bomb-ready";
+                    clearInterval(playerQuizCountdownInterval);
+                    clearInterval(playerSpyfallTimerInterval);
+                    clearInterval(playerBonusRoundInterval);
+                    document.querySelectorAll(".screen.active").forEach((screen) => screen.classList.remove("active"));
+                    document.getElementById("task-screen").classList.remove("active");
+                    document.getElementById("waiting-screen").classList.remove("bomb-spectator");
+                    document.getElementById("waiting-avatar").hidden = false;
+                    document.getElementById("safe-indicator").hidden = true;
+                    document.body.classList.remove("has-bomb", "safe", "bomb-spectator");
+                    const hasBomb = playerId === gameData.activePlayerId;
+                    const activePlayer = gameData.players?.[gameData.activePlayerId];
+                    const activeTeam = getGameTeams(gameData)[activePlayer?.teamId];
+                    const activeTeamName = activePlayer?.teamName || activeTeam?.name;
+                    document.getElementById("waiting-title").innerText = hasBomb ? "You're up first!" : "Get ready!";
+                    document.getElementById("waiting-copy").innerText = hasBomb
+                        ? "The host will start the round shortly. Your tongue twister will appear then."
+                        : "The host is getting the bomb round ready.";
+                    document.getElementById("get-ready-player").hidden = false;
+                    document.getElementById("bomb-holder-avatar").innerText = activePlayer?.avatar || activeTeam?.avatar || "🎮";
+                    document.getElementById("bomb-holder-team-name").innerText = activeTeamName || activePlayer?.name || "A player";
+                    document.getElementById("bomb-holder-action").innerText = "is up first";
+                    document.getElementById("waiting-screen").classList.add("active");
+                    return;
+                }
+
                 if (gameData.phase === "bomb") {
                     activePhase = "bomb";
                     clearInterval(playerQuizCountdownInterval);
